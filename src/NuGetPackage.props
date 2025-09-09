@@ -6,6 +6,7 @@
         <Authors>Snowberry Software</Authors>
         <AssemblyVersion>1.0.0.0</AssemblyVersion>
         <VersionPrefix>$(AssemblyVersion)</VersionPrefix>
+        <VersionSuffix>alpha</VersionSuffix>
 
         <IsPackable>true</IsPackable>
 
