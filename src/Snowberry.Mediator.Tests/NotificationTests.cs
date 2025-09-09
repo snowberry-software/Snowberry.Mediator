@@ -189,9 +189,9 @@ public class NotificationTests : Common.MediatorTestBase
         Assert.DoesNotContain(nameof(AnotherSimpleNotificationHandler), executions);
 
         // Verify each generic handler processed the notification correctly
-        Assert.Equal(1, GenericLoggingHandler<SimpleNotification>.LoggedNotifications.Count);
+        Assert.Single(GenericLoggingHandler<SimpleNotification>.LoggedNotifications);
         Assert.Contains("SimpleNotification", GenericAuditingHandler<SimpleNotification>.AuditLog.Keys);
-        Assert.Equal(1, GenericAuditingHandler<SimpleNotification>.AuditLog["SimpleNotification"].Count);
+        Assert.Single(GenericAuditingHandler<SimpleNotification>.AuditLog["SimpleNotification"]);
         Assert.Equal(1, GenericMetricsHandler<SimpleNotification>.NotificationCounts["SimpleNotification"]);
         Assert.True(GenericMetricsHandler<SimpleNotification>.LastProcessedTimes.ContainsKey("SimpleNotification"));
     }
@@ -246,7 +246,7 @@ public class NotificationTests : Common.MediatorTestBase
         // Verify all handlers processed the notification
         Assert.Single(SimpleNotificationHandler.ReceivedNotifications);
         Assert.Equal(1, AnotherSimpleNotificationHandler.ExecutionCount);
-        Assert.Equal(1, GenericLoggingHandler<SimpleNotification>.LoggedNotifications.Count);
+        Assert.Single(GenericLoggingHandler<SimpleNotification>.LoggedNotifications);
         Assert.Equal(1, GenericMetricsHandler<SimpleNotification>.NotificationCounts["SimpleNotification"]);
     }
 
@@ -293,7 +293,7 @@ public class NotificationTests : Common.MediatorTestBase
 
         // Verify generic handlers processed both notification types
         var executions = NotificationHandlerExecutionTracker.GetExecutions();
-        Assert.Equal(4, executions.Count); // 2 notifications × 2 generic handlers each
+        Assert.Equal(4, executions.Count); // 2 notifications ï¿½ 2 generic handlers each
 
         Assert.Contains("GenericLoggingHandler<UserRegisteredNotification>", executions);
         Assert.Contains("GenericLoggingHandler<OrderCompletedNotification>", executions);
@@ -488,7 +488,7 @@ public class NotificationTests : Common.MediatorTestBase
 
         // Should have executed both handler types for each notification
         var executions = NotificationHandlerExecutionTracker.GetExecutions();
-        Assert.Equal(6, executions.Count); // 2 handlers × 3 notifications
+        Assert.Equal(6, executions.Count); // 2 handlers ï¿½ 3 notifications
 
         // Verify both handler types were called for each notification
         Assert.Equal(3, executions.Count(e => e == nameof(SimpleNotificationHandler)));
@@ -542,7 +542,7 @@ public class NotificationTests : Common.MediatorTestBase
 
         // With thread-safe collections, we should get exact counts
         var executions = NotificationHandlerExecutionTracker.GetExecutions();
-        Assert.Equal(10, executions.Count); // Exactly 2 handlers × 5 notifications
+        Assert.Equal(10, executions.Count); // Exactly 2 handlers ï¿½ 5 notifications
 
         int metricsCount = executions.Count(e => e == "GenericMetricsHandler<SimpleNotification>");
         int loggingCount = executions.Count(e => e == "GenericLoggingHandler<SimpleNotification>");
