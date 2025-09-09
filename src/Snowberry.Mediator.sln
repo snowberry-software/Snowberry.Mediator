@@ -1,0 +1,58 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Snowberry.Mediator", "Snowberry.Mediator\Snowberry.Mediator.csproj", "{8C4919C6-6E70-4B8F-A648-B3A82AE97B4F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Snowberry.Mediator.Abstractions", "Snowberry.Mediator.Abstractions\Snowberry.Mediator.Abstractions.csproj", "{8F152462-6369-4CD3-9C17-062D4BA7827D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Snowberry.Mediator.Tests.Common", "Snowberry.Mediator.Tests.Common\Snowberry.Mediator.Tests.Common.csproj", "{F9C3326B-B695-4023-B203-A11A7793AC56}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Snowberry.Mediator.Tests", "Snowberry.Mediator.Tests\Snowberry.Mediator.Tests.csproj", "{CA40BAC1-7284-4171-807D-0A2505968CB3}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Extensions", "Extensions", "{7A6752CB-F4A3-40D8-8A78-63ED1DC5EF0C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Snowberry.Mediator.Extensions.DependencyInjection", "Snowberry.Mediator.Extensions.DependencyInjection\Snowberry.Mediator.Extensions.DependencyInjection.csproj", "{5CBE1A87-54E8-4A44-A233-0E9EC905C51B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8C4919C6-6E70-4B8F-A648-B3A82AE97B4F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8C4919C6-6E70-4B8F-A648-B3A82AE97B4F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8C4919C6-6E70-4B8F-A648-B3A82AE97B4F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8C4919C6-6E70-4B8F-A648-B3A82AE97B4F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8F152462-6369-4CD3-9C17-062D4BA7827D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8F152462-6369-4CD3-9C17-062D4BA7827D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8F152462-6369-4CD3-9C17-062D4BA7827D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8F152462-6369-4CD3-9C17-062D4BA7827D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F9C3326B-B695-4023-B203-A11A7793AC56}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F9C3326B-B695-4023-B203-A11A7793AC56}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F9C3326B-B695-4023-B203-A11A7793AC56}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F9C3326B-B695-4023-B203-A11A7793AC56}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CA40BAC1-7284-4171-807D-0A2505968CB3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CA40BAC1-7284-4171-807D-0A2505968CB3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CA40BAC1-7284-4171-807D-0A2505968CB3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CA40BAC1-7284-4171-807D-0A2505968CB3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5CBE1A87-54E8-4A44-A233-0E9EC905C51B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5CBE1A87-54E8-4A44-A233-0E9EC905C51B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5CBE1A87-54E8-4A44-A233-0E9EC905C51B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5CBE1A87-54E8-4A44-A233-0E9EC905C51B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{F9C3326B-B695-4023-B203-A11A7793AC56} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{CA40BAC1-7284-4171-807D-0A2505968CB3} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{5CBE1A87-54E8-4A44-A233-0E9EC905C51B} = {7A6752CB-F4A3-40D8-8A78-63ED1DC5EF0C}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {7642D8A5-CC45-4766-B197-EEB7B14671AC}
+	EndGlobalSection
+EndGlobal
