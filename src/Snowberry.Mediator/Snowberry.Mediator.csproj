@@ -1,31 +1,31 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
+	<PropertyGroup>
+		<TargetFramework>net9.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
 
-        <!-- Package -->
-        <Description>A tiny mediator for clean, decoupled application flow.</Description>
+		<!-- Package -->
+		<Description>A tiny mediator for clean, decoupled application flow.</Description>
 
-        <PackageReadmeFile>README.md</PackageReadmeFile>
-    </PropertyGroup>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+	</PropertyGroup>
 
-    <ItemGroup>
-        <None Include="..\..\README.md">
-            <Pack>True</Pack>
-            <PackagePath>\</PackagePath>
-        </None>
-    </ItemGroup>
+	<ItemGroup>
+		<None Include="..\..\README.md">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+	</ItemGroup>
 
-    <ItemGroup>
-        <PackageReference Include="ZLinq" Version="1.5.2" />
-    </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="ZLinq" Version="1.5.2" />
+	</ItemGroup>
 
-    <ItemGroup>
-        <ProjectReference
+	<ItemGroup>
+		<ProjectReference
             Include="..\Snowberry.Mediator.Abstractions\Snowberry.Mediator.Abstractions.csproj" />
-    </ItemGroup>
+	</ItemGroup>
 
-    <Import Project="../NuGetPackage.props" />
+	<Import Project="../NuGetPackage.props" />
 </Project>

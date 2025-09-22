@@ -1,13 +1,19 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
+	<PropertyGroup>
+		<TargetFrameworks>net9.0;netstandard2.0</TargetFrameworks>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<LangVersion>latest</LangVersion>
 
-        <!-- Package -->
-        <Description>The abstractions required for the main package.</Description>
-    </PropertyGroup>
+		<!-- Package -->
+		<Description>The abstractions required for the main package.</Description>
+	</PropertyGroup>
 
-    <Import Project="../NuGetPackage.props" />
+	<ItemGroup Condition="$(TargetFramework) == 'netstandard2.0'">
+		<PackageReference Include="System.Threading.Tasks.Extensions" Version="4.6.3" />
+		<PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="9.0.9" />
+	</ItemGroup>
+
+	<Import Project="../NuGetPackage.props" />
 </Project>

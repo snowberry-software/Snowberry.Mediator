@@ -1,25 +1,24 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
+	<PropertyGroup>
+		<TargetFramework>net9.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
 
-        <!-- Package -->
-        <Description>
-            Extension for the main package to work with
-            `Microsoft.Extensions.DependencyInjection`.
-        </Description>
-    </PropertyGroup>
+		<!-- Package -->
+		<Description>
+			Extension for the main package to work with
+			`Microsoft.Extensions.DependencyInjection`.
+		</Description>
+	</PropertyGroup>
 
-    <ItemGroup>
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions"
-          Version="9.0.8" />
-    </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.9" />
+	</ItemGroup>
 
-    <ItemGroup>
-        <ProjectReference Include="..\Snowberry.Mediator\Snowberry.Mediator.csproj" />
-    </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\Snowberry.Mediator\Snowberry.Mediator.csproj" />
+	</ItemGroup>
 
-    <Import Project="../NuGetPackage.props" />
+	<Import Project="../NuGetPackage.props" />
 </Project>
