@@ -1,5 +1,6 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Snowberry.DependencyInjection;
 using Snowberry.Mediator.Abstractions;
+using Snowberry.Mediator.DependencyInjection;
 using Snowberry.Mediator.Extensions.DependencyInjection;
 using Snowberry.Mediator.Tests.Common;
 using Snowberry.Mediator.Tests.Common.Helper;
@@ -8,14 +9,14 @@ using Snowberry.Mediator.Tests.Common.Requests;
 
 namespace Snowberry.Mediator.Tests;
 
-public class MicrosoftDependencyInjectionTests : MediatorTestBase
+public class Snowberry_DependencyInjectionTests : MediatorTestBase
 {
     [Fact]
     public async Task Test_DependencyInjection_Order()
     {
-        var serviceCollection = new ServiceCollection();
+        var serviceContainer = new ServiceContainer();
 
-        serviceCollection.AddSnowberryMediator(options =>
+        serviceContainer.AddSnowberryMediator(options =>
         {
             options.Assemblies = [typeof(AlwaysFirstCounterRequestPipelineBehavior).Assembly];
             options.PipelineBehaviorTypes = [
@@ -24,9 +25,7 @@ public class MicrosoftDependencyInjectionTests : MediatorTestBase
             ];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var serviceProvider = serviceCollection.BuildServiceProvider();
-
-        var mediator = serviceProvider.GetRequiredService<IMediator>();
+        var mediator = serviceContainer.GetService<IMediator>();
 
         Assert.IsType<Mediator>(mediator);
 
@@ -46,9 +45,9 @@ public class MicrosoftDependencyInjectionTests : MediatorTestBase
     [Fact]
     public async Task Test_PipelineBehavior_Priority_Override()
     {
-        var serviceCollection = new ServiceCollection();
+        var serviceContainer = new ServiceContainer();
 
-        serviceCollection.AddSnowberryMediator(options =>
+        serviceContainer.AddSnowberryMediator(options =>
         {
             options.Assemblies = [typeof(AlwaysFirstCounterRequestPipelineBehavior).Assembly];
             options.PipelineBehaviorTypes = [
@@ -59,8 +58,7 @@ public class MicrosoftDependencyInjectionTests : MediatorTestBase
             ];
         }, serviceLifetime: ServiceLifetime.Transient);
 
-        using var serviceProvider = serviceCollection.BuildServiceProvider();
-        var mediator = serviceProvider.GetRequiredService<IMediator>();
+        var mediator = serviceContainer.GetService<IMediator>();
 
         int response = await mediator.SendAsync(new CounterRequest(), CancellationToken.None);
 
@@ -80,9 +78,9 @@ public class MicrosoftDependencyInjectionTests : MediatorTestBase
     [InlineData(ServiceLifetime.Transient)]
     public async Task Test_DifferentServiceLifetimes(ServiceLifetime lifetime)
     {
-        var serviceCollection = new ServiceCollection();
+        var serviceContainer = new ServiceContainer();
 
-        serviceCollection.AddSnowberryMediator(options =>
+        serviceContainer.AddSnowberryMediator(options =>
         {
             options.Assemblies = [typeof(AlwaysFirstCounterRequestPipelineBehavior).Assembly];
             options.PipelineBehaviorTypes = [
@@ -91,12 +89,10 @@ public class MicrosoftDependencyInjectionTests : MediatorTestBase
             ];
         }, serviceLifetime: lifetime);
 
-        using var serviceProvider = serviceCollection.BuildServiceProvider();
-
         for (int i = 0; i < 3; i++)
         {
-            using var scope = serviceProvider.CreateScope();
-            var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
+            using var scope = serviceContainer.CreateScope();
+            var mediator = scope.ServiceFactory.GetService<IMediator>();
 
             int response = await mediator.SendAsync(new CounterRequest(), CancellationToken.None);
             Assert.Equal(CounterRequest.c_InitialValue + 2, response);
@@ -109,9 +105,9 @@ public class MicrosoftDependencyInjectionTests : MediatorTestBase
     [Fact]
     public async Task Test_StreamPipelineBehaviors_Execution_Order()
     {
-        var serviceCollection = new ServiceCollection();
+        var serviceContainer = new ServiceContainer();
 
-        serviceCollection.AddSnowberryMediator(options =>
+        serviceContainer.AddSnowberryMediator(options =>
         {
             options.Assemblies = [typeof(HighPriorityStreamPipelineBehavior).Assembly];
             options.StreamPipelineBehaviorTypes = [
@@ -120,8 +116,7 @@ public class MicrosoftDependencyInjectionTests : MediatorTestBase
             ];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        using var serviceProvider = serviceCollection.BuildServiceProvider();
-        var mediator = serviceProvider.GetRequiredService<IMediator>();
+        var mediator = serviceContainer.GetService<IMediator>();
 
         var request = new NumberStreamRequest { Count = 3, StartValue = 1 };
         var results = new List<int>();
@@ -142,16 +137,15 @@ public class MicrosoftDependencyInjectionTests : MediatorTestBase
     [Fact]
     public async Task Test_ComplexRequest_WithPipeline()
     {
-        var serviceCollection = new ServiceCollection();
+        var serviceContainer = new ServiceContainer();
 
-        serviceCollection.AddSnowberryMediator(options =>
+        serviceContainer.AddSnowberryMediator(options =>
         {
             options.Assemblies = [typeof(ComplexRequestPipelineBehavior).Assembly];
             options.PipelineBehaviorTypes = [typeof(ComplexRequestPipelineBehavior)];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        using var serviceProvider = serviceCollection.BuildServiceProvider();
-        var mediator = serviceProvider.GetRequiredService<IMediator>();
+        var mediator = serviceContainer.GetService<IMediator>();
 
         var request = new ComplexRequest { Message = "Test", Factor = 3 };
         string response = await mediator.SendAsync(request, CancellationToken.None);
@@ -166,15 +160,14 @@ public class MicrosoftDependencyInjectionTests : MediatorTestBase
     [Fact]
     public async Task Test_OpenGeneric_PipelineBehaviors_Documentation()
     {
-        var serviceCollection = new ServiceCollection();
+        var serviceContainer = new ServiceContainer();
 
-        serviceCollection.AddSnowberryMediator(options =>
+        serviceContainer.AddSnowberryMediator(options =>
         {
             options.Assemblies = [typeof(CounterRequest).Assembly];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        using var serviceProvider = serviceCollection.BuildServiceProvider();
-        var mediator = serviceProvider.GetRequiredService<IMediator>();
+        var mediator = serviceContainer.GetService<IMediator>();
 
         int counterResponse = await mediator.SendAsync(new CounterRequest(), CancellationToken.None);
         Assert.Equal(CounterRequest.c_InitialValue, counterResponse);
@@ -189,15 +182,14 @@ public class MicrosoftDependencyInjectionTests : MediatorTestBase
     [Fact]
     public async Task Test_OpenGeneric_StreamPipelineBehaviors()
     {
-        var serviceCollection = new ServiceCollection();
+        var serviceContainer = new ServiceContainer();
 
-        serviceCollection.AddSnowberryMediator(options =>
+        serviceContainer.AddSnowberryMediator(options =>
         {
             options.Assemblies = [typeof(NumberStreamRequest).Assembly];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        using var serviceProvider = serviceCollection.BuildServiceProvider();
-        var mediator = serviceProvider.GetRequiredService<IMediator>();
+        var mediator = serviceContainer.GetService<IMediator>();
 
         var request = new NumberStreamRequest { Count = 2, StartValue = 10 };
         var results = new List<int>();
@@ -216,9 +208,9 @@ public class MicrosoftDependencyInjectionTests : MediatorTestBase
     [Fact]
     public async Task Test_MultiplePipelineBehaviors_ComplexScenario()
     {
-        var serviceCollection = new ServiceCollection();
+        var serviceContainer = new ServiceContainer();
 
-        serviceCollection.AddSnowberryMediator(options =>
+        serviceContainer.AddSnowberryMediator(options =>
         {
             options.Assemblies = [typeof(AlwaysFirstCounterRequestPipelineBehavior).Assembly];
             options.PipelineBehaviorTypes = [
@@ -229,8 +221,7 @@ public class MicrosoftDependencyInjectionTests : MediatorTestBase
             ];
         }, serviceLifetime: ServiceLifetime.Singleton);
 
-        using var serviceProvider = serviceCollection.BuildServiceProvider();
-        var mediator = serviceProvider.GetRequiredService<IMediator>();
+        var mediator = serviceContainer.GetService<IMediator>();
 
         int response = await mediator.SendAsync(new CounterRequest(), CancellationToken.None);
 
@@ -245,15 +236,14 @@ public class MicrosoftDependencyInjectionTests : MediatorTestBase
     [Fact]
     public async Task Test_CancelledCancellationToken_ThrowsOperationCanceledException()
     {
-        var serviceCollection = new ServiceCollection();
+        var serviceContainer = new ServiceContainer();
 
-        serviceCollection.AddSnowberryMediator(options =>
+        serviceContainer.AddSnowberryMediator(options =>
         {
             options.Assemblies = [typeof(AlwaysFirstCounterRequestPipelineBehavior).Assembly];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        using var serviceProvider = serviceCollection.BuildServiceProvider();
-        var mediator = serviceProvider.GetRequiredService<IMediator>();
+        var mediator = serviceContainer.GetService<IMediator>();
 
         using var cts = new CancellationTokenSource();
         cts.Cancel();
@@ -267,15 +257,14 @@ public class MicrosoftDependencyInjectionTests : MediatorTestBase
     [Fact]
     public async Task Test_StreamRequest_CancelledCancellationToken()
     {
-        var serviceCollection = new ServiceCollection();
+        var serviceContainer = new ServiceContainer();
 
-        serviceCollection.AddSnowberryMediator(options =>
+        serviceContainer.AddSnowberryMediator(options =>
         {
             options.Assemblies = [typeof(NumberStreamRequest).Assembly];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        using var serviceProvider = serviceCollection.BuildServiceProvider();
-        var mediator = serviceProvider.GetRequiredService<IMediator>();
+        var mediator = serviceContainer.GetService<IMediator>();
 
         var request = new NumberStreamRequest { Count = 100, StartValue = 1 };
         using var cts = new CancellationTokenSource();
@@ -307,9 +296,9 @@ public class MicrosoftDependencyInjectionTests : MediatorTestBase
     [Fact]
     public async Task Test_MultipleStreamPipelineBehaviors_ComplexScenario()
     {
-        var serviceCollection = new ServiceCollection();
+        var serviceContainer = new ServiceContainer();
 
-        serviceCollection.AddSnowberryMediator(options =>
+        serviceContainer.AddSnowberryMediator(options =>
         {
             options.Assemblies = [typeof(HighPriorityStreamPipelineBehavior).Assembly];
             options.StreamPipelineBehaviorTypes = [
@@ -318,8 +307,7 @@ public class MicrosoftDependencyInjectionTests : MediatorTestBase
             ];
         }, serviceLifetime: ServiceLifetime.Transient);
 
-        using var serviceProvider = serviceCollection.BuildServiceProvider();
-        var mediator = serviceProvider.GetRequiredService<IMediator>();
+        var mediator = serviceContainer.GetService<IMediator>();
 
         var request = new NumberStreamRequest { Count = 2, StartValue = 5 };
         var results = new List<int>();
@@ -340,15 +328,14 @@ public class MicrosoftDependencyInjectionTests : MediatorTestBase
     [Fact]
     public async Task Test_EmptyStreamRequest()
     {
-        var serviceCollection = new ServiceCollection();
+        var serviceContainer = new ServiceContainer();
 
-        serviceCollection.AddSnowberryMediator(options =>
+        serviceContainer.AddSnowberryMediator(options =>
         {
             options.Assemblies = [typeof(NumberStreamRequest).Assembly];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        using var serviceProvider = serviceCollection.BuildServiceProvider();
-        var mediator = serviceProvider.GetRequiredService<IMediator>();
+        var mediator = serviceContainer.GetService<IMediator>();
 
         var request = new NumberStreamRequest { Count = 0, StartValue = 1 };
         var results = new List<int>();
@@ -364,15 +351,14 @@ public class MicrosoftDependencyInjectionTests : MediatorTestBase
     [Fact]
     public async Task Test_LargeStreamRequest()
     {
-        var serviceCollection = new ServiceCollection();
+        var serviceContainer = new ServiceContainer();
 
-        serviceCollection.AddSnowberryMediator(options =>
+        serviceContainer.AddSnowberryMediator(options =>
         {
             options.Assemblies = [typeof(NumberStreamRequest).Assembly];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        using var serviceProvider = serviceCollection.BuildServiceProvider();
-        var mediator = serviceProvider.GetRequiredService<IMediator>();
+        var mediator = serviceContainer.GetService<IMediator>();
 
         var request = new NumberStreamRequest { Count = 50, StartValue = 1 };
         var results = new List<int>();
@@ -390,16 +376,15 @@ public class MicrosoftDependencyInjectionTests : MediatorTestBase
     [Fact]
     public async Task Test_NoPipelineBehaviors_StillWorks()
     {
-        var serviceCollection = new ServiceCollection();
+        var serviceContainer = new ServiceContainer();
 
-        serviceCollection.AddSnowberryMediator(options =>
+        serviceContainer.AddSnowberryMediator(options =>
         {
             options.Assemblies = [typeof(CounterRequest).Assembly];
             options.RegisterPipelineBehaviors = false;
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        using var serviceProvider = serviceCollection.BuildServiceProvider();
-        var mediator = serviceProvider.GetRequiredService<IMediator>();
+        var mediator = serviceContainer.GetService<IMediator>();
 
         int response = await mediator.SendAsync(new CounterRequest(), CancellationToken.None);
 
@@ -409,16 +394,15 @@ public class MicrosoftDependencyInjectionTests : MediatorTestBase
     [Fact]
     public async Task Test_NoStreamPipelineBehaviors_StillWorks()
     {
-        var serviceCollection = new ServiceCollection();
+        var serviceContainer = new ServiceContainer();
 
-        serviceCollection.AddSnowberryMediator(options =>
+        serviceContainer.AddSnowberryMediator(options =>
         {
             options.Assemblies = [typeof(NumberStreamRequest).Assembly];
             options.RegisterStreamPipelineBehaviors = false;
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        using var serviceProvider = serviceCollection.BuildServiceProvider();
-        var mediator = serviceProvider.GetRequiredService<IMediator>();
+        var mediator = serviceContainer.GetService<IMediator>();
 
         var request = new NumberStreamRequest { Count = 3, StartValue = 10 };
         var results = new List<int>();
@@ -434,9 +418,9 @@ public class MicrosoftDependencyInjectionTests : MediatorTestBase
     [Fact]
     public async Task Test_MixedServiceLifetimes_WithComplexPipeline()
     {
-        var serviceCollection = new ServiceCollection();
+        var serviceContainer = new ServiceContainer();
 
-        serviceCollection.AddSnowberryMediator(options =>
+        serviceContainer.AddSnowberryMediator(options =>
         {
             options.Assemblies = [typeof(AlwaysFirstCounterRequestPipelineBehavior).Assembly];
             options.PipelineBehaviorTypes = [
@@ -446,12 +430,10 @@ public class MicrosoftDependencyInjectionTests : MediatorTestBase
             ];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        using var serviceProvider = serviceCollection.BuildServiceProvider();
-
         for (int scope = 1; scope <= 2; scope++)
         {
-            using var scopedServiceProvider = serviceProvider.CreateScope();
-            var mediator = scopedServiceProvider.ServiceProvider.GetRequiredService<IMediator>();
+            using var scopedServiceProvider = serviceContainer.CreateScope();
+            var mediator = scopedServiceProvider.ServiceFactory.GetService<IMediator>();
 
             int response = await mediator.SendAsync(new CounterRequest(), CancellationToken.None);
 
@@ -465,15 +447,14 @@ public class MicrosoftDependencyInjectionTests : MediatorTestBase
     [Fact]
     public async Task Test_StreamRequest_WithTimeout()
     {
-        var serviceCollection = new ServiceCollection();
+        var serviceContainer = new ServiceContainer();
 
-        serviceCollection.AddSnowberryMediator(options =>
+        serviceContainer.AddSnowberryMediator(options =>
         {
             options.Assemblies = [typeof(NumberStreamRequest).Assembly];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        using var serviceProvider = serviceCollection.BuildServiceProvider();
-        var mediator = serviceProvider.GetRequiredService<IMediator>();
+        var mediator = serviceContainer.GetService<IMediator>();
 
         var request = new NumberStreamRequest { Count = 5, StartValue = 1 };
         using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));

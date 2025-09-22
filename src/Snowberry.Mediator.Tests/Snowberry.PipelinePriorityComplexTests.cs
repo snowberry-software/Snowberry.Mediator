@@ -1,6 +1,6 @@
-using Microsoft.Extensions.DependencyInjection;
+using Snowberry.DependencyInjection;
 using Snowberry.Mediator.Abstractions;
-using Snowberry.Mediator.Extensions.DependencyInjection;
+using Snowberry.Mediator.DependencyInjection;
 using Snowberry.Mediator.Tests.Common.Helper;
 using Snowberry.Mediator.Tests.Common.Pipelines;
 using Snowberry.Mediator.Tests.Common.Requests;
@@ -10,7 +10,7 @@ namespace Snowberry.Mediator.Tests;
 /// <summary>
 /// Tests focused on complex priority scenarios, ordering, and edge cases with pipeline behaviors
 /// </summary>
-public class PipelinePriorityComplexTests : Common.MediatorTestBase
+public class Snowberry_PipelinePriorityComplexTests : Common.MediatorTestBase
 {
     [Theory]
     [InlineData(-1000, -500, -100, 0, 100, 500, 1000)]
@@ -18,15 +18,14 @@ public class PipelinePriorityComplexTests : Common.MediatorTestBase
     [InlineData(50, 40, 30, 20, 10)]
     public async Task Test_Priority_ExtremeCases(params int[] priorities)
     {
-        var serviceCollection = new ServiceCollection();
+        var serviceContainer = new ServiceContainer();
 
-        serviceCollection.AddSnowberryMediator(options =>
+        serviceContainer.AddSnowberryMediator(options =>
         {
             options.Assemblies = [typeof(PriorityTestRequest).Assembly];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        using var serviceProvider = serviceCollection.BuildServiceProvider();
-        var mediator = serviceProvider.GetRequiredService<IMediator>();
+        var mediator = serviceContainer.GetService<IMediator>();
 
         var request = new PriorityTestRequest { Message = "PriorityTest" };
         string response = await mediator.SendAsync(request, CancellationToken.None);
@@ -41,9 +40,9 @@ public class PipelinePriorityComplexTests : Common.MediatorTestBase
     [Fact]
     public async Task Test_MixedPriorityTypes_WithSamePriority()
     {
-        var serviceCollection = new ServiceCollection();
+        var serviceContainer = new ServiceContainer();
 
-        serviceCollection.AddSnowberryMediator(options =>
+        serviceContainer.AddSnowberryMediator(options =>
         {
             options.Assemblies = [typeof(SamePriorityBehaviorA).Assembly];
             options.PipelineBehaviorTypes = [
@@ -55,8 +54,7 @@ public class PipelinePriorityComplexTests : Common.MediatorTestBase
             ];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        using var serviceProvider = serviceCollection.BuildServiceProvider();
-        var mediator = serviceProvider.GetRequiredService<IMediator>();
+        var mediator = serviceContainer.GetService<IMediator>();
 
         var request = new MultiBehaviorRequest { Value = 10 };
         int response = await mediator.SendAsync(request, CancellationToken.None);
@@ -77,22 +75,23 @@ public class PipelinePriorityComplexTests : Common.MediatorTestBase
     [Fact]
     public async Task Test_DeepPipelineNesting_Performance()
     {
-        var serviceCollection = new ServiceCollection();
+        var serviceContainer = new ServiceContainer();
 
         for (int i = 0; i < 10; i++)
         {
             int priority = 1000 - (i * 100);
-            serviceCollection.AddScoped(sp =>
-                new PerformancePipelineBehavior($"Behavior{i:D2}", priority));
+            serviceContainer.RegisterScoped<PerformancePipelineBehavior>(instanceFactory: (sp, key) =>
+            {
+                return new PerformancePipelineBehavior($"Behavior{i:D2}", priority);
+            });
         }
 
-        serviceCollection.AddSnowberryMediator(options =>
+        serviceContainer.AddSnowberryMediator(options =>
         {
             options.Assemblies = [typeof(PerformanceTestRequest).Assembly];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        using var serviceProvider = serviceCollection.BuildServiceProvider();
-        var mediator = serviceProvider.GetRequiredService<IMediator>();
+        var mediator = serviceContainer.GetService<IMediator>();
 
         var startTime = DateTime.UtcNow;
 
@@ -111,9 +110,9 @@ public class PipelinePriorityComplexTests : Common.MediatorTestBase
     [Fact]
     public async Task Test_PriorityOverride_WithInheritance()
     {
-        var serviceCollection = new ServiceCollection();
+        var serviceContainer = new ServiceContainer();
 
-        serviceCollection.AddSnowberryMediator(options =>
+        serviceContainer.AddSnowberryMediator(options =>
         {
             options.Assemblies = [typeof(BasePipelineBehavior).Assembly];
             options.PipelineBehaviorTypes = [
@@ -123,8 +122,7 @@ public class PipelinePriorityComplexTests : Common.MediatorTestBase
             ];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        using var serviceProvider = serviceCollection.BuildServiceProvider();
-        var mediator = serviceProvider.GetRequiredService<IMediator>();
+        var mediator = serviceContainer.GetService<IMediator>();
 
         var request = new InheritanceTestRequest { Data = "test" };
         string response = await mediator.SendAsync(request, CancellationToken.None);
@@ -140,9 +138,9 @@ public class PipelinePriorityComplexTests : Common.MediatorTestBase
     [Fact]
     public async Task Test_StreamPriority_WithComplexTransformations()
     {
-        var serviceCollection = new ServiceCollection();
+        var serviceContainer = new ServiceContainer();
 
-        serviceCollection.AddSnowberryMediator(options =>
+        serviceContainer.AddSnowberryMediator(options =>
         {
             options.Assemblies = [typeof(MultiplyStreamBehavior).Assembly];
             options.StreamPipelineBehaviorTypes = [
@@ -153,8 +151,7 @@ public class PipelinePriorityComplexTests : Common.MediatorTestBase
             ];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        using var serviceProvider = serviceCollection.BuildServiceProvider();
-        var mediator = serviceProvider.GetRequiredService<IMediator>();
+        var mediator = serviceContainer.GetService<IMediator>();
 
         var request = new NumberStreamRequest { Count = 10, StartValue = 1 };
         var results = new List<int>();
