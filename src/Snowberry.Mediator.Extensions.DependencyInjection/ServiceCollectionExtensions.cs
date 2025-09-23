@@ -27,7 +27,7 @@ public static class ServiceCollectionExtensions
             ServiceLifetime.Scoped => RegistrationServiceLifetime.Scoped,
             ServiceLifetime.Transient => RegistrationServiceLifetime.Transient,
             _ => throw new NotSupportedException($"The service lifetime '{serviceLifetime}' is not supported."),
-        });
+        }, append: false);
 
         return services;
     }

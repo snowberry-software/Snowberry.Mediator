@@ -1,5 +1,6 @@
 ﻿using Snowberry.DependencyInjection.Interfaces;
 using Snowberry.Mediator.DependencyInjection.Shared;
+using Snowberry.Mediator.DependencyInjection.Shared.Contracts;
 
 namespace Snowberry.Mediator.DependencyInjection;
 
@@ -10,6 +11,12 @@ namespace Snowberry.Mediator.DependencyInjection;
 internal class SnowberryServiceContext(IServiceRegistry serviceRegistry) : IServiceContext
 {
     private readonly IServiceRegistry _serviceRegistry = serviceRegistry;
+
+    /// <inheritdoc/>
+    public bool IsServiceRegistered<T>()
+    {
+        return _serviceRegistry.IsServiceRegistered<T>(serviceKey: null);
+    }
 
     /// <inheritdoc/>
     public void Register(Type serviceType, Type implementationType, RegistrationServiceLifetime lifetime)
@@ -32,5 +39,17 @@ internal class SnowberryServiceContext(IServiceRegistry serviceRegistry) : IServ
             serviceKey: null,
             lifetime: Snowberry.DependencyInjection.ServiceLifetime.Singleton,
             singletonInstance: instance);
+    }
+
+    /// <inheritdoc/>
+    public T? TryToGetSingleton<T>(out bool found)
+    {
+        found = false;
+        if (_serviceRegistry is not IKeyedServiceProvider serviceFactory)
+            return default;
+
+        var instance = serviceFactory.GetOptionalKeyedService<T>(serviceKey: null);
+        found = instance is not null;
+        return instance;
     }
 }

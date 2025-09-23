@@ -16,7 +16,7 @@ public class Snowberry_EdgeCasesAndErrorTests : MediatorTestBase
     [Fact]
     public async Task Test_Request_WithNullValues()
     {
-        var serviceContainer = new ServiceContainer();
+        using var serviceContainer = new ServiceContainer();
 
         serviceContainer.AddSnowberryMediator(options =>
         {
@@ -35,7 +35,7 @@ public class Snowberry_EdgeCasesAndErrorTests : MediatorTestBase
     [Fact]
     public async Task Test_Handler_ThrowsCustomException()
     {
-        var serviceContainer = new ServiceContainer();
+        using var serviceContainer = new ServiceContainer();
 
         serviceContainer.AddSnowberryMediator(options =>
         {
@@ -57,7 +57,7 @@ public class Snowberry_EdgeCasesAndErrorTests : MediatorTestBase
     [Fact]
     public async Task Test_PipelineBehavior_ExceptionHandling()
     {
-        var serviceContainer = new ServiceContainer();
+        using var serviceContainer = new ServiceContainer();
 
         serviceContainer.AddSnowberryMediator(options =>
         {
@@ -80,7 +80,7 @@ public class Snowberry_EdgeCasesAndErrorTests : MediatorTestBase
     [Fact]
     public async Task Test_StreamRequest_HandlerThrowsException()
     {
-        var serviceContainer = new ServiceContainer();
+        using var serviceContainer = new ServiceContainer();
 
         serviceContainer.AddSnowberryMediator(options =>
         {
@@ -108,7 +108,7 @@ public class Snowberry_EdgeCasesAndErrorTests : MediatorTestBase
     [Fact]
     public async Task Test_LargeDataRequest()
     {
-        var serviceContainer = new ServiceContainer();
+        using var serviceContainer = new ServiceContainer();
 
         serviceContainer.AddSnowberryMediator(options =>
         {
@@ -129,7 +129,7 @@ public class Snowberry_EdgeCasesAndErrorTests : MediatorTestBase
     [Fact]
     public async Task Test_ConcurrentRequests_SameType()
     {
-        var serviceContainer = new ServiceContainer();
+        using var serviceContainer = new ServiceContainer();
 
         serviceContainer.AddSnowberryMediator(options =>
         {
@@ -158,7 +158,7 @@ public class Snowberry_EdgeCasesAndErrorTests : MediatorTestBase
     [Fact]
     public async Task Test_StreamRequest_Empty_WithPipeline()
     {
-        var serviceContainer = new ServiceContainer();
+        using var serviceContainer = new ServiceContainer();
 
         serviceContainer.AddSnowberryMediator(options =>
         {
@@ -186,7 +186,7 @@ public class Snowberry_EdgeCasesAndErrorTests : MediatorTestBase
     [Fact]
     public async Task Test_DefaultValueRequests()
     {
-        var serviceContainer = new ServiceContainer();
+        using var serviceContainer = new ServiceContainer();
 
         serviceContainer.AddSnowberryMediator(options =>
         {
@@ -206,7 +206,7 @@ public class Snowberry_EdgeCasesAndErrorTests : MediatorTestBase
     [Fact]
     public async Task Test_MemoryPressure_LargeStreamRequest()
     {
-        var serviceContainer = new ServiceContainer();
+        using var serviceContainer = new ServiceContainer();
 
         serviceContainer.AddSnowberryMediator(options =>
         {
@@ -239,7 +239,7 @@ public class Snowberry_EdgeCasesAndErrorTests : MediatorTestBase
     [Fact]
     public async Task Test_Unicode_And_SpecialCharacters()
     {
-        var serviceContainer = new ServiceContainer();
+        using var serviceContainer = new ServiceContainer();
 
         serviceContainer.AddSnowberryMediator(options =>
         {
@@ -261,7 +261,7 @@ public class Snowberry_EdgeCasesAndErrorTests : MediatorTestBase
     [Fact]
     public async Task Test_PipelineBehavior_ModifiesRequestObject()
     {
-        var serviceContainer = new ServiceContainer();
+        using var serviceContainer = new ServiceContainer();
 
         serviceContainer.AddSnowberryMediator(options =>
         {

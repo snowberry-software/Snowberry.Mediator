@@ -12,7 +12,7 @@ public class Snowberry_CancellationAndTimeoutTests : Common.MediatorTestBase
     [Fact]
     public async Task Test_TaskCancelledException_ThrownFromHandler()
     {
-        var serviceContainer = new ServiceContainer();
+        using var serviceContainer = new ServiceContainer();
 
         serviceContainer.AddSnowberryMediator(options =>
         {
@@ -38,7 +38,7 @@ public class Snowberry_CancellationAndTimeoutTests : Common.MediatorTestBase
     [Fact]
     public async Task Test_StreamRequest_TaskCancelledException_MidStream()
     {
-        var serviceContainer = new ServiceContainer();
+        using var serviceContainer = new ServiceContainer();
 
         serviceContainer.AddSnowberryMediator(options =>
         {
@@ -65,7 +65,7 @@ public class Snowberry_CancellationAndTimeoutTests : Common.MediatorTestBase
     [Fact]
     public async Task Test_PipelineBehavior_CancellationToken_Propagation()
     {
-        var serviceContainer = new ServiceContainer();
+        using var serviceContainer = new ServiceContainer();
 
         serviceContainer.AddSnowberryMediator(options =>
         {
@@ -98,7 +98,7 @@ public class Snowberry_CancellationAndTimeoutTests : Common.MediatorTestBase
     [Fact]
     public async Task Test_MultipleRequests_ConcurrentCancellation()
     {
-        var serviceContainer = new ServiceContainer();
+        using var serviceContainer = new ServiceContainer();
 
         serviceContainer.AddSnowberryMediator(options =>
         {
@@ -149,7 +149,7 @@ public class Snowberry_CancellationAndTimeoutTests : Common.MediatorTestBase
     [Fact]
     public async Task Test_StreamRequest_ComplexCancellationScenario()
     {
-        var serviceContainer = new ServiceContainer();
+        using var serviceContainer = new ServiceContainer();
 
         serviceContainer.AddSnowberryMediator(options =>
         {
@@ -193,7 +193,7 @@ public class Snowberry_CancellationAndTimeoutTests : Common.MediatorTestBase
     [Fact]
     public async Task Test_NestedCancellationTokens()
     {
-        var serviceContainer = new ServiceContainer();
+        using var serviceContainer = new ServiceContainer();
 
         serviceContainer.AddSnowberryMediator(options =>
         {

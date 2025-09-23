@@ -36,7 +36,7 @@ public sealed class MediatorOptions
     /// <summary>
     /// Used to automatically scan pipeline behaviors from assemblies.
     /// </summary>
-    /// <remarks>The order can be defined using the <see cref="PipelineOverwritePriorityAttribute"/> attribute.</remarks>
+    /// <remarks/The order can be defined using the <see cref="PipelineOverwritePriorityAttribute"/> attribute.</remarks>
     public bool ScanPipelineBehaviors { get; set; } = false;
 
     /// <summary>
@@ -49,6 +49,18 @@ public sealed class MediatorOptions
     /// Used to automatically scan notification handlers.
     /// </summary>
     public bool ScanNotificationHandlers { get; set; } = false;
+
+    /// <summary>
+    /// The request handler types to register.
+    /// </summary>
+    /// <remarks>Depends on <see cref="RegisterRequestHandlers"/>.</remarks>
+    public List<Type>? RequestHandlerTypes { get; set; }
+
+    /// <summary>
+    /// The stream request handler types to register.
+    /// </summary>
+    /// <remarks>Depends on <see cref="RegisterStreamRequestHandlers"/>.</remarks>
+    public List<Type>? StreamRequestHandlerTypes { get; set; }
 
     /// <summary>
     /// The pipeline behavior types to register.

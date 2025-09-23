@@ -155,6 +155,11 @@ public static class MediatorAssemblyHelper
         return typeof(IStreamRequestHandler<,>).MakeGenericType(requestHandlerInfo.RequestType, requestHandlerInfo.ResponseType);
     }
 
+    public static Type CreateStreamRequestHandlerInterfaceType(this StreamRequestHandlerInfo streamRequestHandlerInfo)
+    {
+        return typeof(IStreamRequestHandler<,>).MakeGenericType(streamRequestHandlerInfo.RequestType, streamRequestHandlerInfo.ResponseType);
+    }
+
     public static Type CreateNotificationHandlerInterfaceType(this NotificationHandlerInfo notificationHandlerInfo)
     {
         return typeof(INotificationHandler<>).MakeGenericType(notificationHandlerInfo.NotificationType);
@@ -177,6 +182,30 @@ public static class MediatorAssemblyHelper
             if (parsed != null)
                 for (int j = 0; j < parsed.Count; j++)
                     target.Add(parsed[j]);
+        }
+    }
+
+    /// <summary>
+    /// Parses handler info for request and stream request handlers.
+    /// </summary>
+    /// <param name="handlerInterfaceType">The handler interface type (e.g., IRequestHandler&lt;,&gt; or IStreamRequestHandler&lt;,&gt;).</param>
+    /// <param name="collection">The collection of handler types to parse.</param>
+    /// <param name="target">The target collection to add parsed handlers to.</param>
+    public static void ParseHandlerInfo<THandlerInfo>(Type handlerInterfaceType, List<Type> collection, List<THandlerInfo> target)
+        where THandlerInfo : RequestHandlerInfo, new()
+    {
+        for (int i = 0; i < collection.Count; i++)
+        {
+            var type = collection[i];
+
+            var parsed = RequestHandlerInfo.TryParse<THandlerInfo>(type, handlerInterfaceType);
+            if (parsed != null)
+            {
+                foreach (var item in parsed)
+                {
+                    target.Add(item);
+                }
+            }
         }
     }
 

@@ -15,7 +15,7 @@ public class Snowberry_AdvancedStreamTests : Common.MediatorTestBase
     [Fact]
     public async Task Test_MultipleStreamPipelines_ChainedTransformations()
     {
-        var serviceContainer = new ServiceContainer();
+        using var serviceContainer = new ServiceContainer();
 
         serviceContainer.AddSnowberryMediator(options =>
         {
@@ -52,7 +52,7 @@ public class Snowberry_AdvancedStreamTests : Common.MediatorTestBase
     [Fact]
     public async Task Test_MixedConcreteAndGenericPipelineBehaviors()
     {
-        var serviceContainer = new ServiceContainer();
+        using var serviceContainer = new ServiceContainer();
 
         serviceContainer.AddSnowberryMediator(options =>
         {
@@ -94,7 +94,7 @@ public class Snowberry_AdvancedStreamTests : Common.MediatorTestBase
     [Fact]
     public async Task Test_MixedConcreteAndGenericStreamPipelineBehaviors()
     {
-        var serviceContainer = new ServiceContainer();
+        using var serviceContainer = new ServiceContainer();
 
         serviceContainer.AddSnowberryMediator(options =>
         {
@@ -135,7 +135,7 @@ public class Snowberry_AdvancedStreamTests : Common.MediatorTestBase
     [Fact]
     public async Task Test_StreamRequest_WithComplexData()
     {
-        var serviceContainer = new ServiceContainer();
+        using var serviceContainer = new ServiceContainer();
 
         serviceContainer.AddSnowberryMediator(options =>
         {
@@ -170,7 +170,7 @@ public class Snowberry_AdvancedStreamTests : Common.MediatorTestBase
     [Fact]
     public async Task Test_StreamRequest_AsyncDisposalPattern()
     {
-        var serviceContainer = new ServiceContainer();
+        using var serviceContainer = new ServiceContainer();
 
         serviceContainer.AddSnowberryMediator(options =>
         {
@@ -199,7 +199,7 @@ public class Snowberry_AdvancedStreamTests : Common.MediatorTestBase
     [Fact]
     public async Task Test_StreamRequest_BackpressureScenario()
     {
-        var serviceContainer = new ServiceContainer();
+        using var serviceContainer = new ServiceContainer();
 
         serviceContainer.AddSnowberryMediator(options =>
         {
@@ -236,7 +236,7 @@ public class Snowberry_AdvancedStreamTests : Common.MediatorTestBase
     [Fact]
     public async Task Test_ConcurrentStreamRequests()
     {
-        var serviceContainer = new ServiceContainer();
+        using var serviceContainer = new ServiceContainer();
 
         serviceContainer.AddSnowberryMediator(options =>
         {
@@ -281,7 +281,7 @@ public class Snowberry_AdvancedStreamTests : Common.MediatorTestBase
     [Fact]
     public async Task Test_StreamRequest_FilteringPipeline()
     {
-        var serviceContainer = new ServiceContainer();
+        using var serviceContainer = new ServiceContainer();
 
         serviceContainer.AddSnowberryMediator(options =>
         {
@@ -316,7 +316,7 @@ public class Snowberry_AdvancedStreamTests : Common.MediatorTestBase
     [Fact]
     public async Task Test_StreamRequest_ExceptionRecovery()
     {
-        var serviceContainer = new ServiceContainer();
+        using var serviceContainer = new ServiceContainer();
 
         serviceContainer.AddSnowberryMediator(options =>
         {

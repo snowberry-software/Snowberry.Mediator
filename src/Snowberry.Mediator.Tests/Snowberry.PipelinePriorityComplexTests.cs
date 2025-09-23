@@ -18,7 +18,7 @@ public class Snowberry_PipelinePriorityComplexTests : Common.MediatorTestBase
     [InlineData(50, 40, 30, 20, 10)]
     public async Task Test_Priority_ExtremeCases(params int[] priorities)
     {
-        var serviceContainer = new ServiceContainer();
+        using var serviceContainer = new ServiceContainer();
 
         serviceContainer.AddSnowberryMediator(options =>
         {
@@ -40,7 +40,7 @@ public class Snowberry_PipelinePriorityComplexTests : Common.MediatorTestBase
     [Fact]
     public async Task Test_MixedPriorityTypes_WithSamePriority()
     {
-        var serviceContainer = new ServiceContainer();
+        using var serviceContainer = new ServiceContainer();
 
         serviceContainer.AddSnowberryMediator(options =>
         {
@@ -75,7 +75,7 @@ public class Snowberry_PipelinePriorityComplexTests : Common.MediatorTestBase
     [Fact]
     public async Task Test_DeepPipelineNesting_Performance()
     {
-        var serviceContainer = new ServiceContainer();
+        using var serviceContainer = new ServiceContainer();
 
         for (int i = 0; i < 10; i++)
         {
@@ -110,7 +110,7 @@ public class Snowberry_PipelinePriorityComplexTests : Common.MediatorTestBase
     [Fact]
     public async Task Test_PriorityOverride_WithInheritance()
     {
-        var serviceContainer = new ServiceContainer();
+        using var serviceContainer = new ServiceContainer();
 
         serviceContainer.AddSnowberryMediator(options =>
         {
@@ -138,7 +138,7 @@ public class Snowberry_PipelinePriorityComplexTests : Common.MediatorTestBase
     [Fact]
     public async Task Test_StreamPriority_WithComplexTransformations()
     {
-        var serviceContainer = new ServiceContainer();
+        using var serviceContainer = new ServiceContainer();
 
         serviceContainer.AddSnowberryMediator(options =>
         {

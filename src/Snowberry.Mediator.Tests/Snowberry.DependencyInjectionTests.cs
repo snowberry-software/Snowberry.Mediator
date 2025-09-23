@@ -14,7 +14,7 @@ public class Snowberry_DependencyInjectionTests : MediatorTestBase
     [Fact]
     public async Task Test_DependencyInjection_Order()
     {
-        var serviceContainer = new ServiceContainer();
+        using var serviceContainer = new ServiceContainer();
 
         serviceContainer.AddSnowberryMediator(options =>
         {
@@ -45,7 +45,7 @@ public class Snowberry_DependencyInjectionTests : MediatorTestBase
     [Fact]
     public async Task Test_PipelineBehavior_Priority_Override()
     {
-        var serviceContainer = new ServiceContainer();
+        using var serviceContainer = new ServiceContainer();
 
         serviceContainer.AddSnowberryMediator(options =>
         {
@@ -78,7 +78,7 @@ public class Snowberry_DependencyInjectionTests : MediatorTestBase
     [InlineData(ServiceLifetime.Transient)]
     public async Task Test_DifferentServiceLifetimes(ServiceLifetime lifetime)
     {
-        var serviceContainer = new ServiceContainer();
+        using var serviceContainer = new ServiceContainer();
 
         serviceContainer.AddSnowberryMediator(options =>
         {
@@ -105,7 +105,7 @@ public class Snowberry_DependencyInjectionTests : MediatorTestBase
     [Fact]
     public async Task Test_StreamPipelineBehaviors_Execution_Order()
     {
-        var serviceContainer = new ServiceContainer();
+        using var serviceContainer = new ServiceContainer();
 
         serviceContainer.AddSnowberryMediator(options =>
         {
@@ -137,7 +137,7 @@ public class Snowberry_DependencyInjectionTests : MediatorTestBase
     [Fact]
     public async Task Test_ComplexRequest_WithPipeline()
     {
-        var serviceContainer = new ServiceContainer();
+        using var serviceContainer = new ServiceContainer();
 
         serviceContainer.AddSnowberryMediator(options =>
         {
@@ -160,7 +160,7 @@ public class Snowberry_DependencyInjectionTests : MediatorTestBase
     [Fact]
     public async Task Test_OpenGeneric_PipelineBehaviors_Documentation()
     {
-        var serviceContainer = new ServiceContainer();
+        using var serviceContainer = new ServiceContainer();
 
         serviceContainer.AddSnowberryMediator(options =>
         {
@@ -182,7 +182,7 @@ public class Snowberry_DependencyInjectionTests : MediatorTestBase
     [Fact]
     public async Task Test_OpenGeneric_StreamPipelineBehaviors()
     {
-        var serviceContainer = new ServiceContainer();
+        using var serviceContainer = new ServiceContainer();
 
         serviceContainer.AddSnowberryMediator(options =>
         {
@@ -208,7 +208,7 @@ public class Snowberry_DependencyInjectionTests : MediatorTestBase
     [Fact]
     public async Task Test_MultiplePipelineBehaviors_ComplexScenario()
     {
-        var serviceContainer = new ServiceContainer();
+        using var serviceContainer = new ServiceContainer();
 
         serviceContainer.AddSnowberryMediator(options =>
         {
@@ -236,7 +236,7 @@ public class Snowberry_DependencyInjectionTests : MediatorTestBase
     [Fact]
     public async Task Test_CancelledCancellationToken_ThrowsOperationCanceledException()
     {
-        var serviceContainer = new ServiceContainer();
+        using var serviceContainer = new ServiceContainer();
 
         serviceContainer.AddSnowberryMediator(options =>
         {
@@ -257,7 +257,7 @@ public class Snowberry_DependencyInjectionTests : MediatorTestBase
     [Fact]
     public async Task Test_StreamRequest_CancelledCancellationToken()
     {
-        var serviceContainer = new ServiceContainer();
+        using var serviceContainer = new ServiceContainer();
 
         serviceContainer.AddSnowberryMediator(options =>
         {
@@ -296,7 +296,7 @@ public class Snowberry_DependencyInjectionTests : MediatorTestBase
     [Fact]
     public async Task Test_MultipleStreamPipelineBehaviors_ComplexScenario()
     {
-        var serviceContainer = new ServiceContainer();
+        using var serviceContainer = new ServiceContainer();
 
         serviceContainer.AddSnowberryMediator(options =>
         {
@@ -328,7 +328,7 @@ public class Snowberry_DependencyInjectionTests : MediatorTestBase
     [Fact]
     public async Task Test_EmptyStreamRequest()
     {
-        var serviceContainer = new ServiceContainer();
+        using var serviceContainer = new ServiceContainer();
 
         serviceContainer.AddSnowberryMediator(options =>
         {
@@ -351,7 +351,7 @@ public class Snowberry_DependencyInjectionTests : MediatorTestBase
     [Fact]
     public async Task Test_LargeStreamRequest()
     {
-        var serviceContainer = new ServiceContainer();
+        using var serviceContainer = new ServiceContainer();
 
         serviceContainer.AddSnowberryMediator(options =>
         {
@@ -376,7 +376,7 @@ public class Snowberry_DependencyInjectionTests : MediatorTestBase
     [Fact]
     public async Task Test_NoPipelineBehaviors_StillWorks()
     {
-        var serviceContainer = new ServiceContainer();
+        using var serviceContainer = new ServiceContainer();
 
         serviceContainer.AddSnowberryMediator(options =>
         {
@@ -394,7 +394,7 @@ public class Snowberry_DependencyInjectionTests : MediatorTestBase
     [Fact]
     public async Task Test_NoStreamPipelineBehaviors_StillWorks()
     {
-        var serviceContainer = new ServiceContainer();
+        using var serviceContainer = new ServiceContainer();
 
         serviceContainer.AddSnowberryMediator(options =>
         {
@@ -418,7 +418,7 @@ public class Snowberry_DependencyInjectionTests : MediatorTestBase
     [Fact]
     public async Task Test_MixedServiceLifetimes_WithComplexPipeline()
     {
-        var serviceContainer = new ServiceContainer();
+        using var serviceContainer = new ServiceContainer();
 
         serviceContainer.AddSnowberryMediator(options =>
         {
@@ -447,7 +447,7 @@ public class Snowberry_DependencyInjectionTests : MediatorTestBase
     [Fact]
     public async Task Test_StreamRequest_WithTimeout()
     {
-        var serviceContainer = new ServiceContainer();
+        using var serviceContainer = new ServiceContainer();
 
         serviceContainer.AddSnowberryMediator(options =>
         {
