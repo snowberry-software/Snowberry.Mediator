@@ -1,6 +1,6 @@
-using Microsoft.Extensions.DependencyInjection;
+using Snowberry.DependencyInjection;
 using Snowberry.Mediator.Abstractions;
-using Snowberry.Mediator.Extensions.DependencyInjection;
+using Snowberry.Mediator.DependencyInjection;
 using Snowberry.Mediator.Tests.Common.Helper;
 using Snowberry.Mediator.Tests.Common.Pipelines;
 using Snowberry.Mediator.Tests.Common.Requests;
@@ -10,14 +10,14 @@ namespace Snowberry.Mediator.Tests;
 /// <summary>
 /// Advanced tests for streaming functionality, including complex transformations and edge cases
 /// </summary>
-public class AdvancedStreamTests : Common.MediatorTestBase
+public class Snowberry_AdvancedStreamTests : Common.MediatorTestBase
 {
     [Fact]
     public async Task Test_MultipleStreamPipelines_ChainedTransformations()
     {
-        var serviceCollection = new ServiceCollection();
+        using var serviceContainer = new ServiceContainer();
 
-        serviceCollection.AddSnowberryMediator(options =>
+        serviceContainer.AddSnowberryMediator(options =>
         {
             options.Assemblies = [typeof(ChainedStreamBehavior1).Assembly];
             options.StreamPipelineBehaviorTypes = [
@@ -28,8 +28,7 @@ public class AdvancedStreamTests : Common.MediatorTestBase
             ];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        using var serviceProvider = serviceCollection.BuildServiceProvider();
-        var mediator = serviceProvider.GetRequiredService<IMediator>();
+        var mediator = serviceContainer.GetService<IMediator>();
 
         var request = new NumberStreamRequest { Count = 5, StartValue = 1 };
         var results = new List<int>();
@@ -53,9 +52,9 @@ public class AdvancedStreamTests : Common.MediatorTestBase
     [Fact]
     public async Task Test_MixedConcreteAndGenericPipelineBehaviors()
     {
-        var serviceCollection = new ServiceCollection();
+        using var serviceContainer = new ServiceContainer();
 
-        serviceCollection.AddSnowberryMediator(options =>
+        serviceContainer.AddSnowberryMediator(options =>
         {
             options.Assemblies = [typeof(MixedPipelineTestRequest).Assembly];
             options.PipelineBehaviorTypes = [
@@ -69,8 +68,7 @@ public class AdvancedStreamTests : Common.MediatorTestBase
             ];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        using var serviceProvider = serviceCollection.BuildServiceProvider();
-        var mediator = serviceProvider.GetRequiredService<IMediator>();
+        var mediator = serviceContainer.GetService<IMediator>();
 
         var request = new MixedPipelineTestRequest { Message = "Test", Value = 42 };
         string response = await mediator.SendAsync(request, CancellationToken.None);
@@ -96,9 +94,9 @@ public class AdvancedStreamTests : Common.MediatorTestBase
     [Fact]
     public async Task Test_MixedConcreteAndGenericStreamPipelineBehaviors()
     {
-        var serviceCollection = new ServiceCollection();
+        using var serviceContainer = new ServiceContainer();
 
-        serviceCollection.AddSnowberryMediator(options =>
+        serviceContainer.AddSnowberryMediator(options =>
         {
             options.Assemblies = [typeof(MixedStreamPipelineTestRequest).Assembly];
             options.StreamPipelineBehaviorTypes = [
@@ -112,8 +110,7 @@ public class AdvancedStreamTests : Common.MediatorTestBase
             ];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        using var serviceProvider = serviceCollection.BuildServiceProvider();
-        var mediator = serviceProvider.GetRequiredService<IMediator>();
+        var mediator = serviceContainer.GetService<IMediator>();
 
         var request = new MixedStreamPipelineTestRequest { Count = 3, StartValue = 1 };
         var results = new List<int>();
@@ -138,15 +135,14 @@ public class AdvancedStreamTests : Common.MediatorTestBase
     [Fact]
     public async Task Test_StreamRequest_WithComplexData()
     {
-        var serviceCollection = new ServiceCollection();
+        using var serviceContainer = new ServiceContainer();
 
-        serviceCollection.AddSnowberryMediator(options =>
+        serviceContainer.AddSnowberryMediator(options =>
         {
             options.Assemblies = [typeof(ComplexDataStreamRequest).Assembly];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        using var serviceProvider = serviceCollection.BuildServiceProvider();
-        var mediator = serviceProvider.GetRequiredService<IMediator>();
+        var mediator = serviceContainer.GetService<IMediator>();
 
         var request = new ComplexDataStreamRequest
         {
@@ -174,15 +170,14 @@ public class AdvancedStreamTests : Common.MediatorTestBase
     [Fact]
     public async Task Test_StreamRequest_AsyncDisposalPattern()
     {
-        var serviceCollection = new ServiceCollection();
+        using var serviceContainer = new ServiceContainer();
 
-        serviceCollection.AddSnowberryMediator(options =>
+        serviceContainer.AddSnowberryMediator(options =>
         {
             options.Assemblies = [typeof(DisposableStreamRequest).Assembly];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        using var serviceProvider = serviceCollection.BuildServiceProvider();
-        var mediator = serviceProvider.GetRequiredService<IMediator>();
+        var mediator = serviceContainer.GetService<IMediator>();
 
         var request = new DisposableStreamRequest { ResourceCount = 10 };
         int processedCount = 0;
@@ -204,16 +199,15 @@ public class AdvancedStreamTests : Common.MediatorTestBase
     [Fact]
     public async Task Test_StreamRequest_BackpressureScenario()
     {
-        var serviceCollection = new ServiceCollection();
+        using var serviceContainer = new ServiceContainer();
 
-        serviceCollection.AddSnowberryMediator(options =>
+        serviceContainer.AddSnowberryMediator(options =>
         {
             options.Assemblies = [typeof(BackpressureBehavior).Assembly];
             options.StreamPipelineBehaviorTypes = [typeof(BackpressureBehavior)];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        using var serviceProvider = serviceCollection.BuildServiceProvider();
-        var mediator = serviceProvider.GetRequiredService<IMediator>();
+        var mediator = serviceContainer.GetService<IMediator>();
 
         var request = new NumberStreamRequest { Count = 100, StartValue = 1 };
         var startTime = DateTime.UtcNow;
@@ -242,15 +236,14 @@ public class AdvancedStreamTests : Common.MediatorTestBase
     [Fact]
     public async Task Test_ConcurrentStreamRequests()
     {
-        var serviceCollection = new ServiceCollection();
+        using var serviceContainer = new ServiceContainer();
 
-        serviceCollection.AddSnowberryMediator(options =>
+        serviceContainer.AddSnowberryMediator(options =>
         {
             options.Assemblies = [typeof(NumberStreamRequest).Assembly];
         }, serviceLifetime: ServiceLifetime.Singleton);
 
-        using var serviceProvider = serviceCollection.BuildServiceProvider();
-        var mediator = serviceProvider.GetRequiredService<IMediator>();
+        var mediator = serviceContainer.GetService<IMediator>();
 
         var tasks = new List<Task<List<int>>>();
 
@@ -288,16 +281,15 @@ public class AdvancedStreamTests : Common.MediatorTestBase
     [Fact]
     public async Task Test_StreamRequest_FilteringPipeline()
     {
-        var serviceCollection = new ServiceCollection();
+        using var serviceContainer = new ServiceContainer();
 
-        serviceCollection.AddSnowberryMediator(options =>
+        serviceContainer.AddSnowberryMediator(options =>
         {
             options.Assemblies = [typeof(ConditionalFilterBehavior).Assembly];
             options.StreamPipelineBehaviorTypes = [typeof(ConditionalFilterBehavior)];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        using var serviceProvider = serviceCollection.BuildServiceProvider();
-        var mediator = serviceProvider.GetRequiredService<IMediator>();
+        var mediator = serviceContainer.GetService<IMediator>();
 
         var request = new FilterableStreamRequest
         {
@@ -324,16 +316,15 @@ public class AdvancedStreamTests : Common.MediatorTestBase
     [Fact]
     public async Task Test_StreamRequest_ExceptionRecovery()
     {
-        var serviceCollection = new ServiceCollection();
+        using var serviceContainer = new ServiceContainer();
 
-        serviceCollection.AddSnowberryMediator(options =>
+        serviceContainer.AddSnowberryMediator(options =>
         {
             options.Assemblies = [typeof(ExceptionRecoveryBehavior).Assembly];
             options.StreamPipelineBehaviorTypes = [typeof(ExceptionRecoveryBehavior)];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        using var serviceProvider = serviceCollection.BuildServiceProvider();
-        var mediator = serviceProvider.GetRequiredService<IMediator>();
+        var mediator = serviceContainer.GetService<IMediator>();
 
         var request = new FaultyStreamRequest { Count = 10, FaultAtPositions = [3, 7] };
         var results = new List<int>();

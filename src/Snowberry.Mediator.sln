@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.0.31903.59
+# Visual Studio Version 18
+VisualStudioVersion = 18.0.11012.119 d18.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Snowberry.Mediator", "Snowberry.Mediator\Snowberry.Mediator.csproj", "{8C4919C6-6E70-4B8F-A648-B3A82AE97B4F}"
 EndProject
@@ -16,6 +16,10 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Extensions", "Extensions", "{7A6752CB-F4A3-40D8-8A78-63ED1DC5EF0C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Snowberry.Mediator.Extensions.DependencyInjection", "Snowberry.Mediator.Extensions.DependencyInjection\Snowberry.Mediator.Extensions.DependencyInjection.csproj", "{5CBE1A87-54E8-4A44-A233-0E9EC905C51B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Snowberry.Mediator.DependencyInjection", "Snowberry.Mediator.DependencyInjection\Snowberry.Mediator.DependencyInjection.csproj", "{8FD5ACA9-63EE-43C5-A143-D5C3AB3953D0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Snowberry.Mediator.DependencyInjection.Shared", "Snowberry.Mediator.DependencyInjection.Shared\Snowberry.Mediator.DependencyInjection.Shared.csproj", "{22DD0E84-EC8E-4FC9-ADB1-49F2DFC91522}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -43,6 +47,14 @@ Global
 		{5CBE1A87-54E8-4A44-A233-0E9EC905C51B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5CBE1A87-54E8-4A44-A233-0E9EC905C51B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5CBE1A87-54E8-4A44-A233-0E9EC905C51B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8FD5ACA9-63EE-43C5-A143-D5C3AB3953D0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8FD5ACA9-63EE-43C5-A143-D5C3AB3953D0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8FD5ACA9-63EE-43C5-A143-D5C3AB3953D0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8FD5ACA9-63EE-43C5-A143-D5C3AB3953D0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{22DD0E84-EC8E-4FC9-ADB1-49F2DFC91522}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{22DD0E84-EC8E-4FC9-ADB1-49F2DFC91522}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{22DD0E84-EC8E-4FC9-ADB1-49F2DFC91522}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{22DD0E84-EC8E-4FC9-ADB1-49F2DFC91522}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -51,6 +63,8 @@ Global
 		{F9C3326B-B695-4023-B203-A11A7793AC56} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{CA40BAC1-7284-4171-807D-0A2505968CB3} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{5CBE1A87-54E8-4A44-A233-0E9EC905C51B} = {7A6752CB-F4A3-40D8-8A78-63ED1DC5EF0C}
+		{8FD5ACA9-63EE-43C5-A143-D5C3AB3953D0} = {7A6752CB-F4A3-40D8-8A78-63ED1DC5EF0C}
+		{22DD0E84-EC8E-4FC9-ADB1-49F2DFC91522} = {7A6752CB-F4A3-40D8-8A78-63ED1DC5EF0C}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7642D8A5-CC45-4766-B197-EEB7B14671AC}

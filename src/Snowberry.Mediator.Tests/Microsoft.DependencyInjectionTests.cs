@@ -8,7 +8,7 @@ using Snowberry.Mediator.Tests.Common.Requests;
 
 namespace Snowberry.Mediator.Tests;
 
-public class MicrosoftDependencyInjectionTests : MediatorTestBase
+public class Microsoft_DependencyInjectionTests : MediatorTestBase
 {
     [Fact]
     public async Task Test_DependencyInjection_Order()

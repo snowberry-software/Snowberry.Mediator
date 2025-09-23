@@ -11,8 +11,9 @@ namespace Snowberry.Mediator.Tests.Common.NotificationHandlers;
 public class GenericLoggingHandler<TNotification> : INotificationHandler<TNotification>
     where TNotification : INotification
 {
-    // Use thread-safe collection for concurrent access
-    public static ConcurrentBag<object> LoggedNotifications { get; } = [];
+    // Use test-isolated state instead of shared static state
+    public static ConcurrentBag<object> LoggedNotifications =>
+        TestIsolationContext.GetOrCreateBag<object>($"GenericLoggingHandler<{typeof(TNotification).Name}>.LoggedNotifications");
 
     public ValueTask HandleAsync(TNotification notification, CancellationToken cancellationToken = default)
     {
@@ -23,9 +24,9 @@ public class GenericLoggingHandler<TNotification> : INotificationHandler<TNotifi
 
     public static void ClearLoggedNotifications()
     {
-        // Clear by creating a new instance since ConcurrentBag doesn't have Clear()
-        var currentBag = LoggedNotifications;
-        while (currentBag.TryTake(out _))
+        // Clear by draining the bag
+        var bag = LoggedNotifications;
+        while (bag.TryTake(out _))
         {
         }
     }
@@ -37,8 +38,11 @@ public class GenericLoggingHandler<TNotification> : INotificationHandler<TNotifi
 public class GenericAuditingHandler<TNotification> : INotificationHandler<TNotification>
     where TNotification : INotification
 {
-    // Use thread-safe collection for concurrent access
-    public static ConcurrentDictionary<string, ConcurrentBag<object>> AuditLog { get; } = new();
+    private static string AuditLogKey => $"GenericAuditingHandler<{typeof(TNotification).Name}>.AuditLog";
+
+    // Use test-isolated state instead of shared static state
+    public static ConcurrentDictionary<string, ConcurrentBag<object>> AuditLog =>
+        TestIsolationContext.GetOrCreateValue(AuditLogKey, () => new ConcurrentDictionary<string, ConcurrentBag<object>>());
 
     public async ValueTask HandleAsync(TNotification notification, CancellationToken cancellationToken = default)
     {
@@ -54,7 +58,8 @@ public class GenericAuditingHandler<TNotification> : INotificationHandler<TNotif
 
     public static void ClearAuditLog()
     {
-        AuditLog.Clear();
+        var auditLog = AuditLog;
+        auditLog.Clear();
     }
 }
 
@@ -64,9 +69,15 @@ public class GenericAuditingHandler<TNotification> : INotificationHandler<TNotif
 public class GenericMetricsHandler<TNotification> : INotificationHandler<TNotification>
     where TNotification : INotification
 {
-    // Use thread-safe collections for concurrent access
-    public static ConcurrentDictionary<string, int> NotificationCounts { get; } = new();
-    public static ConcurrentDictionary<string, DateTime> LastProcessedTimes { get; } = new();
+    private static string NotificationCountsKey => $"GenericMetricsHandler<{typeof(TNotification).Name}>.NotificationCounts";
+    private static string LastProcessedTimesKey => $"GenericMetricsHandler<{typeof(TNotification).Name}>.LastProcessedTimes";
+
+    // Use test-isolated state instead of shared static state
+    public static ConcurrentDictionary<string, int> NotificationCounts =>
+        TestIsolationContext.GetOrCreateValue(NotificationCountsKey, () => new ConcurrentDictionary<string, int>());
+
+    public static ConcurrentDictionary<string, DateTime> LastProcessedTimes =>
+        TestIsolationContext.GetOrCreateValue(LastProcessedTimesKey, () => new ConcurrentDictionary<string, DateTime>());
 
     public ValueTask HandleAsync(TNotification notification, CancellationToken cancellationToken = default)
     {
@@ -94,9 +105,18 @@ public class GenericMetricsHandler<TNotification> : INotificationHandler<TNotifi
 public class GenericValidationHandler<TNotification> : INotificationHandler<TNotification>
     where TNotification : INotification
 {
-    // Use thread-safe collection for concurrent access
-    public static ConcurrentBag<string> ValidationResults { get; } = [];
-    public static bool ShouldThrowException { get; set; } = false;
+    private static string ValidationResultsKey => $"GenericValidationHandler<{typeof(TNotification).Name}>.ValidationResults";
+    private static string ShouldThrowExceptionKey => $"GenericValidationHandler<{typeof(TNotification).Name}>.ShouldThrowException";
+
+    // Use test-isolated state instead of shared static state
+    public static ConcurrentBag<string> ValidationResults =>
+        TestIsolationContext.GetOrCreateBag<string>(ValidationResultsKey);
+
+    public static bool ShouldThrowException
+    {
+        get => TestIsolationContext.GetValue(ShouldThrowExceptionKey, false);
+        set => TestIsolationContext.GetOrSetValue(ShouldThrowExceptionKey, value);
+    }
 
     public ValueTask HandleAsync(TNotification notification, CancellationToken cancellationToken = default)
     {
@@ -114,7 +134,8 @@ public class GenericValidationHandler<TNotification> : INotificationHandler<TNot
     public static void ClearValidationResults()
     {
         // Clear by draining the bag
-        while (ValidationResults.TryTake(out _))
+        var bag = ValidationResults;
+        while (bag.TryTake(out _))
         {
         }
 

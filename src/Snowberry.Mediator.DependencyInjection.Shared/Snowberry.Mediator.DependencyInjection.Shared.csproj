@@ -7,17 +7,11 @@
 
 		<!-- Package -->
 		<Description>
-			Extension for the main package to work with
-			`Microsoft.Extensions.DependencyInjection`.
+			A small helper library for supporting multiple Dependency Injection frameworks.
 		</Description>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.9" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<ProjectReference Include="..\Snowberry.Mediator.DependencyInjection.Shared\Snowberry.Mediator.DependencyInjection.Shared.csproj" />
 		<ProjectReference Include="..\Snowberry.Mediator\Snowberry.Mediator.csproj" />
 	</ItemGroup>
 

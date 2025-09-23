@@ -11,7 +11,7 @@ namespace Snowberry.Mediator.Tests;
 /// <summary>
 /// Tests focused on edge cases, error scenarios, and boundary conditions
 /// </summary>
-public class EdgeCasesAndErrorTests : MediatorTestBase
+public class Microsoft_EdgeCasesAndErrorTests : MediatorTestBase
 {
     [Fact]
     public async Task Test_Request_WithNullValues()

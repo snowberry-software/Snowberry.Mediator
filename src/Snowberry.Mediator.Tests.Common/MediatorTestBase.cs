@@ -13,11 +13,13 @@ public abstract class MediatorTestBase
     protected MediatorTestBase()
     {
         // Initialize isolated tracking contexts for this test
+        TestIsolationContext.InitializeContext();
         PipelineExecutionTracker.InitializeContext();
         StreamPipelineExecutionTracker.InitializeContext();
         NotificationHandlerExecutionTracker.InitializeContext();
 
         // Clear any existing data
+        TestIsolationContext.Clear();
         PipelineExecutionTracker.Clear();
         StreamPipelineExecutionTracker.Clear();
         NotificationHandlerExecutionTracker.Clear();
@@ -31,10 +33,12 @@ public abstract class MediatorTestBase
     /// </summary>
     protected void ResetTracking()
     {
+        TestIsolationContext.InitializeContext();
         PipelineExecutionTracker.InitializeContext();
         StreamPipelineExecutionTracker.InitializeContext();
         NotificationHandlerExecutionTracker.InitializeContext();
 
+        TestIsolationContext.Clear();
         PipelineExecutionTracker.Clear();
         StreamPipelineExecutionTracker.Clear();
         NotificationHandlerExecutionTracker.Clear();
