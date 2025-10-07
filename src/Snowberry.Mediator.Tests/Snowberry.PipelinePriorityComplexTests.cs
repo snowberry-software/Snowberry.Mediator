@@ -1,4 +1,6 @@
 using Snowberry.DependencyInjection;
+using Snowberry.DependencyInjection.Abstractions;
+using Snowberry.DependencyInjection.Abstractions.Extensions;
 using Snowberry.Mediator.Abstractions;
 using Snowberry.Mediator.DependencyInjection;
 using Snowberry.Mediator.Tests.Common.Helper;
@@ -25,7 +27,7 @@ public class Snowberry_PipelinePriorityComplexTests : Common.MediatorTestBase
             options.Assemblies = [typeof(PriorityTestRequest).Assembly];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         var request = new PriorityTestRequest { Message = "PriorityTest" };
         string response = await mediator.SendAsync(request, CancellationToken.None);
@@ -54,7 +56,7 @@ public class Snowberry_PipelinePriorityComplexTests : Common.MediatorTestBase
             ];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         var request = new MultiBehaviorRequest { Value = 10 };
         int response = await mediator.SendAsync(request, CancellationToken.None);
@@ -75,7 +77,7 @@ public class Snowberry_PipelinePriorityComplexTests : Common.MediatorTestBase
     [Fact]
     public async Task Test_DeepPipelineNesting_Performance()
     {
-        using var serviceContainer = new ServiceContainer();
+        using var serviceContainer = new ServiceContainer(ServiceContainerOptions.Default & ~ServiceContainerOptions.ReadOnly);
 
         for (int i = 0; i < 10; i++)
         {
@@ -91,7 +93,7 @@ public class Snowberry_PipelinePriorityComplexTests : Common.MediatorTestBase
             options.Assemblies = [typeof(PerformanceTestRequest).Assembly];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         var startTime = DateTime.UtcNow;
 
@@ -122,7 +124,7 @@ public class Snowberry_PipelinePriorityComplexTests : Common.MediatorTestBase
             ];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         var request = new InheritanceTestRequest { Data = "test" };
         string response = await mediator.SendAsync(request, CancellationToken.None);
@@ -151,7 +153,7 @@ public class Snowberry_PipelinePriorityComplexTests : Common.MediatorTestBase
             ];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         var request = new NumberStreamRequest { Count = 10, StartValue = 1 };
         var results = new List<int>();

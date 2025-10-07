@@ -28,7 +28,7 @@ public static class DependencyInjectionHelper
         bool append)
     {
         if (!append || !serviceContext.IsServiceRegistered<IMediator>())
-            serviceContext.Register(typeof(IMediator), typeof(Mediator), serviceLifetime);
+            serviceContext.TryRegister(typeof(IMediator), typeof(Mediator), serviceLifetime);
 
         var allHandlers = new List<RequestHandlerInfo>();
         var allStreamHandlers = new List<StreamRequestHandlerInfo>();
@@ -89,13 +89,13 @@ public static class DependencyInjectionHelper
         for (int i = 0; i < allHandlers.Count; i++)
         {
             var handlerInfo = allHandlers[i];
-            serviceContext.Register(handlerInfo.CreateRequestHandlerInterfaceType(), handlerInfo.HandlerType, serviceLifetime);
+            serviceContext.TryRegister(handlerInfo.CreateRequestHandlerInterfaceType(), handlerInfo.HandlerType, serviceLifetime);
         }
 
         for (int i = 0; i < allStreamHandlers.Count; i++)
         {
             var handlerInfo = allStreamHandlers[i];
-            serviceContext.Register(handlerInfo.CreateStreamRequestHandlerInterfaceType(), handlerInfo.HandlerType, serviceLifetime);
+            serviceContext.TryRegister(handlerInfo.CreateStreamRequestHandlerInterfaceType(), handlerInfo.HandlerType, serviceLifetime);
         }
 
         if (options.RegisterPipelineBehaviors && allPipelineBehaviorHandlers.Count > 0)
@@ -133,7 +133,7 @@ public static class DependencyInjectionHelper
         if (!append || !serviceContext.IsServiceRegistered<TGlobalPipelineInterface>())
         {
             globalPipelineRegistry = new TGlobalPipelineRegistry();
-            serviceContext.Register(serviceType: typeof(TGlobalPipelineInterface), instance: globalPipelineRegistry);
+            serviceContext.TryRegister(serviceType: typeof(TGlobalPipelineInterface), instance: globalPipelineRegistry);
         }
         else
         {
@@ -142,7 +142,7 @@ public static class DependencyInjectionHelper
             if (!foundSingleton)
             {
                 globalPipelineRegistry = new TGlobalPipelineRegistry();
-                serviceContext.Register(serviceType: typeof(TGlobalPipelineInterface), instance: globalPipelineRegistry);
+                serviceContext.TryRegister(serviceType: typeof(TGlobalPipelineInterface), instance: globalPipelineRegistry);
             }
         }
 
@@ -151,7 +151,7 @@ public static class DependencyInjectionHelper
             var handler = pipelineBehaviorHandlers[i];
             globalPipelineRegistry!.Register(handler);
 
-            serviceContext.Register(handler.HandlerType, handler.HandlerType, serviceLifetime);
+            serviceContext.TryRegister(handler.HandlerType, handler.HandlerType, serviceLifetime);
         }
     }
 
@@ -170,7 +170,7 @@ public static class DependencyInjectionHelper
         if (!append || !serviceContext.IsServiceRegistered<IGlobalNotificationHandlerRegistry<NotificationHandlerInfo>>())
         {
             globalNotificationHandlerRegistry = new GlobalNotificationHandlerRegistry();
-            serviceContext.Register(serviceType: typeof(IGlobalNotificationHandlerRegistry<NotificationHandlerInfo>), instance: globalNotificationHandlerRegistry);
+            serviceContext.TryRegister(serviceType: typeof(IGlobalNotificationHandlerRegistry<NotificationHandlerInfo>), instance: globalNotificationHandlerRegistry);
         }
         else
         {
@@ -179,7 +179,7 @@ public static class DependencyInjectionHelper
             if (!foundSingleton)
             {
                 globalNotificationHandlerRegistry = new GlobalNotificationHandlerRegistry();
-                serviceContext.Register(serviceType: typeof(IGlobalNotificationHandlerRegistry<NotificationHandlerInfo>), instance: globalNotificationHandlerRegistry);
+                serviceContext.TryRegister(serviceType: typeof(IGlobalNotificationHandlerRegistry<NotificationHandlerInfo>), instance: globalNotificationHandlerRegistry);
             }
         }
 
@@ -188,7 +188,7 @@ public static class DependencyInjectionHelper
             var handler = notificationHandlers[i];
             globalNotificationHandlerRegistry!.Register(handler);
 
-            serviceContext.Register(handler.HandlerType, handler.HandlerType, serviceLifetime);
+            serviceContext.TryRegister(handler.HandlerType, handler.HandlerType, serviceLifetime);
         }
     }
 }

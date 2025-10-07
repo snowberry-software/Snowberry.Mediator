@@ -1,4 +1,6 @@
-﻿using Snowberry.DependencyInjection.Interfaces;
+﻿using Snowberry.DependencyInjection.Abstractions.Extensions;
+using Snowberry.DependencyInjection.Abstractions.Implementation;
+using Snowberry.DependencyInjection.Abstractions.Interfaces;
 using Snowberry.Mediator.DependencyInjection.Shared;
 using Snowberry.Mediator.DependencyInjection.Shared.Contracts;
 
@@ -19,26 +21,21 @@ internal class SnowberryServiceContext(IServiceRegistry serviceRegistry) : IServ
     }
 
     /// <inheritdoc/>
-    public void Register(Type serviceType, Type implementationType, RegistrationServiceLifetime lifetime)
+    public void TryRegister(Type serviceType, Type implementationType, RegistrationServiceLifetime lifetime)
     {
-        _serviceRegistry.Register(serviceType: serviceType, implementationType: implementationType, serviceKey: null, lifetime: lifetime switch
+        _serviceRegistry.TryRegister(new ServiceDescriptor(serviceType, implementationType, lifetime switch
         {
-            RegistrationServiceLifetime.Singleton => Snowberry.DependencyInjection.ServiceLifetime.Singleton,
-            RegistrationServiceLifetime.Scoped => Snowberry.DependencyInjection.ServiceLifetime.Scoped,
-            RegistrationServiceLifetime.Transient => Snowberry.DependencyInjection.ServiceLifetime.Transient,
+            RegistrationServiceLifetime.Singleton => Snowberry.DependencyInjection.Abstractions.ServiceLifetime.Singleton,
+            RegistrationServiceLifetime.Scoped => Snowberry.DependencyInjection.Abstractions.ServiceLifetime.Scoped,
+            RegistrationServiceLifetime.Transient => Snowberry.DependencyInjection.Abstractions.ServiceLifetime.Transient,
             _ => throw new NotSupportedException($"The service lifetime '{lifetime}' is not supported."),
-        }, singletonInstance: null);
+        }));
     }
 
     /// <inheritdoc/>
-    public void Register(Type serviceType, object instance)
+    public void TryRegister(Type serviceType, object instance)
     {
-        _serviceRegistry.Register(
-            serviceType: serviceType,
-            implementationType: serviceType,
-            serviceKey: null,
-            lifetime: Snowberry.DependencyInjection.ServiceLifetime.Singleton,
-            singletonInstance: instance);
+        _serviceRegistry.TryRegister(ServiceDescriptor.Singleton(serviceType, serviceType, singletonInstance: instance));
     }
 
     /// <inheritdoc/>
@@ -48,7 +45,7 @@ internal class SnowberryServiceContext(IServiceRegistry serviceRegistry) : IServ
         if (_serviceRegistry is not IKeyedServiceProvider serviceFactory)
             return default;
 
-        var instance = serviceFactory.GetOptionalKeyedService<T>(serviceKey: null);
+        var instance = serviceFactory.GetService<T>();
         found = instance is not null;
         return instance;
     }

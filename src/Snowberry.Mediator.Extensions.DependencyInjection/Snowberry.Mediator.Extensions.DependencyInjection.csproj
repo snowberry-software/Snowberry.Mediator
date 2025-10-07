@@ -6,10 +6,7 @@
 		<Nullable>enable</Nullable>
 
 		<!-- Package -->
-		<Description>
-			Extension for the main package to work with
-			`Microsoft.Extensions.DependencyInjection`.
-		</Description>
+		<Description>Extension for the main package to work with `Microsoft.Extensions.DependencyInjection`.</Description>
 	</PropertyGroup>
 
 	<ItemGroup>

@@ -26,12 +26,12 @@ public interface IServiceContext
     /// <param name="serviceType">The service type.</param>
     /// <param name="implementationType">The implementation type.</param>
     /// <param name="lifetime">The service lifetime.</param>
-    void Register(Type serviceType, Type implementationType, RegistrationServiceLifetime lifetime);
+    void TryRegister(Type serviceType, Type implementationType, RegistrationServiceLifetime lifetime);
 
     /// <summary>
     /// Registers a singleton instance of a service.
     /// </summary>
     /// <param name="serviceType">The service type.</param>
     /// <param name="instance">The instance type.</param>
-    void Register(Type serviceType, object instance);
+    void TryRegister(Type serviceType, object instance);
 }

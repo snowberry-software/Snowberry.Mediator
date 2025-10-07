@@ -20,7 +20,7 @@ internal class MicrosoftServiceContext(IServiceCollection serviceCollection) : I
     }
 
     /// <inheritdoc/>
-    public void Register(Type serviceType, Type implementationType, RegistrationServiceLifetime lifetime)
+    public void TryRegister(Type serviceType, Type implementationType, RegistrationServiceLifetime lifetime)
     {
         var descriptor = new ServiceDescriptor(serviceType, implementationType, lifetime switch
         {
@@ -34,7 +34,7 @@ internal class MicrosoftServiceContext(IServiceCollection serviceCollection) : I
     }
 
     /// <inheritdoc/>
-    public void Register(Type serviceType, object instance)
+    public void TryRegister(Type serviceType, object instance)
     {
         var descriptor = new ServiceDescriptor(serviceType, instance: instance);
         _serviceCollection.TryAdd(descriptor);
@@ -44,7 +44,7 @@ internal class MicrosoftServiceContext(IServiceCollection serviceCollection) : I
     public T? TryToGetSingleton<T>(out bool found)
     {
         found = false;
-        var instance = _serviceCollection.FirstOrDefault(sd => sd.ServiceType == typeof(T) && sd.Lifetime == ServiceLifetime.Singleton)?.ImplementationInstance;
+        object? instance = _serviceCollection.FirstOrDefault(sd => sd.ServiceType == typeof(T) && sd.Lifetime == ServiceLifetime.Singleton)?.ImplementationInstance;
 
         if (instance is T typed)
         {

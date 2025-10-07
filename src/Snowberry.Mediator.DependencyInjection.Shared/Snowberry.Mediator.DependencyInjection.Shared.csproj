@@ -6,9 +6,7 @@
 		<Nullable>enable</Nullable>
 
 		<!-- Package -->
-		<Description>
-			A small helper library for supporting multiple Dependency Injection frameworks.
-		</Description>
+		<Description>A small helper library for supporting multiple Dependency Injection frameworks.</Description>
 	</PropertyGroup>
 
 	<ItemGroup>

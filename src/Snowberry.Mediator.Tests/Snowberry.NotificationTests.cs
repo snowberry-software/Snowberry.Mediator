@@ -1,5 +1,7 @@
 using System.Collections.Concurrent;
 using Snowberry.DependencyInjection;
+using Snowberry.DependencyInjection.Abstractions;
+using Snowberry.DependencyInjection.Abstractions.Extensions;
 using Snowberry.Mediator.Abstractions;
 using Snowberry.Mediator.Abstractions.Handler;
 using Snowberry.Mediator.DependencyInjection;
@@ -28,7 +30,7 @@ public class Snowberry_NotificationTests : Common.MediatorTestBase
             options.NotificationHandlerTypes = [typeof(SimpleNotificationHandler)];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         var notification = new SimpleNotification
         {
@@ -68,7 +70,7 @@ public class Snowberry_NotificationTests : Common.MediatorTestBase
             ];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         var notification = new SimpleNotification
         {
@@ -111,7 +113,7 @@ public class Snowberry_NotificationTests : Common.MediatorTestBase
             ];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         var notification = new UserRegisteredNotification
         {
@@ -161,7 +163,7 @@ public class Snowberry_NotificationTests : Common.MediatorTestBase
             ];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         var notification = new SimpleNotification
         {
@@ -216,7 +218,7 @@ public class Snowberry_NotificationTests : Common.MediatorTestBase
             ];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         var notification = new SimpleNotification
         {
@@ -265,7 +267,7 @@ public class Snowberry_NotificationTests : Common.MediatorTestBase
             ];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         // Send different notification types
         var userNotification = new UserRegisteredNotification
@@ -315,7 +317,7 @@ public class Snowberry_NotificationTests : Common.MediatorTestBase
             options.NotificationHandlerTypes = [typeof(GenericLoggingHandler<>)];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         var simpleNotification = new SimpleNotification { Message = "Only generic test", Value = 1 };
         var systemNotification = new SystemEventNotification { EventType = "Test", Description = "Generic only" };
@@ -349,7 +351,7 @@ public class Snowberry_NotificationTests : Common.MediatorTestBase
             options.NotificationHandlerTypes = [typeof(TestSpecificValidationHandler<>)];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         var notification = new SimpleNotification
         {
@@ -405,7 +407,7 @@ public class Snowberry_NotificationTests : Common.MediatorTestBase
                         options.NotificationHandlerTypes = [typeof(TestSpecificValidationHandler<>)];
                     }, serviceLifetime: ServiceLifetime.Scoped);
 
-                    var mediator = serviceContainer.GetService<IMediator>();
+                    var mediator = serviceContainer.GetRequiredService<IMediator>();
 
                     var notification = new SimpleNotification
                     {
@@ -464,7 +466,7 @@ public class Snowberry_NotificationTests : Common.MediatorTestBase
         for (int i = 0; i < 3; i++)
         {
             using var scope = serviceContainer.CreateScope();
-            var mediator = scope.ServiceFactory.GetService<IMediator>();
+            var mediator = scope.ServiceFactory.GetRequiredService<IMediator>();
 
             var notification = new SimpleNotification
             {
@@ -506,7 +508,7 @@ public class Snowberry_NotificationTests : Common.MediatorTestBase
             ];
         }, serviceLifetime: ServiceLifetime.Singleton);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         var tasks = new List<Task>();
 
@@ -555,7 +557,7 @@ public class Snowberry_NotificationTests : Common.MediatorTestBase
             options.NotificationHandlerTypes = [typeof(SimpleNotificationHandler)];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         var notification = new SimpleNotification { Message = "Cancellation test", Value = 0 };
 
@@ -583,7 +585,7 @@ public class Snowberry_NotificationTests : Common.MediatorTestBase
             options.NotificationHandlerTypes = [typeof(OrderCompletionHandler)];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         var notification1 = new OrderCompletedNotification
         {
@@ -637,7 +639,7 @@ public class Snowberry_NotificationTests : Common.MediatorTestBase
             ];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         // Send different notification types
         var userNotification = new UserRegisteredNotification
@@ -696,12 +698,12 @@ public class Snowberry_NotificationTests : Common.MediatorTestBase
             options.NotificationHandlerTypes = [];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         var notification = new SimpleNotification { Message = "No handlers", Value = 0 };
 
         // Should throw when no handlers are registered for the notification
-        await Assert.ThrowsAsync<Snowberry.Mediator.Abstractions.Exceptions.NotificationHandlerNotFoundException>(async () =>
+        await Assert.ThrowsAsync<Abstractions.Exceptions.NotificationHandlerNotFoundException>(async () =>
         {
             await mediator.PublishAsync(notification, CancellationToken.None);
         });
