@@ -1,5 +1,6 @@
-﻿using Snowberry.DependencyInjection;
-using Snowberry.DependencyInjection.Interfaces;
+﻿using Snowberry.DependencyInjection.Abstractions;
+using Snowberry.DependencyInjection.Abstractions.Extensions;
+using Snowberry.DependencyInjection.Abstractions.Interfaces;
 using Snowberry.Mediator.DependencyInjection.Shared;
 
 namespace Snowberry.Mediator.DependencyInjection;

@@ -1,4 +1,6 @@
 using Snowberry.DependencyInjection;
+using Snowberry.DependencyInjection.Abstractions;
+using Snowberry.DependencyInjection.Abstractions.Extensions;
 using Snowberry.Mediator.Abstractions;
 using Snowberry.Mediator.DependencyInjection;
 using Snowberry.Mediator.Tests.Common;
@@ -23,7 +25,7 @@ public class Snowberry_EdgeCasesAndErrorTests : MediatorTestBase
             options.Assemblies = [typeof(NullableRequest).Assembly];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         var request = new NullableRequest { NullableString = null, RequiredString = "Required" };
         string response = await mediator.SendAsync(request, CancellationToken.None);
@@ -42,7 +44,7 @@ public class Snowberry_EdgeCasesAndErrorTests : MediatorTestBase
             options.Assemblies = [typeof(ExceptionThrowingRequest).Assembly];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         var request = new ExceptionThrowingRequest { ShouldThrow = true, Message = "Test exception" };
 
@@ -65,7 +67,7 @@ public class Snowberry_EdgeCasesAndErrorTests : MediatorTestBase
             options.PipelineBehaviorTypes = [typeof(ExceptionHandlingBehavior)];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         var request = new ExceptionThrowingRequest { ShouldThrow = true, Message = "Pipeline test" };
 
@@ -87,7 +89,7 @@ public class Snowberry_EdgeCasesAndErrorTests : MediatorTestBase
             options.Assemblies = [typeof(ExceptionThrowingStreamRequest).Assembly];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         var request = new ExceptionThrowingStreamRequest { ThrowAfterCount = 2, ExceptionMessage = "Stream error" };
         var results = new List<int>();
@@ -115,7 +117,7 @@ public class Snowberry_EdgeCasesAndErrorTests : MediatorTestBase
             options.Assemblies = [typeof(LargeDataRequest).Assembly];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         byte[] largeData = new byte[1024 * 1024];
         new Random().NextBytes(largeData);
@@ -136,7 +138,7 @@ public class Snowberry_EdgeCasesAndErrorTests : MediatorTestBase
             options.Assemblies = [typeof(ConcurrentTestRequest).Assembly];
         }, serviceLifetime: ServiceLifetime.Singleton);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         var tasks = new List<Task<string>>();
 
@@ -166,7 +168,7 @@ public class Snowberry_EdgeCasesAndErrorTests : MediatorTestBase
             options.StreamPipelineBehaviorTypes = [typeof(LoggingStreamBehavior)];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         var request = new NumberStreamRequest { Count = 0, StartValue = 1 };
         var results = new List<int>();
@@ -193,7 +195,7 @@ public class Snowberry_EdgeCasesAndErrorTests : MediatorTestBase
             options.Assemblies = [typeof(DefaultValueRequest).Assembly];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         var request = new DefaultValueRequest();
         string response = await mediator.SendAsync(request, CancellationToken.None);
@@ -213,7 +215,7 @@ public class Snowberry_EdgeCasesAndErrorTests : MediatorTestBase
             options.Assemblies = [typeof(NumberStreamRequest).Assembly];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         var request = new NumberStreamRequest { Count = 1000, StartValue = 1 };
         int processedCount = 0;
@@ -246,7 +248,7 @@ public class Snowberry_EdgeCasesAndErrorTests : MediatorTestBase
             options.Assemblies = [typeof(UnicodeRequest).Assembly];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         string specialChars = "?? Hello ??! ?o?l ?? \t\n\r \"'\\";
         var request = new UnicodeRequest { Text = specialChars };
@@ -269,7 +271,7 @@ public class Snowberry_EdgeCasesAndErrorTests : MediatorTestBase
             options.PipelineBehaviorTypes = [typeof(RequestModifyingBehavior)];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         var request = new MutableRequest { Value = 10, Text = "Original" };
         string response = await mediator.SendAsync(request, CancellationToken.None);

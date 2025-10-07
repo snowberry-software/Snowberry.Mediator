@@ -717,7 +717,7 @@ public class Microsoft_NotificationTests : Common.MediatorTestBase
         var notification = new SimpleNotification { Message = "No handlers", Value = 0 };
 
         // Should throw when no handlers are registered for the notification
-        await Assert.ThrowsAsync<Snowberry.Mediator.Abstractions.Exceptions.NotificationHandlerNotFoundException>(async () =>
+        await Assert.ThrowsAsync<Abstractions.Exceptions.NotificationHandlerNotFoundException>(async () =>
         {
             await mediator.PublishAsync(notification, CancellationToken.None);
         });

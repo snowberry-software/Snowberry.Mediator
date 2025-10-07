@@ -1,4 +1,6 @@
 ﻿using Snowberry.DependencyInjection;
+using Snowberry.DependencyInjection.Abstractions;
+using Snowberry.DependencyInjection.Abstractions.Extensions;
 using Snowberry.Mediator.Abstractions;
 using Snowberry.Mediator.DependencyInjection;
 using Snowberry.Mediator.Extensions.DependencyInjection;
@@ -25,7 +27,7 @@ public class Snowberry_DependencyInjectionTests : MediatorTestBase
             ];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         Assert.IsType<Mediator>(mediator);
 
@@ -58,7 +60,7 @@ public class Snowberry_DependencyInjectionTests : MediatorTestBase
             ];
         }, serviceLifetime: ServiceLifetime.Transient);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         int response = await mediator.SendAsync(new CounterRequest(), CancellationToken.None);
 
@@ -92,7 +94,7 @@ public class Snowberry_DependencyInjectionTests : MediatorTestBase
         for (int i = 0; i < 3; i++)
         {
             using var scope = serviceContainer.CreateScope();
-            var mediator = scope.ServiceFactory.GetService<IMediator>();
+            var mediator = scope.ServiceFactory.GetRequiredService<IMediator>();
 
             int response = await mediator.SendAsync(new CounterRequest(), CancellationToken.None);
             Assert.Equal(CounterRequest.c_InitialValue + 2, response);
@@ -116,7 +118,7 @@ public class Snowberry_DependencyInjectionTests : MediatorTestBase
             ];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         var request = new NumberStreamRequest { Count = 3, StartValue = 1 };
         var results = new List<int>();
@@ -145,7 +147,7 @@ public class Snowberry_DependencyInjectionTests : MediatorTestBase
             options.PipelineBehaviorTypes = [typeof(ComplexRequestPipelineBehavior)];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         var request = new ComplexRequest { Message = "Test", Factor = 3 };
         string response = await mediator.SendAsync(request, CancellationToken.None);
@@ -167,7 +169,7 @@ public class Snowberry_DependencyInjectionTests : MediatorTestBase
             options.Assemblies = [typeof(CounterRequest).Assembly];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         int counterResponse = await mediator.SendAsync(new CounterRequest(), CancellationToken.None);
         Assert.Equal(CounterRequest.c_InitialValue, counterResponse);
@@ -189,7 +191,7 @@ public class Snowberry_DependencyInjectionTests : MediatorTestBase
             options.Assemblies = [typeof(NumberStreamRequest).Assembly];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         var request = new NumberStreamRequest { Count = 2, StartValue = 10 };
         var results = new List<int>();
@@ -221,7 +223,7 @@ public class Snowberry_DependencyInjectionTests : MediatorTestBase
             ];
         }, serviceLifetime: ServiceLifetime.Singleton);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         int response = await mediator.SendAsync(new CounterRequest(), CancellationToken.None);
 
@@ -243,7 +245,7 @@ public class Snowberry_DependencyInjectionTests : MediatorTestBase
             options.Assemblies = [typeof(AlwaysFirstCounterRequestPipelineBehavior).Assembly];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         using var cts = new CancellationTokenSource();
         cts.Cancel();
@@ -264,7 +266,7 @@ public class Snowberry_DependencyInjectionTests : MediatorTestBase
             options.Assemblies = [typeof(NumberStreamRequest).Assembly];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         var request = new NumberStreamRequest { Count = 100, StartValue = 1 };
         using var cts = new CancellationTokenSource();
@@ -307,7 +309,7 @@ public class Snowberry_DependencyInjectionTests : MediatorTestBase
             ];
         }, serviceLifetime: ServiceLifetime.Transient);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         var request = new NumberStreamRequest { Count = 2, StartValue = 5 };
         var results = new List<int>();
@@ -335,7 +337,7 @@ public class Snowberry_DependencyInjectionTests : MediatorTestBase
             options.Assemblies = [typeof(NumberStreamRequest).Assembly];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         var request = new NumberStreamRequest { Count = 0, StartValue = 1 };
         var results = new List<int>();
@@ -358,7 +360,7 @@ public class Snowberry_DependencyInjectionTests : MediatorTestBase
             options.Assemblies = [typeof(NumberStreamRequest).Assembly];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         var request = new NumberStreamRequest { Count = 50, StartValue = 1 };
         var results = new List<int>();
@@ -384,7 +386,7 @@ public class Snowberry_DependencyInjectionTests : MediatorTestBase
             options.RegisterPipelineBehaviors = false;
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         int response = await mediator.SendAsync(new CounterRequest(), CancellationToken.None);
 
@@ -402,7 +404,7 @@ public class Snowberry_DependencyInjectionTests : MediatorTestBase
             options.RegisterStreamPipelineBehaviors = false;
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         var request = new NumberStreamRequest { Count = 3, StartValue = 10 };
         var results = new List<int>();
@@ -433,7 +435,7 @@ public class Snowberry_DependencyInjectionTests : MediatorTestBase
         for (int scope = 1; scope <= 2; scope++)
         {
             using var scopedServiceProvider = serviceContainer.CreateScope();
-            var mediator = scopedServiceProvider.ServiceFactory.GetService<IMediator>();
+            var mediator = scopedServiceProvider.ServiceFactory.GetRequiredService<IMediator>();
 
             int response = await mediator.SendAsync(new CounterRequest(), CancellationToken.None);
 
@@ -454,7 +456,7 @@ public class Snowberry_DependencyInjectionTests : MediatorTestBase
             options.Assemblies = [typeof(NumberStreamRequest).Assembly];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         var request = new NumberStreamRequest { Count = 5, StartValue = 1 };
         using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));

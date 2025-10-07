@@ -1,4 +1,6 @@
 using Snowberry.DependencyInjection;
+using Snowberry.DependencyInjection.Abstractions;
+using Snowberry.DependencyInjection.Abstractions.Extensions;
 using Snowberry.Mediator.Abstractions;
 using Snowberry.Mediator.DependencyInjection;
 using Snowberry.Mediator.Tests.Common.Helper;
@@ -28,7 +30,7 @@ public class Snowberry_AdvancedStreamTests : Common.MediatorTestBase
             ];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         var request = new NumberStreamRequest { Count = 5, StartValue = 1 };
         var results = new List<int>();
@@ -68,7 +70,7 @@ public class Snowberry_AdvancedStreamTests : Common.MediatorTestBase
             ];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         var request = new MixedPipelineTestRequest { Message = "Test", Value = 42 };
         string response = await mediator.SendAsync(request, CancellationToken.None);
@@ -110,7 +112,7 @@ public class Snowberry_AdvancedStreamTests : Common.MediatorTestBase
             ];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         var request = new MixedStreamPipelineTestRequest { Count = 3, StartValue = 1 };
         var results = new List<int>();
@@ -142,7 +144,7 @@ public class Snowberry_AdvancedStreamTests : Common.MediatorTestBase
             options.Assemblies = [typeof(ComplexDataStreamRequest).Assembly];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         var request = new ComplexDataStreamRequest
         {
@@ -177,7 +179,7 @@ public class Snowberry_AdvancedStreamTests : Common.MediatorTestBase
             options.Assemblies = [typeof(DisposableStreamRequest).Assembly];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         var request = new DisposableStreamRequest { ResourceCount = 10 };
         int processedCount = 0;
@@ -207,7 +209,7 @@ public class Snowberry_AdvancedStreamTests : Common.MediatorTestBase
             options.StreamPipelineBehaviorTypes = [typeof(BackpressureBehavior)];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         var request = new NumberStreamRequest { Count = 100, StartValue = 1 };
         var startTime = DateTime.UtcNow;
@@ -243,7 +245,7 @@ public class Snowberry_AdvancedStreamTests : Common.MediatorTestBase
             options.Assemblies = [typeof(NumberStreamRequest).Assembly];
         }, serviceLifetime: ServiceLifetime.Singleton);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         var tasks = new List<Task<List<int>>>();
 
@@ -289,7 +291,7 @@ public class Snowberry_AdvancedStreamTests : Common.MediatorTestBase
             options.StreamPipelineBehaviorTypes = [typeof(ConditionalFilterBehavior)];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         var request = new FilterableStreamRequest
         {
@@ -324,7 +326,7 @@ public class Snowberry_AdvancedStreamTests : Common.MediatorTestBase
             options.StreamPipelineBehaviorTypes = [typeof(ExceptionRecoveryBehavior)];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         var request = new FaultyStreamRequest { Count = 10, FaultAtPositions = [3, 7] };
         var results = new List<int>();

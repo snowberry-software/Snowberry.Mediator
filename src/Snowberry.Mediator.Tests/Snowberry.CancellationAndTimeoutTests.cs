@@ -1,4 +1,6 @@
 using Snowberry.DependencyInjection;
+using Snowberry.DependencyInjection.Abstractions;
+using Snowberry.DependencyInjection.Abstractions.Extensions;
 using Snowberry.Mediator.Abstractions;
 using Snowberry.Mediator.DependencyInjection;
 using Snowberry.Mediator.Tests.Common.Helper;
@@ -19,7 +21,7 @@ public class Snowberry_CancellationAndTimeoutTests : Common.MediatorTestBase
             options.Assemblies = [typeof(CancellationThrowingRequest).Assembly];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         using var cts = new CancellationTokenSource();
         cts.Cancel();
@@ -45,7 +47,7 @@ public class Snowberry_CancellationAndTimeoutTests : Common.MediatorTestBase
             options.Assemblies = [typeof(CancellationThrowingStreamRequest).Assembly];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         var request = new CancellationThrowingStreamRequest { ThrowAfterCount = 3 };
         var results = new List<int>();
@@ -73,7 +75,7 @@ public class Snowberry_CancellationAndTimeoutTests : Common.MediatorTestBase
             options.PipelineBehaviorTypes = [typeof(CancellationCheckingPipelineBehavior)];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         using var cts = new CancellationTokenSource();
         var request = new DelayedRequest { DelayMs = 50 };
@@ -105,7 +107,7 @@ public class Snowberry_CancellationAndTimeoutTests : Common.MediatorTestBase
             options.Assemblies = [typeof(DelayedRequest).Assembly];
         }, serviceLifetime: ServiceLifetime.Singleton);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         var tasks = new List<Task<string>>();
         var cancellationSources = new List<CancellationTokenSource>();
@@ -157,7 +159,7 @@ public class Snowberry_CancellationAndTimeoutTests : Common.MediatorTestBase
             options.StreamPipelineBehaviorTypes = [typeof(SlowStreamPipelineBehavior)];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(150));
         var request = new NumberStreamRequest { Count = 20, StartValue = 1 };
@@ -200,7 +202,7 @@ public class Snowberry_CancellationAndTimeoutTests : Common.MediatorTestBase
             options.Assemblies = [typeof(DelayedRequest).Assembly];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         using var outerCts = new CancellationTokenSource();
         using var innerCts = new CancellationTokenSource();

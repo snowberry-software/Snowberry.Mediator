@@ -1,5 +1,7 @@
 using System.Collections.Concurrent;
 using Snowberry.DependencyInjection;
+using Snowberry.DependencyInjection.Abstractions;
+using Snowberry.DependencyInjection.Abstractions.Extensions;
 using Snowberry.Mediator.Abstractions;
 using Snowberry.Mediator.Abstractions.Handler;
 using Snowberry.Mediator.Abstractions.Messages;
@@ -45,7 +47,9 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
         public static void Clear()
         {
             var bag = ProcessedNotifications;
-            while (bag.TryTake(out _)) { }
+            while (bag.TryTake(out _))
+            {
+            }
         }
     }
 
@@ -67,7 +71,9 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
         public static void Clear()
         {
             var bag = ProcessedNotifications;
-            while (bag.TryTake(out _)) { }
+            while (bag.TryTake(out _))
+            {
+            }
         }
     }
 
@@ -89,7 +95,9 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
         public static void Clear()
         {
             var bag = ProcessedNotifications;
-            while (bag.TryTake(out _)) { }
+            while (bag.TryTake(out _))
+            {
+            }
         }
     }
 
@@ -111,7 +119,9 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
         public static void Clear()
         {
             var bag = ProcessedNotifications;
-            while (bag.TryTake(out _)) { }
+            while (bag.TryTake(out _))
+            {
+            }
         }
     }
 
@@ -142,7 +152,9 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
         public static void Clear()
         {
             var bag = ProcessedRequests;
-            while (bag.TryTake(out _)) { }
+            while (bag.TryTake(out _))
+            {
+            }
         }
     }
 
@@ -164,7 +176,9 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
         public static void Clear()
         {
             var bag = ProcessedRequests;
-            while (bag.TryTake(out _)) { }
+            while (bag.TryTake(out _))
+            {
+            }
         }
     }
 
@@ -201,7 +215,9 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
         public static void Clear()
         {
             var bag = ProcessedRequests;
-            while (bag.TryTake(out _)) { }
+            while (bag.TryTake(out _))
+            {
+            }
         }
     }
 
@@ -228,7 +244,9 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
         public static void Clear()
         {
             var bag = ProcessedRequests;
-            while (bag.TryTake(out _)) { }
+            while (bag.TryTake(out _))
+            {
+            }
         }
     }
 
@@ -259,7 +277,9 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
         public static void Clear()
         {
             var bag = ProcessedRequests;
-            while (bag.TryTake(out _)) { }
+            while (bag.TryTake(out _))
+            {
+            }
         }
     }
 
@@ -290,7 +310,7 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
             options.RegisterNotificationHandlers = true; // Enable notification handler registration
         });
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         // Step 3: Test that both handlers are executed
         var notification = new PluginNotification
@@ -354,7 +374,7 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
             options.RegisterNotificationHandlers = true;
         });
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         // Step 4: Test that all handlers are executed
         var notification = new PluginNotification
@@ -409,7 +429,7 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
             options.RegisterNotificationHandlers = true;
         });
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         // Step 3: Test existing notification type
         var simpleNotification = new SimpleNotification
@@ -464,36 +484,36 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
             options.RegisterRequestHandlers = true;
         });
 
-        // Step 2: Append enhanced handler (should replace the core one due to DI behavior)
+        // Step 2: Append enhanced handler (will NOT replace the core one due to "try add" behavior)
         serviceContainer.AppendSnowberryMediator(options =>
         {
             options.RequestHandlerTypes = [typeof(EnhancedPluginRequestHandler)];
             options.RegisterRequestHandlers = true;
         });
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
-        // Step 3: Test that the enhanced handler is used
+        // Step 3: Test that the first registered handler is used
         var request = new PluginRequest
         {
             RequestData = "Test request",
             ProcessingLevel = 5
         };
 
-        var result = await mediator.SendAsync<PluginRequest, string>(request);
+        string result = await mediator.SendAsync(request);
 
-        // Verify the enhanced handler was used
+        // Verify the core handler was used (first registered wins)
         var executions = PipelineExecutionTracker.GetExecutionOrder();
         Assert.Single(executions);
-        Assert.Contains(nameof(EnhancedPluginRequestHandler), executions);
+        Assert.Contains(nameof(CorePluginRequestHandler), executions);
 
         // Verify the correct result
-        Assert.Contains("Enhanced processed", result);
-        Assert.Contains("Level 5", result);
+        Assert.Contains("Core processed", result);
+        Assert.Contains("Test request", result);
 
-        // Verify only the enhanced handler processed the request
-        Assert.Empty(CorePluginRequestHandler.ProcessedRequests);
-        Assert.Single(EnhancedPluginRequestHandler.ProcessedRequests);
+        // Verify only the core handler processed the request
+        Assert.Single(CorePluginRequestHandler.ProcessedRequests);
+        Assert.Empty(EnhancedPluginRequestHandler.ProcessedRequests);
     }
 
     [Fact]
@@ -523,7 +543,7 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
             options.RegisterNotificationHandlers = true;
         });
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         // Step 3: Test that all handlers execute
         var notification = new PluginNotification
@@ -568,36 +588,36 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
             options.RegisterRequestHandlers = true;
         });
 
-        // Step 2: Append enhanced handler
+        // Step 2: Append enhanced handler (will NOT replace due to "try add" behavior)
         serviceContainer.AppendSnowberryMediator(options =>
         {
             options.RequestHandlerTypes = [typeof(EnhancedPluginRequestHandler)];
             options.RegisterRequestHandlers = true;
         });
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
-        // Step 3: Test that the last registered handler is used (DI container behavior)
+        // Step 3: Test that the first registered handler is used (try-add behavior)
         var request = new PluginRequest
         {
             RequestData = "Test request",
             ProcessingLevel = 5
         };
 
-        var result = await mediator.SendAsync<PluginRequest, string>(request);
+        string result = await mediator.SendAsync(request);
 
-        // Verify the enhanced handler was used (last registered wins)
+        // Verify the core handler was used (first registered wins with try-add)
         var executions = PipelineExecutionTracker.GetExecutionOrder();
         Assert.Single(executions);
-        Assert.Contains(nameof(EnhancedPluginRequestHandler), executions);
+        Assert.Contains(nameof(CorePluginRequestHandler), executions);
 
-        // Verify the correct result
-        Assert.Contains("Enhanced processed", result);
-        Assert.Contains("Level 5", result);
+        // Verify the correct result from core handler
+        Assert.Contains("Core processed", result);
+        Assert.Contains("Test request", result);
 
-        // Verify only the enhanced handler processed the request
-        Assert.Empty(CorePluginRequestHandler.ProcessedRequests);
-        Assert.Single(EnhancedPluginRequestHandler.ProcessedRequests);
+        // Verify only the core handler processed the request
+        Assert.Single(CorePluginRequestHandler.ProcessedRequests);
+        Assert.Empty(EnhancedPluginRequestHandler.ProcessedRequests);
     }
 
     [Fact]
@@ -623,7 +643,7 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
             options.RegisterRequestHandlers = true;
         });
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         // Step 3: Test that both request types work
         var pluginRequest = new PluginRequest
@@ -638,8 +658,8 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
             ProcessingSteps = 3
         };
 
-        var pluginResult = await mediator.SendAsync<PluginRequest, string>(pluginRequest);
-        var complexResult = await mediator.SendAsync<ComplexPluginRequest, string>(complexRequest);
+        string pluginResult = await mediator.SendAsync(pluginRequest);
+        string complexResult = await mediator.SendAsync(complexRequest);
 
         // Verify both handlers executed for their respective types
         var executions = PipelineExecutionTracker.GetExecutionOrder();
@@ -676,7 +696,7 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
             // Empty configuration
         });
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         // Step 3: Test that original functionality still works
         var request = new PluginRequest
@@ -685,7 +705,7 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
             ProcessingLevel = 1
         };
 
-        var result = await mediator.SendAsync<PluginRequest, string>(request);
+        string result = await mediator.SendAsync(request);
 
         // Verify original handler still works
         var executions = PipelineExecutionTracker.GetExecutionOrder();
@@ -716,16 +736,16 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
             options.RegisterStreamRequestHandlers = true;
         });
 
-        // Step 2: Append enhanced stream handler
+        // Step 2: Append enhanced stream handler (will NOT replace due to "try add" behavior)
         serviceContainer.AppendSnowberryMediator(options =>
         {
             options.StreamRequestHandlerTypes = [typeof(EnhancedPluginStreamHandler)];
             options.RegisterStreamRequestHandlers = true;
         });
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
-        // Step 3: Test that the last registered handler is used
+        // Step 3: Test that the first registered handler is used
         var request = new PluginStreamRequest
         {
             Source = "Stream test",
@@ -734,25 +754,25 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
         };
 
         var results = new List<int>();
-        await foreach (var item in mediator.CreateStreamAsync<PluginStreamRequest, int>(request))
+        await foreach (int item in mediator.CreateStreamAsync(request))
         {
             results.Add(item);
         }
 
-        // Verify enhanced handler was used (values should be doubled)
+        // Verify core handler was used (first registered wins with try-add)
         Assert.Equal(3, results.Count);
-        Assert.Equal(20, results[0]); // (10 + 0) * 2
-        Assert.Equal(22, results[1]); // (10 + 1) * 2
-        Assert.Equal(24, results[2]); // (10 + 2) * 2
+        Assert.Equal(10, results[0]); // 10 + 0 (not doubled)
+        Assert.Equal(11, results[1]); // 10 + 1 (not doubled)
+        Assert.Equal(12, results[2]); // 10 + 2 (not doubled)
 
-        // Verify enhanced handler executed
+        // Verify core handler executed
         var executions = StreamPipelineExecutionTracker.GetExecutionOrder();
         Assert.Single(executions);
-        Assert.Contains(nameof(EnhancedPluginStreamHandler), executions);
+        Assert.Contains(nameof(CorePluginStreamHandler), executions);
 
-        // Verify only enhanced handler processed the request
-        Assert.Empty(CorePluginStreamHandler.ProcessedRequests);
-        Assert.Single(EnhancedPluginStreamHandler.ProcessedRequests);
+        // Verify only core handler processed the request
+        Assert.Single(CorePluginStreamHandler.ProcessedRequests);
+        Assert.Empty(EnhancedPluginStreamHandler.ProcessedRequests);
     }
 
     [Fact]
@@ -776,7 +796,7 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
             // Empty configuration
         });
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         // Step 3: Test that original functionality still works
         var request = new PluginStreamRequest
@@ -787,7 +807,7 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
         };
 
         var results = new List<int>();
-        await foreach (var item in mediator.CreateStreamAsync<PluginStreamRequest, int>(request))
+        await foreach (int item in mediator.CreateStreamAsync(request))
         {
             results.Add(item);
         }
@@ -840,7 +860,7 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
             options.RegisterRequestHandlers = true;
         });
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         // Step 3: Test notification handlers
         var notification = new PluginNotification
@@ -875,8 +895,8 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
             ProcessingSteps = 4
         };
 
-        var pluginResult = await mediator.SendAsync<PluginRequest, string>(pluginRequest);
-        var complexResult = await mediator.SendAsync<ComplexPluginRequest, string>(complexRequest);
+        string pluginResult = await mediator.SendAsync(pluginRequest);
+        string complexResult = await mediator.SendAsync(complexRequest);
 
         var requestExecutions = PipelineExecutionTracker.GetExecutionOrder();
         Assert.Equal(2, requestExecutions.Count);
@@ -896,7 +916,7 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
         };
 
         var streamResults = new List<int>();
-        await foreach (var item in mediator.CreateStreamAsync<PluginStreamRequest, int>(streamRequest))
+        await foreach (int item in mediator.CreateStreamAsync(streamRequest))
         {
             streamResults.Add(item);
         }
@@ -954,7 +974,7 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
 
         await Task.WhenAll(appendTasks);
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         // Step 3: Test that all handlers work after concurrent loading
         var notification = new PluginNotification
@@ -1011,7 +1031,7 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
             for (int i = 0; i < 3; i++)
             {
                 using var scope = serviceContainer.CreateScope();
-                var mediator = scope.ServiceFactory.GetService<IMediator>();
+                var mediator = scope.ServiceFactory.GetRequiredService<IMediator>();
 
                 var notification = new PluginNotification
                 {
@@ -1032,7 +1052,7 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
         }
         else
         {
-            var mediator = serviceContainer.GetService<IMediator>();
+            var mediator = serviceContainer.GetRequiredService<IMediator>();
 
             var notification = new PluginNotification
             {
@@ -1082,7 +1102,7 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
             options.RegisterNotificationHandlers = true;
         });
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         // Step 3: Test that existing handlers still work
         var simpleNotification = new SimpleNotification
@@ -1142,7 +1162,7 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
             // Empty configuration
         });
 
-        var mediator = serviceContainer.GetService<IMediator>();
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         // Step 3: Test that original functionality still works
         var notification = new PluginNotification

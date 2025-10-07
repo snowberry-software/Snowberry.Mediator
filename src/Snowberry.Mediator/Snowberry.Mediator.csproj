@@ -19,12 +19,11 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="ZLinq" Version="1.5.2" />
+		<PackageReference Include="ZLinq" Version="1.5.3" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference
-            Include="..\Snowberry.Mediator.Abstractions\Snowberry.Mediator.Abstractions.csproj" />
+		<ProjectReference Include="..\Snowberry.Mediator.Abstractions\Snowberry.Mediator.Abstractions.csproj" />
 	</ItemGroup>
 
 	<Import Project="../NuGetPackage.props" />
