@@ -1,4 +1,6 @@
-﻿namespace Snowberry.Mediator.DependencyInjection.Shared.Contracts;
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace Snowberry.Mediator.DependencyInjection.Shared.Contracts;
 
 /// <summary>
 /// Defines a context for registering services with specific lifetimes.
@@ -26,7 +28,7 @@ public interface IServiceContext
     /// <param name="serviceType">The service type.</param>
     /// <param name="implementationType">The implementation type.</param>
     /// <param name="lifetime">The service lifetime.</param>
-    void TryRegister(Type serviceType, Type implementationType, RegistrationServiceLifetime lifetime);
+    void TryRegister(Type serviceType, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]  Type implementationType, RegistrationServiceLifetime lifetime);
 
     /// <summary>
     /// Registers a singleton instance of a service.

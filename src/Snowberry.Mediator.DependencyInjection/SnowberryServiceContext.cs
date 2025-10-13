@@ -1,4 +1,5 @@
-﻿using Snowberry.DependencyInjection.Abstractions.Extensions;
+﻿using System.Diagnostics.CodeAnalysis;
+using Snowberry.DependencyInjection.Abstractions.Extensions;
 using Snowberry.DependencyInjection.Abstractions.Implementation;
 using Snowberry.DependencyInjection.Abstractions.Interfaces;
 using Snowberry.Mediator.DependencyInjection.Shared;
@@ -21,7 +22,7 @@ internal class SnowberryServiceContext(IServiceRegistry serviceRegistry) : IServ
     }
 
     /// <inheritdoc/>
-    public void TryRegister(Type serviceType, Type implementationType, RegistrationServiceLifetime lifetime)
+    public void TryRegister(Type serviceType, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Type implementationType, RegistrationServiceLifetime lifetime)
     {
         _serviceRegistry.TryRegister(new ServiceDescriptor(serviceType, implementationType, lifetime switch
         {

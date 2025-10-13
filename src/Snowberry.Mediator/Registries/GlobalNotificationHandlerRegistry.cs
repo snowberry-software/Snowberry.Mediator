@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using Snowberry.Mediator.Abstractions.Exceptions;
 using Snowberry.Mediator.Abstractions.Handler;
 using Snowberry.Mediator.Abstractions.Messages;
@@ -16,6 +17,8 @@ public class GlobalNotificationHandlerRegistry : IGlobalNotificationHandlerRegis
     protected List<NotificationHandlerInfo> _openGenericHandlers = [];
 
     /// <inheritdoc/>
+    [UnconditionalSuppressMessage("Trimming", "IL2055", Justification = "Notification handlers are explicitly registered, not discovered through reflection.")]
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "Notification handlers are explicitly registered, not discovered through reflection.")]
     public async ValueTask PublishAsync<TNotification>(IServiceProvider serviceProvider, TNotification notification, CancellationToken cancellationToken)
         where TNotification : INotification
     {

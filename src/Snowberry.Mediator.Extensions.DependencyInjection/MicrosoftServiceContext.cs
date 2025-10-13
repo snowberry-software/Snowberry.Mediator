@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System.Diagnostics.CodeAnalysis;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Snowberry.Mediator.DependencyInjection.Shared;
 using Snowberry.Mediator.DependencyInjection.Shared.Contracts;
@@ -20,7 +21,7 @@ internal class MicrosoftServiceContext(IServiceCollection serviceCollection) : I
     }
 
     /// <inheritdoc/>
-    public void TryRegister(Type serviceType, Type implementationType, RegistrationServiceLifetime lifetime)
+    public void TryRegister(Type serviceType, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Type implementationType, RegistrationServiceLifetime lifetime)
     {
         var descriptor = new ServiceDescriptor(serviceType, implementationType, lifetime switch
         {

@@ -4,6 +4,7 @@
 		<TargetFramework>net9.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
+		<IsAotCompatible>true</IsAotCompatible>
 
 		<!-- Package -->
 		<Description>A tiny mediator for clean, decoupled application flow.</Description>

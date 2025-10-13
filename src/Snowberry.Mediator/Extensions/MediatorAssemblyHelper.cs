@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using Snowberry.Mediator.Abstractions.Handler;
 using Snowberry.Mediator.Abstractions.Messages;
 using Snowberry.Mediator.Abstractions.Pipeline;
@@ -13,6 +14,7 @@ public static class MediatorAssemblyHelper
     /// </summary>
     /// <param name="assembly">The assembly.</param>
     /// <returns>The result.</returns>
+    [RequiresUnreferencedCode("Assembly scanning requires unreferenced code. Use explicit handler registration for AOT compatibility.")]
     public static AssemblyScanResult ScanAssembly(Assembly assembly)
     {
         List<Type>? requestTypes = null;
@@ -145,39 +147,32 @@ public static class MediatorAssemblyHelper
         };
     }
 
+    [RequiresDynamicCode("Creating generic types at runtime requires dynamic code. Use explicit handler registration for AOT compatibility.")]
     public static Type CreateRequestHandlerInterfaceType(this RequestHandlerInfo requestHandlerInfo)
     {
         return typeof(IRequestHandler<,>).MakeGenericType(requestHandlerInfo.RequestType, requestHandlerInfo.ResponseType);
     }
 
-    public static Type CreateStreamRequestHandlerInterfaceType(this RequestHandlerInfo requestHandlerInfo)
-    {
-        return typeof(IStreamRequestHandler<,>).MakeGenericType(requestHandlerInfo.RequestType, requestHandlerInfo.ResponseType);
-    }
-
+    [RequiresDynamicCode("Creating generic types at runtime requires dynamic code. Use explicit handler registration for AOT compatibility.")]
     public static Type CreateStreamRequestHandlerInterfaceType(this StreamRequestHandlerInfo streamRequestHandlerInfo)
     {
         return typeof(IStreamRequestHandler<,>).MakeGenericType(streamRequestHandlerInfo.RequestType, streamRequestHandlerInfo.ResponseType);
     }
 
-    public static Type CreateNotificationHandlerInterfaceType(this NotificationHandlerInfo notificationHandlerInfo)
-    {
-        return typeof(INotificationHandler<>).MakeGenericType(notificationHandlerInfo.NotificationType);
-    }
-
-    public static Type CreatePipelineBehaviorInterfaceType(this PipelineBehaviorHandlerInfo pipelineBehaviorHandlerInfo)
-    {
-        return typeof(IPipelineBehavior<,>).MakeGenericType(pipelineBehaviorHandlerInfo.RequestType, pipelineBehaviorHandlerInfo.ResponseType);
-    }
-
-    public static void ParsePipelineBehaviors<THandlerInfo>(Type pipelineInterfaceType, List<Type> collection, List<THandlerInfo> target)
-        where THandlerInfo : PipelineBehaviorHandlerInfo, new()
+    /// <summary>
+    /// Parses handler info for request and stream request handlers.
+    /// </summary>
+    /// <param name="handlerInterfaceType">The handler interface type (e.g., IRequestHandler<,> or IStreamRequestHandler<,>).</param>
+    /// <param name="collection">The collection of handler types to parse.</param>
+    /// <param name="target">The target collection to add parsed handlers to.</param>
+    [UnconditionalSuppressMessage("Trimming", "IL2072", Justification = "Handler types are explicitly registered by the user, not discovered through reflection.")]
+    public static void ParseHandlerInfo<THandlerInfo>(Type handlerInterfaceType, List<Type> collection, List<THandlerInfo> target)
+        where THandlerInfo : RequestHandlerInfo, new()
     {
         for (int i = 0; i < collection.Count; i++)
         {
             var type = collection[i];
-
-            var parsed = RequestHandlerInfo.TryParse<THandlerInfo>(type, pipelineInterfaceType);
+            var parsed = RequestHandlerInfo.TryParse<THandlerInfo>(type, handlerInterfaceType);
 
             if (parsed != null)
                 for (int j = 0; j < parsed.Count; j++)
@@ -186,35 +181,16 @@ public static class MediatorAssemblyHelper
     }
 
     /// <summary>
-    /// Parses handler info for request and stream request handlers.
+    /// Parses handler info for notification handlers.
     /// </summary>
-    /// <param name="handlerInterfaceType">The handler interface type (e.g., IRequestHandler&lt;,&gt; or IStreamRequestHandler&lt;,&gt;).</param>
     /// <param name="collection">The collection of handler types to parse.</param>
     /// <param name="target">The target collection to add parsed handlers to.</param>
-    public static void ParseHandlerInfo<THandlerInfo>(Type handlerInterfaceType, List<Type> collection, List<THandlerInfo> target)
-        where THandlerInfo : RequestHandlerInfo, new()
-    {
-        for (int i = 0; i < collection.Count; i++)
-        {
-            var type = collection[i];
-
-            var parsed = RequestHandlerInfo.TryParse<THandlerInfo>(type, handlerInterfaceType);
-            if (parsed != null)
-            {
-                foreach (var item in parsed)
-                {
-                    target.Add(item);
-                }
-            }
-        }
-    }
-
+    [UnconditionalSuppressMessage("Trimming", "IL2072", Justification = "Handler types are explicitly registered by the user, not discovered through reflection.")]
     public static void ParseNotificationHandlers(List<Type> collection, List<NotificationHandlerInfo> target)
     {
         for (int i = 0; i < collection.Count; i++)
         {
             var type = collection[i];
-
             var parsed = NotificationHandlerInfo.TryParse(type);
 
             if (parsed != null)

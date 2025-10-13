@@ -1,4 +1,5 @@
-﻿using Snowberry.Mediator.Abstractions;
+﻿using System.Diagnostics.CodeAnalysis;
+using Snowberry.Mediator.Abstractions;
 using Snowberry.Mediator.Abstractions.Handler;
 using Snowberry.Mediator.Abstractions.Pipeline;
 using Snowberry.Mediator.DependencyInjection.Shared.Contracts;
@@ -21,6 +22,8 @@ public static class DependencyInjectionHelper
     /// <param name="options">The options.</param>
     /// <param name="serviceLifetime">The service lifetime.</param>
     /// <param name="append">Whether to append to existing registrations or replace them.</param>
+    [RequiresUnreferencedCode("Assembly scanning requires unreferenced code. Use explicit handler registration for AOT compatibility.")]
+    [RequiresDynamicCode("Creating generic handler types at runtime requires dynamic code. Use explicit handler registration for AOT compatibility.")]
     public static void AddSnowberryMediator(
         IServiceContext serviceContext,
         MediatorOptions options,

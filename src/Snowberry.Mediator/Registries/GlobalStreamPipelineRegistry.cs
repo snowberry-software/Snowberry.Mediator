@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using Snowberry.Mediator.Abstractions;
 using Snowberry.Mediator.Abstractions.Exceptions;
 using Snowberry.Mediator.Abstractions.Handler;
@@ -16,6 +17,9 @@ namespace Snowberry.Mediator.Registries;
 public class GlobalStreamPipelineRegistry : BaseGlobalPipelineRegistry<StreamPipelineBehaviorHandlerInfo>, IGlobalStreamPipelineRegistry
 {
     /// <inheritdoc/>
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Stream pipeline behaviors are explicitly registered, not discovered through reflection.")]
+    [UnconditionalSuppressMessage("Trimming", "IL2055", Justification = "Stream pipeline behaviors are explicitly registered, not discovered through reflection.")]
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "Stream pipeline behaviors are explicitly registered, not discovered through reflection.")]
     public IAsyncEnumerable<TResponse> ExecuteAsync<TRequest, TResponse>(IServiceProvider serviceProvider, IStreamRequestHandler<TRequest, TResponse> handler, TRequest request, CancellationToken cancellationToken)
         where TRequest : class, IStreamRequest<TRequest, TResponse>
     {

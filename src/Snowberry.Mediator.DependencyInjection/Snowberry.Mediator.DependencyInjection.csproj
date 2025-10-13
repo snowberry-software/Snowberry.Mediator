@@ -4,6 +4,7 @@
 		<TargetFramework>net9.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
+		<IsAotCompatible>true</IsAotCompatible>
 
 		<!-- Package -->
 		<Description>Extension for the main package to work with `Snowberry.DependencyInjection`.</Description>

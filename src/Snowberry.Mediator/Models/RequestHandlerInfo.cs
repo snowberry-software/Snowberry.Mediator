@@ -1,11 +1,13 @@
-﻿namespace Snowberry.Mediator.Models;
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace Snowberry.Mediator.Models;
 
 /// <summary>
 /// Handler information for a request handler.
 /// </summary>
 public class RequestHandlerInfo : IEquatable<RequestHandlerInfo>
 {
-    public static IList<T>? TryParse<T>(Type type, Type expectedInterface) where T : RequestHandlerInfo, new()
+    public static IList<T>? TryParse<T>([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)] Type type, Type expectedInterface) where T : RequestHandlerInfo, new()
     {
         if (type.IsAbstract || type.IsInterface)
             return default;
@@ -22,19 +24,19 @@ public class RequestHandlerInfo : IEquatable<RequestHandlerInfo>
 
             var def = inter.GetGenericTypeDefinition();
 
-            if (def == expectedInterface)
-            {
-                var genericArguments = inter.GetGenericArguments();
-                var requestType = genericArguments[0];
-                var responseType = genericArguments[1];
+            if (def != expectedInterface)
+                continue;
 
-                results.Add(new T()
-                {
-                    HandlerType = type,
-                    RequestType = requestType,
-                    ResponseType = responseType
-                });
-            }
+            var genericArguments = inter.GetGenericArguments();
+            var requestType = genericArguments[0];
+            var responseType = genericArguments[1];
+
+            results.Add(new T()
+            {
+                HandlerType = type,
+                RequestType = requestType,
+                ResponseType = responseType
+            });
         }
 
         return results;
@@ -64,6 +66,12 @@ public class RequestHandlerInfo : IEquatable<RequestHandlerInfo>
         return other.HandlerType == HandlerType
             && other.RequestType == RequestType
             && other.ResponseType == ResponseType;
+    }
+
+    /// <inheritdoc/>
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(HandlerType, RequestType, ResponseType);
     }
 
     /// <summary>
