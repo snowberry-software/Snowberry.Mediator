@@ -7,7 +7,7 @@ namespace Snowberry.Mediator.Models;
 /// </summary>
 public class RequestHandlerInfo : IEquatable<RequestHandlerInfo>
 {
-    public static IList<T>? TryParse<T>([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)] Type type, Type expectedInterface) where T : RequestHandlerInfo, new()
+    public static IList<T>? TryParse<T>([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.Interfaces)] Type type, Type expectedInterface) where T : RequestHandlerInfo, new()
     {
         if (type.IsAbstract || type.IsInterface)
             return default;
@@ -87,5 +87,6 @@ public class RequestHandlerInfo : IEquatable<RequestHandlerInfo>
     /// <summary>
     /// The handler type.
     /// </summary>
+    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
     public Type HandlerType { get; init; } = null!;
 }

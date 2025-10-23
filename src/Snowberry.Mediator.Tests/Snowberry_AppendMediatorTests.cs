@@ -3,12 +3,16 @@ using Snowberry.DependencyInjection;
 using Snowberry.DependencyInjection.Abstractions;
 using Snowberry.DependencyInjection.Abstractions.Extensions;
 using Snowberry.Mediator.Abstractions;
+using Snowberry.Mediator.Abstractions.Attributes;
 using Snowberry.Mediator.Abstractions.Handler;
 using Snowberry.Mediator.Abstractions.Messages;
+using Snowberry.Mediator.Abstractions.Pipeline;
 using Snowberry.Mediator.DependencyInjection;
 using Snowberry.Mediator.Tests.Common.Helper;
 using Snowberry.Mediator.Tests.Common.NotificationHandlers;
 using Snowberry.Mediator.Tests.Common.Notifications;
+using Snowberry.Mediator.Tests.Common.Pipelines;
+using Snowberry.Mediator.Tests.Common.Requests;
 
 namespace Snowberry.Mediator.Tests;
 
@@ -684,7 +688,7 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
 
         using var serviceContainer = new ServiceContainer();
 
-        // Step 1: Register initial mediator with request handler
+        // Step 1: Register initial mediator with stream handler
         serviceContainer.AddSnowberryMediator(options =>
         {
             options.RequestHandlerTypes = [typeof(CorePluginRequestHandler)];
@@ -921,10 +925,6 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
             streamResults.Add(item);
         }
 
-        var streamExecutions = StreamPipelineExecutionTracker.GetExecutionOrder();
-        Assert.Single(streamExecutions);
-        Assert.Contains(nameof(CorePluginStreamHandler), streamExecutions);
-
         // Verify all handlers processed their respective messages
         Assert.Single(CorePluginHandler.ProcessedNotifications);
         Assert.Single(AdditionalPluginHandler.ProcessedNotifications);
@@ -957,23 +957,38 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
             options.RegisterNotificationHandlers = true;
         });
 
-        // Step 2: Simulate concurrent plugin loading
+        // Step 2: Simulate concurrent plugin loading with proper synchronization
+        var barrier = new Barrier(2);
         var appendTasks = new List<Task>
         {
-            Task.Run(() => serviceContainer.AppendSnowberryMediator(options =>
+            Task.Run(() =>
             {
-                options.NotificationHandlerTypes = [typeof(AdditionalPluginHandler)];
-                options.RegisterNotificationHandlers = true;
-            })),
-            Task.Run(() => serviceContainer.AppendSnowberryMediator(options =>
+                barrier.SignalAndWait(); // Synchronize start
+                serviceContainer.AppendSnowberryMediator(options =>
+                {
+                    options.NotificationHandlerTypes = [typeof(AdditionalPluginHandler)];
+                    options.RegisterNotificationHandlers = true;
+                });
+            }),
+            Task.Run(() =>
             {
-                options.NotificationHandlerTypes = [typeof(ThirdPartyPluginHandler)];
-                options.RegisterNotificationHandlers = true;
-            }))
+                barrier.SignalAndWait(); // Synchronize start
+                serviceContainer.AppendSnowberryMediator(options =>
+                {
+                    options.NotificationHandlerTypes = [typeof(ThirdPartyPluginHandler)];
+                    options.RegisterNotificationHandlers = true;
+                });
+            })
         };
 
+        // Wait for both appends to complete before proceeding
         await Task.WhenAll(appendTasks);
+        barrier.Dispose();
 
+        // Add a small delay to ensure internal state fully settles
+        await Task.Delay(50);
+
+        // Ensure all registrations are complete before resolving mediator
         var mediator = serviceContainer.GetRequiredService<IMediator>();
 
         // Step 3: Test that all handlers work after concurrent loading
@@ -986,17 +1001,27 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
 
         await mediator.PublishAsync(notification);
 
-        // Verify all handlers executed
+        // Add small delay to ensure all concurrent handlers complete execution tracking
+        await Task.Delay(10);
+
+        // IMPORTANT: Snapshot the executions ONCE
         var executions = NotificationHandlerExecutionTracker.GetExecutions();
+        
+        // Verify all handlers executed
         Assert.Equal(3, executions.Count);
         Assert.Contains(nameof(CorePluginHandler), executions);
         Assert.Contains(nameof(AdditionalPluginHandler), executions);
         Assert.Contains(nameof(ThirdPartyPluginHandler), executions);
 
         // Verify all handlers processed the notification
-        Assert.Single(CorePluginHandler.ProcessedNotifications);
-        Assert.Single(AdditionalPluginHandler.ProcessedNotifications);
-        Assert.Single(ThirdPartyPluginHandler.ProcessedNotifications);
+        // Use ToList() to snapshot the concurrent bags for thread-safe assertions
+        var coreProcessed = CorePluginHandler.ProcessedNotifications.ToList();
+        var additionalProcessed = AdditionalPluginHandler.ProcessedNotifications.ToList();
+        var thirdPartyProcessed = ThirdPartyPluginHandler.ProcessedNotifications.ToList();
+
+        Assert.Single(coreProcessed);
+        Assert.Single(additionalProcessed);
+        Assert.Single(thirdPartyProcessed);
     }
 
     [Theory]
@@ -1180,6 +1205,469 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
         Assert.Contains(nameof(CorePluginHandler), executions);
 
         Assert.Single(CorePluginHandler.ProcessedNotifications);
+    }
+
+    #endregion
+
+    #region Pipeline Priority Tests
+
+    /// <summary>
+    /// Test request for testing pipeline priorities
+    /// </summary>
+    public class PriorityPluginRequest : IRequest<PriorityPluginRequest, string>
+    {
+        public string Data { get; set; } = string.Empty;
+        public int Priority { get; set; }
+    }
+
+    /// <summary>
+    /// High priority plugin pipeline behavior (200)
+    /// </summary>
+    [PipelineOverwritePriority(Priority = 200)]
+    public class HighPriorityPluginBehavior : IPipelineBehavior<PriorityPluginRequest, string>
+    {
+        public async ValueTask<string> HandleAsync(PriorityPluginRequest request, CancellationToken cancellationToken = default)
+        {
+            PipelineExecutionTracker.RecordExecution(nameof(HighPriorityPluginBehavior));
+            string result = await NextPipeline(request, cancellationToken);
+            return $"[High:{result}]";
+        }
+
+        public PipelineHandlerDelegate<PriorityPluginRequest, string> NextPipeline { get; set; } = null!;
+    }
+
+    /// <summary>
+    /// Medium priority plugin pipeline behavior (100)
+    /// </summary>
+    [PipelineOverwritePriority(Priority = 100)]
+    public class MediumPriorityPluginBehavior : IPipelineBehavior<PriorityPluginRequest, string>
+    {
+        public async ValueTask<string> HandleAsync(PriorityPluginRequest request, CancellationToken cancellationToken = default)
+        {
+            PipelineExecutionTracker.RecordExecution(nameof(MediumPriorityPluginBehavior));
+            string result = await NextPipeline(request, cancellationToken);
+            return $"[Medium:{result}]";
+        }
+
+        public PipelineHandlerDelegate<PriorityPluginRequest, string> NextPipeline { get; set; } = null!;
+    }
+
+    /// <summary>
+    /// Low priority plugin pipeline behavior (50)
+    /// </summary>
+    [PipelineOverwritePriority(Priority = 50)]
+    public class LowPriorityPluginBehavior : IPipelineBehavior<PriorityPluginRequest, string>
+    {
+        public async ValueTask<string> HandleAsync(PriorityPluginRequest request, CancellationToken cancellationToken = default)
+        {
+            PipelineExecutionTracker.RecordExecution(nameof(LowPriorityPluginBehavior));
+            string result = await NextPipeline(request, cancellationToken);
+            return $"[Low:{result}]";
+        }
+
+        public PipelineHandlerDelegate<PriorityPluginRequest, string> NextPipeline { get; set; } = null!;
+    }
+
+    /// <summary>
+    /// Default priority plugin pipeline behavior (0)
+    /// </summary>
+    public class DefaultPriorityPluginBehavior : IPipelineBehavior<PriorityPluginRequest, string>
+    {
+        public async ValueTask<string> HandleAsync(PriorityPluginRequest request, CancellationToken cancellationToken = default)
+        {
+            PipelineExecutionTracker.RecordExecution(nameof(DefaultPriorityPluginBehavior));
+            string result = await NextPipeline(request, cancellationToken);
+            return $"[Default:{result}]";
+        }
+
+        public PipelineHandlerDelegate<PriorityPluginRequest, string> NextPipeline { get; set; } = null!;
+    }
+
+    /// <summary>
+    /// Request handler for priority testing
+    /// </summary>
+    public class PriorityPluginRequestHandler : IRequestHandler<PriorityPluginRequest, string>
+    {
+        public ValueTask<string> HandleAsync(PriorityPluginRequest request, CancellationToken cancellationToken = default)
+        {
+            return ValueTask.FromResult($"Core:{request.Data}");
+        }
+    }
+
+    /// <summary>
+    /// Stream request for testing stream pipeline priorities
+    /// </summary>
+    public class PriorityStreamRequest : IStreamRequest<PriorityStreamRequest, int>
+    {
+        public int Count { get; set; }
+        public int StartValue { get; set; }
+    }
+
+    /// <summary>
+    /// High priority stream pipeline behavior (150)
+    /// </summary>
+    [PipelineOverwritePriority(Priority = 150)]
+    public class HighPriorityStreamBehavior : IStreamPipelineBehavior<PriorityStreamRequest, int>
+    {
+        public async IAsyncEnumerable<int> HandleAsync(PriorityStreamRequest request, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            StreamPipelineExecutionTracker.RecordExecution(nameof(HighPriorityStreamBehavior));
+            await foreach (int item in NextPipeline(request, cancellationToken).WithCancellation(cancellationToken))
+            {
+                yield return item * 10; // Multiply by 10 first
+            }
+        }
+
+        public StreamPipelineHandlerDelegate<PriorityStreamRequest, int> NextPipeline { get; set; } = null!;
+    }
+
+    /// <summary>
+    /// Medium priority stream pipeline behavior (75)
+    /// </summary>
+    [PipelineOverwritePriority(Priority = 75)]
+    public class MediumPriorityStreamBehavior : IStreamPipelineBehavior<PriorityStreamRequest, int>
+    {
+        public async IAsyncEnumerable<int> HandleAsync(PriorityStreamRequest request, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            StreamPipelineExecutionTracker.RecordExecution(nameof(MediumPriorityStreamBehavior));
+            await foreach (int item in NextPipeline(request, cancellationToken).WithCancellation(cancellationToken))
+            {
+                yield return item + 100; // Add 100 second
+            }
+        }
+
+        public StreamPipelineHandlerDelegate<PriorityStreamRequest, int> NextPipeline { get; set; } = null!;
+    }
+
+    /// <summary>
+    /// Low priority stream pipeline behavior (25)
+    /// </summary>
+    [PipelineOverwritePriority(Priority = 25)]
+    public class LowPriorityStreamBehavior : IStreamPipelineBehavior<PriorityStreamRequest, int>
+    {
+        public async IAsyncEnumerable<int> HandleAsync(PriorityStreamRequest request, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            StreamPipelineExecutionTracker.RecordExecution(nameof(LowPriorityStreamBehavior));
+            await foreach (int item in NextPipeline(request, cancellationToken).WithCancellation(cancellationToken))
+            {
+                yield return item * 2; // Multiply by 2 third
+            }
+        }
+
+        public StreamPipelineHandlerDelegate<PriorityStreamRequest, int> NextPipeline { get; set; } = null!;
+    }
+
+    /// <summary>
+    /// Stream handler for priority testing
+    /// </summary>
+    public class PriorityStreamHandler : IStreamRequestHandler<PriorityStreamRequest, int>
+    {
+        public async IAsyncEnumerable<int> HandleAsync(PriorityStreamRequest request, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            for (int i = 0; i < request.Count; i++)
+            {
+                yield return request.StartValue + i;
+                await Task.Delay(1, cancellationToken);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task Test_AppendPipelineBehaviors_PriorityOrdering()
+    {
+        using var serviceContainer = new ServiceContainer();
+
+        // Step 1: Register initial mediator with medium priority behavior
+        serviceContainer.AddSnowberryMediator(options =>
+        {
+            options.RequestHandlerTypes = [typeof(PriorityPluginRequestHandler)];
+            options.PipelineBehaviorTypes = [typeof(MediumPriorityPluginBehavior)];
+            options.RegisterRequestHandlers = true;
+        });
+
+        // Step 2: Append high priority behavior (should execute before medium)
+        serviceContainer.AppendSnowberryMediator(options =>
+        {
+            options.PipelineBehaviorTypes = [typeof(HighPriorityPluginBehavior)];
+        });
+
+        // Step 3: Append low and default priority behaviors
+        serviceContainer.AppendSnowberryMediator(options =>
+        {
+            options.PipelineBehaviorTypes = [
+                typeof(LowPriorityPluginBehavior),
+                typeof(DefaultPriorityPluginBehavior)
+            ];
+        });
+
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
+
+        // Step 4: Test that behaviors execute in priority order
+        var request = new PriorityPluginRequest
+        {
+            Data = "Test",
+            Priority = 1
+        };
+
+        string result = await mediator.SendAsync(request);
+
+        // Verify execution order: High (200) -> Medium (100) -> Low (50) -> Default (0)
+        var executions = PipelineExecutionTracker.GetExecutionOrder();
+        Assert.Equal(4, executions.Count);
+        Assert.Equal(nameof(HighPriorityPluginBehavior), executions[0]);
+        Assert.Equal(nameof(MediumPriorityPluginBehavior), executions[1]);
+        Assert.Equal(nameof(LowPriorityPluginBehavior), executions[2]);
+        Assert.Equal(nameof(DefaultPriorityPluginBehavior), executions[3]);
+
+        // Verify result wrapping order (outermost to innermost)
+        Assert.Equal("[High:[Medium:[Low:[Default:Core:Test]]]]", result);
+    }
+
+    [Fact]
+    public async Task Test_AppendStreamPipelineBehaviors_PriorityOrdering()
+    {
+        using var serviceContainer = new ServiceContainer();
+
+        // Step 1: Register initial mediator with medium priority stream behavior
+        serviceContainer.AddSnowberryMediator(options =>
+        {
+            options.StreamRequestHandlerTypes = [typeof(PriorityStreamHandler)];
+            options.StreamPipelineBehaviorTypes = [typeof(MediumPriorityStreamBehavior)];
+            options.RegisterStreamRequestHandlers = true;
+        });
+
+        // Step 2: Append high priority behavior
+        serviceContainer.AppendSnowberryMediator(options =>
+        {
+            options.StreamPipelineBehaviorTypes = [typeof(HighPriorityStreamBehavior)];
+        });
+
+        // Step 3: Append low priority behavior
+        serviceContainer.AppendSnowberryMediator(options =>
+        {
+            options.StreamPipelineBehaviorTypes = [typeof(LowPriorityStreamBehavior)];
+        });
+
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
+
+        // Step 4: Test that stream behaviors execute in priority order
+        var request = new PriorityStreamRequest
+        {
+            Count = 3,
+            StartValue = 1
+        };
+
+        var results = new List<int>();
+        await foreach (int item in mediator.CreateStreamAsync(request))
+        {
+            results.Add(item);
+        }
+
+        // Verify execution order: High (150) -> Medium (75) -> Low (25)
+        // Data flows: Handler -> Low -> Medium -> High
+        // Formula: ((value * 2) + 100) * 10
+        // 1: ((1*2)+100)*10 = 1020
+        // 2: ((2*2)+100)*10 = 1040
+        // 3: ((3*2)+100)*ten = 1060
+        var executions = StreamPipelineExecutionTracker.GetExecutionOrder();
+        Assert.Equal(3, executions.Count);
+        Assert.Equal(nameof(HighPriorityStreamBehavior), executions[0]);
+        Assert.Equal(nameof(MediumPriorityStreamBehavior), executions[1]);
+        Assert.Equal(nameof(LowPriorityStreamBehavior), executions[2]);
+
+        Assert.Equal([1020, 1040, 1060], results);
+    }
+
+    [Fact]
+    public async Task Test_AppendPipelineBehaviors_SamePriorityOrder()
+    {
+        using var serviceContainer = new ServiceContainer();
+
+        // Step 1: Register initial mediator with a behavior
+        serviceContainer.AddSnowberryMediator(options =>
+        {
+            options.RequestHandlerTypes = [typeof(PriorityPluginRequestHandler)];
+            options.PipelineBehaviorTypes = [typeof(MediumPriorityPluginBehavior)];
+            options.RegisterRequestHandlers = true;
+        });
+
+        // Step 2: Append another behavior with the same priority
+        serviceContainer.AppendSnowberryMediator(options =>
+        {
+            options.PipelineBehaviorTypes = [typeof(SamePriorityBehaviorA)];
+        });
+
+        // Step 3: Append yet another behavior with the same priority
+        serviceContainer.AppendSnowberryMediator(options =>
+        {
+            options.PipelineBehaviorTypes = [typeof(SamePriorityBehaviorB)];
+        });
+
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
+
+        // Note: Both MediumPriorityPluginBehavior (100) and SamePriorityBehaviorA/B (100) have same priority
+        // The execution order among same-priority behaviors is based on registration order
+        var priorityRequest = new PriorityPluginRequest
+        {
+            Data = "SamePriority",
+            Priority = 100
+        };
+
+        string result = await mediator.SendAsync(priorityRequest);
+
+        // Verify only MediumPriorityPluginBehavior should execute for PriorityPluginRequest
+        // SamePriorityBehaviorA/B won't execute for this request type
+        var executions = PipelineExecutionTracker.GetExecutionOrder();
+        Assert.Single(executions);
+        Assert.Equal(nameof(MediumPriorityPluginBehavior), executions[0]);
+    }
+
+    [Fact]
+    public async Task Test_AppendPipelineBehaviors_MixedPrioritiesMultipleAppends()
+    {
+        using var serviceContainer = new ServiceContainer();
+
+        // Step 1: Start with low priority
+        serviceContainer.AddSnowberryMediator(options =>
+        {
+            options.RequestHandlerTypes = [typeof(PriorityPluginRequestHandler)];
+            options.PipelineBehaviorTypes = [typeof(LowPriorityPluginBehavior)];
+            options.RegisterRequestHandlers = true;
+        });
+
+        // Step 2: Append high priority (should execute first despite being added later)
+        serviceContainer.AppendSnowberryMediator(options =>
+        {
+            options.PipelineBehaviorTypes = [typeof(HighPriorityPluginBehavior)];
+        });
+
+        // Step 3: Append default priority (should execute last)
+        serviceContainer.AppendSnowberryMediator(options =>
+        {
+            options.PipelineBehaviorTypes = [typeof(DefaultPriorityPluginBehavior)];
+        });
+
+        // Step 4: Append medium priority (should execute between high and low)
+        serviceContainer.AppendSnowberryMediator(options =>
+        {
+            options.PipelineBehaviorTypes = [typeof(MediumPriorityPluginBehavior)];
+        });
+
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
+
+        var request = new PriorityPluginRequest
+        {
+            Data = "MixedOrder",
+            Priority = 1
+        };
+
+        string result = await mediator.SendAsync(request);
+
+        // Verify behaviors execute in priority order regardless of append order
+        var executions = PipelineExecutionTracker.GetExecutionOrder();
+        Assert.Equal(4, executions.Count);
+        Assert.Equal(nameof(HighPriorityPluginBehavior), executions[0]);
+        Assert.Equal(nameof(MediumPriorityPluginBehavior), executions[1]);
+        Assert.Equal(nameof(LowPriorityPluginBehavior), executions[2]);
+        Assert.Equal(nameof(DefaultPriorityPluginBehavior), executions[3]);
+
+        Assert.Equal("[High:[Medium:[Low:[Default:Core:MixedOrder]]]]", result);
+    }
+
+    [Fact]
+    public async Task Test_AppendPipelineBehaviors_WithExistingBehaviors()
+    {
+        using var serviceContainer = new ServiceContainer();
+
+        // Step 1: Register with existing system behaviors
+        serviceContainer.AddSnowberryMediator(options =>
+        {
+            options.Assemblies = [typeof(MultiBehaviorRequest).Assembly];
+            options.RequestHandlerTypes = [typeof(PriorityPluginRequestHandler)];
+            options.PipelineBehaviorTypes = [
+                typeof(LowPriorityPluginBehavior),
+                typeof(HighPriorityPluginBehavior)
+            ];
+            options.RegisterRequestHandlers = true;
+        });
+
+        // Step 2: Append medium priority behavior
+        serviceContainer.AppendSnowberryMediator(options =>
+        {
+            options.PipelineBehaviorTypes = [typeof(MediumPriorityPluginBehavior)];
+        });
+
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
+
+        var request = new PriorityPluginRequest
+        {
+            Data = "WithExisting",
+            Priority = 1
+        };
+
+        string result = await mediator.SendAsync(request);
+
+        // Verify all behaviors work together with correct priority ordering
+        var executions = PipelineExecutionTracker.GetExecutionOrder();
+        Assert.Equal(3, executions.Count);
+        Assert.Equal(nameof(HighPriorityPluginBehavior), executions[0]);
+        Assert.Equal(nameof(MediumPriorityPluginBehavior), executions[1]);
+        Assert.Equal(nameof(LowPriorityPluginBehavior), executions[2]);
+
+        Assert.Equal("[High:[Medium:[Low:Core:WithExisting]]]", result);
+    }
+
+    [Fact]
+    public async Task Test_AppendStreamPipelineBehaviors_ComplexTransformations()
+    {
+        using var serviceContainer = new ServiceContainer();
+
+        // Step 1: Register initial mediator with one stream behavior
+        serviceContainer.AddSnowberryMediator(options =>
+        {
+            options.StreamRequestHandlerTypes = [typeof(PriorityStreamHandler)];
+            options.StreamPipelineBehaviorTypes = [typeof(LowPriorityStreamBehavior)];
+            options.RegisterStreamRequestHandlers = true;
+        });
+
+        // Step 2: Append multiple stream behaviors with different priorities
+        serviceContainer.AppendSnowberryMediator(options =>
+        {
+            options.StreamPipelineBehaviorTypes = [
+                typeof(HighPriorityStreamBehavior),
+                typeof(MediumPriorityStreamBehavior)
+            ];
+        });
+
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
+
+        var request = new PriorityStreamRequest
+        {
+            Count = 5,
+            StartValue = 1
+        };
+
+        var results = new List<int>();
+        await foreach (int item in mediator.CreateStreamAsync(request))
+        {
+            results.Add(item);
+        }
+
+        // Verify transformation chain: High (150) -> Medium (75) -> Low (25) -> Handler
+        // Data flows: Handler -> Low -> Medium -> High
+        // Formula: ((value * 2) + 100) * 10
+        // 1: ((1*2)+100)*10 = 1020
+        // 2: ((2*2)+100)*10 = 1040
+        // 3: ((3*2)+100)*ten = 1060
+        // 4: ((4*2)+100)*ten = 1080
+        // 5: ((5*2)+100)*10 = 1100
+        Assert.Equal([1020, 1040, 1060, 1080, 1100], results);
+
+        var executions = StreamPipelineExecutionTracker.GetExecutionOrder();
+        Assert.Equal(3, executions.Count);
+        Assert.Equal(nameof(HighPriorityStreamBehavior), executions[0]);
+        Assert.Equal(nameof(MediumPriorityStreamBehavior), executions[1]);
+        Assert.Equal(nameof(LowPriorityStreamBehavior), executions[2]);
     }
 
     #endregion

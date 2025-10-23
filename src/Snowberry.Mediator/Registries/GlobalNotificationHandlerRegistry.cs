@@ -67,7 +67,7 @@ public class GlobalNotificationHandlerRegistry : IGlobalNotificationHandlerRegis
     /// <inheritdoc/>
     public void Register(NotificationHandlerInfo handlerInfo)
     {
-        lock (handlerInfo)
+        lock (_lock)
         {
             if (handlerInfo.HandlerType.IsGenericTypeDefinition)
             {

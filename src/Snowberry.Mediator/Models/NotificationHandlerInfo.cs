@@ -51,6 +51,7 @@ public class NotificationHandlerInfo : IEquatable<NotificationHandlerInfo>
     /// <summary>
     /// The handler type.
     /// </summary>
+    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
     public required Type HandlerType { get; init; }
 
     /// <inheritdoc/>
