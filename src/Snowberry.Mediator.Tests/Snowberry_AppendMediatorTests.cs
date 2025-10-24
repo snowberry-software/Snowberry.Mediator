@@ -1006,7 +1006,7 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
 
         // IMPORTANT: Snapshot the executions ONCE
         var executions = NotificationHandlerExecutionTracker.GetExecutions();
-        
+
         // Verify all handlers executed
         Assert.Equal(3, executions.Count);
         Assert.Contains(nameof(CorePluginHandler), executions);
