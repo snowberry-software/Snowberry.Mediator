@@ -75,13 +75,13 @@ public static class ServiceCollectionExtensions
             _ => throw new NotSupportedException($"The service lifetime '{serviceLifetime}' is not supported."),
         }, append: append);
 
-        if (!serviceRegistry.IsServiceRegistered<IServiceProvider>(serviceKey: null))
-        {
-            if (serviceRegistry is IServiceProvider serviceProvider)
-                serviceRegistry.RegisterSingleton(instance: serviceProvider);
-            else
-                throw new InvalidOperationException($"The {nameof(IServiceRegistry)} instance is not an {nameof(IServiceProvider)}. Please register an {nameof(IServiceProvider)} instance before calling {nameof(AddSnowberryMediator)}.");
-        }
+        //if (!serviceRegistry.IsServiceRegistered<IServiceProvider>(serviceKey: null))
+        //{
+        //    if (serviceRegistry is IServiceProvider serviceProvider)
+        //        serviceRegistry.RegisterSingleton(instance: serviceProvider);
+        //    else
+        //        throw new InvalidOperationException($"The {nameof(IServiceRegistry)} instance is not an {nameof(IServiceProvider)}. Please register an {nameof(IServiceProvider)} instance before calling {nameof(AddSnowberryMediator)}.");
+        //}
 
         return serviceRegistry;
     }

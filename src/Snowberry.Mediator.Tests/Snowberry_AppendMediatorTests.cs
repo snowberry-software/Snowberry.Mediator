@@ -1056,7 +1056,7 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
             for (int i = 0; i < 3; i++)
             {
                 using var scope = serviceContainer.CreateScope();
-                var mediator = scope.ServiceFactory.GetRequiredService<IMediator>();
+                var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
 
                 var notification = new PluginNotification
                 {

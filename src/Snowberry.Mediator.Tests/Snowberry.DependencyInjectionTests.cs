@@ -94,7 +94,7 @@ public class Snowberry_DependencyInjectionTests : MediatorTestBase
         for (int i = 0; i < 3; i++)
         {
             using var scope = serviceContainer.CreateScope();
-            var mediator = scope.ServiceFactory.GetRequiredService<IMediator>();
+            var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
 
             int response = await mediator.SendAsync(new CounterRequest(), CancellationToken.None);
             Assert.Equal(CounterRequest.c_InitialValue + 2, response);
@@ -435,7 +435,7 @@ public class Snowberry_DependencyInjectionTests : MediatorTestBase
         for (int scope = 1; scope <= 2; scope++)
         {
             using var scopedServiceProvider = serviceContainer.CreateScope();
-            var mediator = scopedServiceProvider.ServiceFactory.GetRequiredService<IMediator>();
+            var mediator = scopedServiceProvider.ServiceProvider.GetRequiredService<IMediator>();
 
             int response = await mediator.SendAsync(new CounterRequest(), CancellationToken.None);
 
