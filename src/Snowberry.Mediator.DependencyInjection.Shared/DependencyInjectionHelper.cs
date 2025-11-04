@@ -1,4 +1,6 @@
-﻿using Snowberry.Mediator.Abstractions;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
+using Snowberry.Mediator.Abstractions;
 using Snowberry.Mediator.Abstractions.Handler;
 using Snowberry.Mediator.Abstractions.Pipeline;
 using Snowberry.Mediator.DependencyInjection.Shared.Contracts;
@@ -14,57 +16,36 @@ namespace Snowberry.Mediator.DependencyInjection.Shared;
 /// </summary>
 public static class DependencyInjectionHelper
 {
+    public delegate void CustomAddCallbackDelegate(
+        IServiceContext serviceContext,
+        MediatorOptions options,
+        RegistrationServiceLifetime serviceLifetime,
+        HandlerCollection handlerCollection,
+        bool append);
+
     /// <summary>
     /// Adds Mediator services to the specified service context.
     /// </summary>
+    /// <remarks>This variant ignores the <see cref="MediatorOptions.Assemblies"/> option to be more compatible with AOT scenarios.</remarks>
     /// <param name="serviceContext">The service context.</param>
     /// <param name="options">The options.</param>
     /// <param name="serviceLifetime">The service lifetime.</param>
     /// <param name="append">Whether to append to existing registrations or replace them.</param>
-    public static void AddSnowberryMediator(
+    /// <param name="customCallback">A custom callback to execute at the start during registration.</param>
+    [RequiresDynamicCode("Creating generic handler types at runtime requires dynamic code. Use explicit handler registration for AOT compatibility.")]
+    public static void AddSnowberryMediatorNoScan(
         IServiceContext serviceContext,
         MediatorOptions options,
         RegistrationServiceLifetime serviceLifetime,
-        bool append)
+        bool append,
+        CustomAddCallbackDelegate? customCallback)
     {
         if (!append || !serviceContext.IsServiceRegistered<IMediator>())
             serviceContext.TryRegister(typeof(IMediator), typeof(Mediator), serviceLifetime);
 
-        var allHandlers = new List<RequestHandlerInfo>();
-        var allStreamHandlers = new List<StreamRequestHandlerInfo>();
-        var allPipelineBehaviorHandlers = new List<PipelineBehaviorHandlerInfo>();
-        var allStreamPipelineBehaviorHandlers = new List<StreamPipelineBehaviorHandlerInfo>();
-        var allNotificationHandlers = new List<NotificationHandlerInfo>();
+        var handlerCollection = new HandlerCollection();
 
-        if (options.Assemblies != null && options.Assemblies.Count > 0)
-        {
-            for (int i = 0; i < options.Assemblies.Count; i++)
-            {
-                var assembly = options.Assemblies[i];
-
-                var scanResult = MediatorAssemblyHelper.ScanAssembly(assembly);
-
-                if (scanResult.RequestHandlerTypes != null)
-                    for (int j = 0; j < scanResult.RequestHandlerTypes.Count; j++)
-                        allHandlers.Add(scanResult.RequestHandlerTypes[j]);
-
-                if (scanResult.StreamRequestHandlerTypes != null)
-                    for (int j = 0; j < scanResult.StreamRequestHandlerTypes.Count; j++)
-                        allStreamHandlers.Add(scanResult.StreamRequestHandlerTypes[j]);
-
-                if (options.RegisterPipelineBehaviors && options.ScanPipelineBehaviors && scanResult.PipelineBehaviorTypes != null)
-                    for (int j = 0; j < scanResult.PipelineBehaviorTypes.Count; j++)
-                        allPipelineBehaviorHandlers.Add(scanResult.PipelineBehaviorTypes[j]);
-
-                if (options.RegisterStreamPipelineBehaviors && options.ScanStreamPipelineBehaviors && scanResult.StreamPipelineBehaviorTypes != null)
-                    for (int j = 0; j < scanResult.StreamPipelineBehaviorTypes.Count; j++)
-                        allStreamPipelineBehaviorHandlers.Add(scanResult.StreamPipelineBehaviorTypes[j]);
-
-                if (options.RegisterNotificationHandlers && options.ScanNotificationHandlers && scanResult.NotificationHandlerTypes != null)
-                    for (int j = 0; j < scanResult.NotificationHandlerTypes.Count; j++)
-                        allNotificationHandlers.Add(scanResult.NotificationHandlerTypes[j]);
-            }
-        }
+        customCallback?.Invoke(serviceContext, options, serviceLifetime, handlerCollection, append);
 
         var pipelineBehaviorType = typeof(IPipelineBehavior<,>);
         var streamPipelineBehaviorType = typeof(IStreamPipelineBehavior<,>);
@@ -72,48 +53,106 @@ public static class DependencyInjectionHelper
         var streamRequestHandlerType = typeof(IStreamRequestHandler<,>);
 
         if (options.PipelineBehaviorTypes != null && options.RegisterPipelineBehaviors)
-            MediatorAssemblyHelper.ParseHandlerInfo(pipelineBehaviorType, options.PipelineBehaviorTypes, allPipelineBehaviorHandlers);
+            MediatorAssemblyHelper.ParseHandlerInfo(pipelineBehaviorType, options.PipelineBehaviorTypes, handlerCollection.AllPipelineBehaviorHandlers);
 
         if (options.RequestHandlerTypes != null && options.RegisterRequestHandlers)
-            MediatorAssemblyHelper.ParseHandlerInfo(requestHandlerType, options.RequestHandlerTypes, allHandlers);
+            MediatorAssemblyHelper.ParseHandlerInfo(requestHandlerType, options.RequestHandlerTypes, handlerCollection.AllHandlers);
 
         if (options.StreamRequestHandlerTypes != null && options.RegisterStreamRequestHandlers)
-            MediatorAssemblyHelper.ParseHandlerInfo(streamRequestHandlerType, options.StreamRequestHandlerTypes, allStreamHandlers);
+            MediatorAssemblyHelper.ParseHandlerInfo(streamRequestHandlerType, options.StreamRequestHandlerTypes, handlerCollection.AllStreamHandlers);
 
         if (options.StreamPipelineBehaviorTypes != null && options.RegisterStreamPipelineBehaviors)
-            MediatorAssemblyHelper.ParseHandlerInfo(streamPipelineBehaviorType, options.StreamPipelineBehaviorTypes, allStreamPipelineBehaviorHandlers);
+            MediatorAssemblyHelper.ParseHandlerInfo(streamPipelineBehaviorType, options.StreamPipelineBehaviorTypes, handlerCollection.AllStreamPipelineBehaviorHandlers);
 
         if (options.NotificationHandlerTypes != null && options.RegisterNotificationHandlers)
-            MediatorAssemblyHelper.ParseNotificationHandlers(options.NotificationHandlerTypes, allNotificationHandlers);
+            MediatorAssemblyHelper.ParseNotificationHandlers(options.NotificationHandlerTypes, handlerCollection.AllNotificationHandlers);
 
-        for (int i = 0; i < allHandlers.Count; i++)
+        for (int i = 0; i < handlerCollection.AllHandlers.Count; i++)
         {
-            var handlerInfo = allHandlers[i];
+            var handlerInfo = handlerCollection.AllHandlers[i];
             serviceContext.TryRegister(handlerInfo.CreateRequestHandlerInterfaceType(), handlerInfo.HandlerType, serviceLifetime);
         }
 
-        for (int i = 0; i < allStreamHandlers.Count; i++)
+        for (int i = 0; i < handlerCollection.AllStreamHandlers.Count; i++)
         {
-            var handlerInfo = allStreamHandlers[i];
+            var handlerInfo = handlerCollection.AllStreamHandlers[i];
             serviceContext.TryRegister(handlerInfo.CreateStreamRequestHandlerInterfaceType(), handlerInfo.HandlerType, serviceLifetime);
         }
 
-        if (options.RegisterPipelineBehaviors && allPipelineBehaviorHandlers.Count > 0)
+        if (options.RegisterPipelineBehaviors && handlerCollection.AllPipelineBehaviorHandlers.Count > 0)
             AddPipelineBehaviors<IGlobalPipelineRegistry, GlobalPipelineRegistry, PipelineBehaviorHandlerInfo>(
                 serviceContext,
                 serviceLifetime,
-                allPipelineBehaviorHandlers,
+                handlerCollection.AllPipelineBehaviorHandlers,
                 append);
 
-        if (options.RegisterStreamPipelineBehaviors && allStreamPipelineBehaviorHandlers.Count > 0)
+        if (options.RegisterStreamPipelineBehaviors && handlerCollection.AllStreamPipelineBehaviorHandlers.Count > 0)
             AddPipelineBehaviors<IGlobalStreamPipelineRegistry, GlobalStreamPipelineRegistry, StreamPipelineBehaviorHandlerInfo>(
                 serviceContext,
                 serviceLifetime,
-                allStreamPipelineBehaviorHandlers,
+                handlerCollection.AllStreamPipelineBehaviorHandlers,
                 append);
 
-        if (options.RegisterNotificationHandlers && allNotificationHandlers.Count > 0)
-            AddNotificationHandlers(serviceContext, serviceLifetime, allNotificationHandlers, append);
+        if (options.RegisterNotificationHandlers && handlerCollection.AllNotificationHandlers.Count > 0)
+            AddNotificationHandlers(serviceContext, serviceLifetime, handlerCollection.AllNotificationHandlers, append);
+    }
+
+    /// <summary>
+    /// Adds Mediator services to the specified service context.
+    /// </summary>
+    /// <param name="serviceContext">The service context.</param>
+    /// <param name="options">The options.</param>
+    /// <param name="serviceLifetime">The service lifetime.</param>
+    /// <param name="append">Whether to append to existing registrations or replace them.</param>
+    /// <param name="customCallback">A custom callback to execute at the start during registration.</param>
+    [RequiresUnreferencedCode("Assembly scanning requires unreferenced code. Use explicit handler registration for AOT compatibility.")]
+    [RequiresDynamicCode("Creating generic handler types at runtime requires dynamic code. Use explicit handler registration for AOT compatibility.")]
+    public static void AddSnowberryMediator(
+        IServiceContext serviceContext,
+        MediatorOptions options,
+        RegistrationServiceLifetime serviceLifetime,
+        bool append,
+        CustomAddCallbackDelegate? customCallback = null)
+    {
+        AddSnowberryMediatorNoScan(serviceContext, options, serviceLifetime, append, (_, _, _, handlerCollection, _) =>
+        {
+            if (options.Assemblies != null && options.Assemblies.Count > 0)
+            {
+                for (int i = 0; i < options.Assemblies.Count; i++)
+                {
+                    var assembly = options.Assemblies[i];
+                    ScanAssembly(options, handlerCollection, assembly);
+                }
+            }
+
+            customCallback?.Invoke(serviceContext, options, serviceLifetime, handlerCollection, append);
+        });
+    }
+
+    [RequiresUnreferencedCode("Assembly scanning requires unreferenced code. Use explicit handler registration for AOT compatibility.")]
+    public static void ScanAssembly(MediatorOptions options, HandlerCollection handlerCollection, Assembly assembly)
+    {
+        var scanResult = MediatorAssemblyHelper.ScanAssembly(assembly);
+
+        if (scanResult.RequestHandlerTypes != null)
+            for (int j = 0; j < scanResult.RequestHandlerTypes.Count; j++)
+                handlerCollection.AllHandlers.Add(scanResult.RequestHandlerTypes[j]);
+
+        if (scanResult.StreamRequestHandlerTypes != null)
+            for (int j = 0; j < scanResult.StreamRequestHandlerTypes.Count; j++)
+                handlerCollection.AllStreamHandlers.Add(scanResult.StreamRequestHandlerTypes[j]);
+
+        if (options.RegisterPipelineBehaviors && options.ScanPipelineBehaviors && scanResult.PipelineBehaviorTypes != null)
+            for (int j = 0; j < scanResult.PipelineBehaviorTypes.Count; j++)
+                handlerCollection.AllPipelineBehaviorHandlers.Add(scanResult.PipelineBehaviorTypes[j]);
+
+        if (options.RegisterStreamPipelineBehaviors && options.ScanStreamPipelineBehaviors && scanResult.StreamPipelineBehaviorTypes != null)
+            for (int j = 0; j < scanResult.StreamPipelineBehaviorTypes.Count; j++)
+                handlerCollection.AllStreamPipelineBehaviorHandlers.Add(scanResult.StreamPipelineBehaviorTypes[j]);
+
+        if (options.RegisterNotificationHandlers && options.ScanNotificationHandlers && scanResult.NotificationHandlerTypes != null)
+            for (int j = 0; j < scanResult.NotificationHandlerTypes.Count; j++)
+                handlerCollection.AllNotificationHandlers.Add(scanResult.NotificationHandlerTypes[j]);
     }
 
     private static void AddPipelineBehaviors<TGlobalPipelineInterface, TGlobalPipelineRegistry, THandlerInfo>(
@@ -190,5 +229,14 @@ public static class DependencyInjectionHelper
 
             serviceContext.TryRegister(handler.HandlerType, handler.HandlerType, serviceLifetime);
         }
+    }
+
+    public class HandlerCollection
+    {
+        public readonly List<RequestHandlerInfo> AllHandlers = [];
+        public readonly List<StreamRequestHandlerInfo> AllStreamHandlers = [];
+        public readonly List<PipelineBehaviorHandlerInfo> AllPipelineBehaviorHandlers = [];
+        public readonly List<StreamPipelineBehaviorHandlerInfo> AllStreamPipelineBehaviorHandlers = [];
+        public readonly List<NotificationHandlerInfo> AllNotificationHandlers = [];
     }
 }

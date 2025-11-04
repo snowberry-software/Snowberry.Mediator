@@ -15,7 +15,7 @@ public class BaseGlobalPipelineRegistry<T> : IBaseGlobalPipelineRegistry<T>
     /// <inheritdoc/>
     public void Register(T pipelineBehaviorHandlerInfo)
     {
-        lock (pipelineBehaviorHandlerInfo)
+        lock (_lock)
         {
             if (pipelineBehaviorHandlerInfo.HandlerType.IsGenericTypeDefinition)
             {

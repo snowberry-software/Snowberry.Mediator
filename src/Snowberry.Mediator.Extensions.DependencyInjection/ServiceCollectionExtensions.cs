@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System.Diagnostics.CodeAnalysis;
+using Microsoft.Extensions.DependencyInjection;
 using Snowberry.Mediator.DependencyInjection.Shared;
 
 namespace Snowberry.Mediator.Extensions.DependencyInjection;
@@ -15,6 +16,8 @@ public static class ServiceCollectionExtensions
     /// <param name="configure">The configuration method.</param>
     /// <param name="serviceLifetime">The service lifetime of the mediator and handlers.</param>
     /// <returns>The service collection.</returns>
+    [RequiresDynamicCode("This method uses reflection to find types from the asemblies defined in the options.")]
+    [RequiresUnreferencedCode("This method uses reflection to find types from the asemblies defined in the options.")]
     public static IServiceCollection AddSnowberryMediator(this IServiceCollection services, Action<MediatorOptions> configure, ServiceLifetime serviceLifetime = ServiceLifetime.Scoped)
     {
         var options = new MediatorOptions();

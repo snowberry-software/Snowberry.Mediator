@@ -1,4 +1,4 @@
-﻿
+﻿using System.Diagnostics.CodeAnalysis;
 using Snowberry.Mediator.Abstractions.Handler;
 
 namespace Snowberry.Mediator.Models;
@@ -8,7 +8,7 @@ namespace Snowberry.Mediator.Models;
 /// </summary>
 public class NotificationHandlerInfo : IEquatable<NotificationHandlerInfo>
 {
-    public static IList<NotificationHandlerInfo>? TryParse(Type type)
+    public static IList<NotificationHandlerInfo>? TryParse([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)] Type type)
     {
         if (type.IsAbstract || type.IsInterface)
             return default;
@@ -51,6 +51,7 @@ public class NotificationHandlerInfo : IEquatable<NotificationHandlerInfo>
     /// <summary>
     /// The handler type.
     /// </summary>
+    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
     public required Type HandlerType { get; init; }
 
     /// <inheritdoc/>
