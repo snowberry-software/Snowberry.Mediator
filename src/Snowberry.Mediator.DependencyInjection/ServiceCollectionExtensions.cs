@@ -1,6 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using Snowberry.DependencyInjection.Abstractions;
-using Snowberry.DependencyInjection.Abstractions.Extensions;
 using Snowberry.DependencyInjection.Abstractions.Interfaces;
 using Snowberry.Mediator.DependencyInjection.Shared;
 

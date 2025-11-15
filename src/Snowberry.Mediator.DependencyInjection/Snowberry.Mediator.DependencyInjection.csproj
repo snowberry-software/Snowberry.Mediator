@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net9.0</TargetFramework>
+		<TargetFrameworks>net10.0;net9.0</TargetFrameworks>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<IsAotCompatible>true</IsAotCompatible>
@@ -11,7 +11,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Snowberry.DependencyInjection" Version="5.0.0.2" />
+		<PackageReference Include="Snowberry.DependencyInjection" Version="5.1.0" />
 	</ItemGroup>
 
 	<ItemGroup>
