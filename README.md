@@ -1,4 +1,4 @@
-[![License](https://img.shields.io/github/license/snowberry-software/Snowberry.Mediator)](https://github.com/snowberry-software/Snowberry.Mediator/blob/main/LICENSE)
+[![License](https://img.shields.io/github/license/snowberry-software/Snowberry.Mediator)](https://github.com/snowberry-software/Snowberry.Mediator/blob/master/LICENSE)
 [![NuGet Version](https://img.shields.io/nuget/v/Snowberry.Mediator.svg?logo=nuget)](https://www.nuget.org/packages/Snowberry.Mediator/)
 
 Lightweight mediator implementation (request/response, streaming requests and notifications) with support for pipeline behaviors and pluggable registration via assembly scanning or explicit type lists.
