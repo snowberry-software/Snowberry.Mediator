@@ -12,7 +12,11 @@ namespace Snowberry.Mediator.Registries;
 /// <inheritdoc cref="IGlobalNotificationHandlerRegistry{TNotificationHandlerInfo}"/>
 public class GlobalNotificationHandlerRegistry : IGlobalNotificationHandlerRegistry<NotificationHandlerInfo>
 {
-    protected Lock _lock = new();
+#if NET9_0_OR_GREATER
+    protected readonly Lock _lock = new();
+#else
+    protected readonly object _lock = new();
+#endif
     protected Dictionary<Type, List<NotificationHandlerInfo>> _notificationHandlers = [];
     protected List<NotificationHandlerInfo> _openGenericHandlers = [];
 

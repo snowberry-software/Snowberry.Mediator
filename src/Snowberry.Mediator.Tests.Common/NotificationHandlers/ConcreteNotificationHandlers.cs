@@ -18,7 +18,7 @@ public class SimpleNotificationHandler : INotificationHandler<SimpleNotification
     {
         NotificationHandlerExecutionTracker.RecordExecution(nameof(SimpleNotificationHandler));
         ReceivedNotifications.Add(notification);
-        return ValueTask.CompletedTask;
+        return default;
     }
 
     public static void ClearReceivedNotifications()
@@ -47,7 +47,7 @@ public class AnotherSimpleNotificationHandler : INotificationHandler<SimpleNotif
         // Thread-safe increment in isolated context
         int current = TestIsolationContext.GetValue(ExecutionCountKey, 0);
         TestIsolationContext.GetOrSetValue(ExecutionCountKey, current + 1);
-        return ValueTask.CompletedTask;
+        return default;
     }
 
     public static void ResetExecutionCount()
@@ -98,7 +98,7 @@ public class UserRegistrationEmailHandler : INotificationHandler<UserRegisteredN
     {
         NotificationHandlerExecutionTracker.RecordExecution(nameof(UserRegistrationEmailHandler));
         EmailsSent.Add($"Welcome email sent to {notification.Email}");
-        return ValueTask.CompletedTask;
+        return default;
     }
 
     public static void ClearEmailsSent()
@@ -134,7 +134,7 @@ public class OrderCompletionHandler : INotificationHandler<OrderCompletedNotific
         decimal currentRevenue = TestIsolationContext.GetValue(TotalRevenueKey, 0m);
         TestIsolationContext.GetOrSetValue(TotalRevenueKey, currentRevenue + notification.Amount);
 
-        return ValueTask.CompletedTask;
+        return default;
     }
 
     public static void Reset()
@@ -162,7 +162,7 @@ public class SystemEventLoggingHandler : INotificationHandler<SystemEventNotific
     {
         NotificationHandlerExecutionTracker.RecordExecution(nameof(SystemEventLoggingHandler));
         LoggedEvents.Add(notification);
-        return ValueTask.CompletedTask;
+        return default;
     }
 
     public static void ClearLoggedEvents()

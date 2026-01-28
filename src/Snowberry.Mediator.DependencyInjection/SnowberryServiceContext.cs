@@ -22,7 +22,7 @@ internal class SnowberryServiceContext(IServiceRegistry serviceRegistry) : IServ
     }
 
     /// <inheritdoc/>
-    public void TryRegister(Type serviceType, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Type implementationType, RegistrationServiceLifetime lifetime)
+    public void TryRegister(Type serviceType, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)] Type implementationType, RegistrationServiceLifetime lifetime)
     {
         _serviceRegistry.TryRegister(new ServiceDescriptor(serviceType, implementationType, lifetime switch
         {
@@ -34,7 +34,7 @@ internal class SnowberryServiceContext(IServiceRegistry serviceRegistry) : IServ
     }
 
     /// <inheritdoc/>
-    public void TryRegister(Type serviceType, object instance)
+    public void TryRegister([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)] Type serviceType, object instance)
     {
         _serviceRegistry.TryRegister(ServiceDescriptor.Singleton(serviceType, serviceType, singletonInstance: instance));
     }

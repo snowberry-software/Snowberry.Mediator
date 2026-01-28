@@ -19,7 +19,7 @@ public class GenericLoggingHandler<TNotification> : INotificationHandler<TNotifi
     {
         NotificationHandlerExecutionTracker.RecordExecution($"GenericLoggingHandler<{typeof(TNotification).Name}>");
         LoggedNotifications.Add(notification);
-        return ValueTask.CompletedTask;
+        return default;
     }
 
     public static void ClearLoggedNotifications()
@@ -89,7 +89,7 @@ public class GenericMetricsHandler<TNotification> : INotificationHandler<TNotifi
         NotificationCounts.AddOrUpdate(notificationType, 1, (key, value) => value + 1);
         LastProcessedTimes[notificationType] = DateTime.UtcNow;
 
-        return ValueTask.CompletedTask;
+        return default;
     }
 
     public static void ClearMetrics()
@@ -128,7 +128,7 @@ public class GenericValidationHandler<TNotification> : INotificationHandler<TNot
         }
 
         ValidationResults.Add($"Validated {typeof(TNotification).Name} successfully");
-        return ValueTask.CompletedTask;
+        return default;
     }
 
     public static void ClearValidationResults()
@@ -173,7 +173,7 @@ public class TestSpecificValidationHandler<TNotification> : INotificationHandler
         }
 
         ValidationResults.Add($"Validated {typeof(TNotification).Name} successfully");
-        return ValueTask.CompletedTask;
+        return default;
     }
 
     public static void ClearValidationResults()

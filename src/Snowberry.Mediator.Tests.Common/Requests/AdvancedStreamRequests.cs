@@ -29,7 +29,7 @@ public class DisposableResource : IAsyncDisposable
     public ValueTask DisposeAsync()
     {
         IsDisposed = true;
-        return ValueTask.CompletedTask;
+        return default;
     }
 }
 

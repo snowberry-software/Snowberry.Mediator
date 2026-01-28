@@ -1,13 +1,17 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFrameworks>net10.0;net9.0</TargetFrameworks>
+		<TargetFrameworks>net10.0;net9.0;netstandard2.0</TargetFrameworks>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
-		<IsAotCompatible>true</IsAotCompatible>
+		<LangVersion>latest</LangVersion>
 
 		<!-- Package -->
 		<Description>Extension for the main package to work with `Microsoft.Extensions.DependencyInjection`.</Description>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="$(TargetFramework) != 'netstandard2.0'">
+		<IsAotCompatible>true</IsAotCompatible>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -20,4 +24,5 @@
 	</ItemGroup>
 
 	<Import Project="../NuGetPackage.props" />
+	<Import Project="../PolySharp.props" />
 </Project>
