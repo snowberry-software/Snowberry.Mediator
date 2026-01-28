@@ -7,7 +7,11 @@ namespace Snowberry.Mediator.Registries;
 public class BaseGlobalPipelineRegistry<T> : IBaseGlobalPipelineRegistry<T>
     where T : PipelineBehaviorHandlerInfo
 {
-    protected Lock _lock = new();
+#if NET9_0_OR_GREATER
+    protected readonly Lock _lock = new();
+#else
+    protected readonly object _lock = new();
+#endif
     protected Dictionary<Type, List<PipelineBehaviorValue<T>>> _pipelineBehaviors = [];
     protected List<PipelineBehaviorValue<T>> _openGenericHandlers = [];
     protected int _registrationIndex = 0;
@@ -75,7 +79,14 @@ public class BaseGlobalPipelineRegistry<T> : IBaseGlobalPipelineRegistry<T>
         /// <inheritdoc/>
         public override int GetHashCode()
         {
+#if NET9_0_OR_GREATER
             return HashCode.Combine(HandlerInfo);
+#else
+            unchecked
+            {
+                return HandlerInfo?.GetHashCode() ?? 0;
+            }
+#endif
         }
 
         public THandlerInfo HandlerInfo { get; }

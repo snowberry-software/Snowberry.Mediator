@@ -115,7 +115,7 @@ partial class Build : NukeBuild
 
                DotNetTest(x => SetDefaultOptions(x)
                    .SetProjectFile(test)
-                   .SetFramework("net9.0"));
+                   .SetFramework("net10.0"));
            }
        });
 

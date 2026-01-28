@@ -21,7 +21,7 @@ internal class MicrosoftServiceContext(IServiceCollection serviceCollection) : I
     }
 
     /// <inheritdoc/>
-    public void TryRegister(Type serviceType, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Type implementationType, RegistrationServiceLifetime lifetime)
+    public void TryRegister(Type serviceType, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)] Type implementationType, RegistrationServiceLifetime lifetime)
     {
         var descriptor = new ServiceDescriptor(serviceType, implementationType, lifetime switch
         {
@@ -35,7 +35,7 @@ internal class MicrosoftServiceContext(IServiceCollection serviceCollection) : I
     }
 
     /// <inheritdoc/>
-    public void TryRegister(Type serviceType, object instance)
+    public void TryRegister([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)] Type serviceType, object instance)
     {
         var descriptor = new ServiceDescriptor(serviceType, instance: instance);
         _serviceCollection.TryAdd(descriptor);

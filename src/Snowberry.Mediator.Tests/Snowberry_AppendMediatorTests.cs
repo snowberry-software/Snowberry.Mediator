@@ -45,7 +45,7 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
         {
             NotificationHandlerExecutionTracker.RecordExecution(nameof(CorePluginHandler));
             ProcessedNotifications.Add(notification);
-            return ValueTask.CompletedTask;
+            return default;
         }
 
         public static void Clear()
@@ -69,7 +69,7 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
         {
             NotificationHandlerExecutionTracker.RecordExecution(nameof(AdditionalPluginHandler));
             ProcessedNotifications.Add(notification);
-            return ValueTask.CompletedTask;
+            return default;
         }
 
         public static void Clear()
@@ -93,7 +93,7 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
         {
             NotificationHandlerExecutionTracker.RecordExecution(nameof(ThirdPartyPluginHandler));
             ProcessedNotifications.Add(notification);
-            return ValueTask.CompletedTask;
+            return default;
         }
 
         public static void Clear()
@@ -117,7 +117,7 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
         {
             NotificationHandlerExecutionTracker.RecordExecution(nameof(AnalyticsPluginHandler));
             ProcessedNotifications.Add(notification);
-            return ValueTask.CompletedTask;
+            return default;
         }
 
         public static void Clear()
@@ -150,7 +150,7 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
         {
             PipelineExecutionTracker.RecordExecution(nameof(CorePluginRequestHandler));
             ProcessedRequests.Add(request);
-            return ValueTask.FromResult($"Core processed: {request.RequestData}");
+            return new($"Core processed: {request.RequestData}");
         }
 
         public static void Clear()
@@ -174,7 +174,7 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
         {
             PipelineExecutionTracker.RecordExecution(nameof(EnhancedPluginRequestHandler));
             ProcessedRequests.Add(request);
-            return ValueTask.FromResult($"Enhanced processed: {request.RequestData} (Level {request.ProcessingLevel})");
+            return new($"Enhanced processed: {request.RequestData} (Level {request.ProcessingLevel})");
         }
 
         public static void Clear()
@@ -275,7 +275,7 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
         {
             PipelineExecutionTracker.RecordExecution(nameof(ComplexPluginRequestHandler));
             ProcessedRequests.Add(request);
-            return ValueTask.FromResult($"Complex processed: {request.Data} with {request.ProcessingSteps} steps");
+            return new($"Complex processed: {request.Data} with {request.ProcessingSteps} steps");
         }
 
         public static void Clear()
@@ -1290,7 +1290,7 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
     {
         public ValueTask<string> HandleAsync(PriorityPluginRequest request, CancellationToken cancellationToken = default)
         {
-            return ValueTask.FromResult($"Core:{request.Data}");
+            return new($"Core:{request.Data}");
         }
     }
 

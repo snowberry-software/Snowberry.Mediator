@@ -7,7 +7,7 @@ namespace Snowberry.Mediator.Models;
 /// </summary>
 public class RequestHandlerInfo : IEquatable<RequestHandlerInfo>
 {
-    public static IList<T>? TryParse<T>([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.Interfaces)] Type type, Type expectedInterface) where T : RequestHandlerInfo, new()
+    public static IList<T>? TryParse<T>([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.Interfaces | DynamicallyAccessedMemberTypes.PublicProperties)] Type type, Type expectedInterface) where T : RequestHandlerInfo, new()
     {
         if (type.IsAbstract || type.IsInterface)
             return default;
@@ -71,7 +71,18 @@ public class RequestHandlerInfo : IEquatable<RequestHandlerInfo>
     /// <inheritdoc/>
     public override int GetHashCode()
     {
+#if NET9_0_OR_GREATER
         return HashCode.Combine(HandlerType, RequestType, ResponseType);
+#else
+        unchecked
+        {
+            int hash = 17;
+            hash = (hash * 31) + (HandlerType?.GetHashCode() ?? 0);
+            hash = (hash * 31) + (RequestType?.GetHashCode() ?? 0);
+            hash = (hash * 31) + (ResponseType?.GetHashCode() ?? 0);
+            return hash;
+        }
+#endif
     }
 
     /// <summary>
@@ -87,6 +98,6 @@ public class RequestHandlerInfo : IEquatable<RequestHandlerInfo>
     /// <summary>
     /// The handler type.
     /// </summary>
-    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)]
     public Type HandlerType { get; init; } = null!;
 }

@@ -17,4 +17,5 @@
 	</ItemGroup>
 
 	<Import Project="../NuGetPackage.props" />
+	<Import Project="../PolySharp.props" />
 </Project>

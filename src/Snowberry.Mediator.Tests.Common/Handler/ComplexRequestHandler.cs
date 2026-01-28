@@ -7,6 +7,6 @@ public class ComplexRequestHandler : IRequestHandler<ComplexRequest, string>
 {
     public ValueTask<string> HandleAsync(ComplexRequest request, CancellationToken cancellationToken = default)
     {
-        return ValueTask.FromResult($"{request.Message} x{request.Factor}");
+        return new($"{request.Message} x{request.Factor}");
     }
 }

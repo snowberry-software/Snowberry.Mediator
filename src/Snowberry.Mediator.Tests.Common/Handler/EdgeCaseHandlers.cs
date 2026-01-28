@@ -8,7 +8,7 @@ public class NullableRequestHandler : IRequestHandler<NullableRequest, string>
     public ValueTask<string> HandleAsync(NullableRequest request, CancellationToken cancellationToken = default)
     {
         string nullableValue = request.NullableString ?? "null";
-        return ValueTask.FromResult($"Nullable: {nullableValue}, Required: {request.RequiredString}");
+        return new($"Nullable: {nullableValue}, Required: {request.RequiredString}");
     }
 }
 
@@ -21,7 +21,7 @@ public class ExceptionThrowingRequestHandler : IRequestHandler<ExceptionThrowing
             throw new CustomBusinessException(request.Message);
         }
 
-        return ValueTask.FromResult($"No exception: {request.Message}");
+        return new($"No exception: {request.Message}");
     }
 }
 
@@ -45,12 +45,14 @@ public class LargeDataRequestHandler : IRequestHandler<LargeDataRequest, int>
     public ValueTask<int> HandleAsync(LargeDataRequest request, CancellationToken cancellationToken = default)
     {
         // Process the large data (just return length for testing)
-        return ValueTask.FromResult(request.Data.Length);
+        return new(request.Data.Length);
     }
 }
 
 public class ConcurrentTestRequestHandler : IRequestHandler<ConcurrentTestRequest, string>
 {
+    private static readonly Random s_Random = new();
+
     private static readonly object _lock = new();
     private static int _processingCounter = 0;
 
@@ -62,7 +64,7 @@ public class ConcurrentTestRequestHandler : IRequestHandler<ConcurrentTestReques
         }
 
         // Simulate some processing time
-        await Task.Delay(Random.Shared.Next(1, 10), cancellationToken);
+        await Task.Delay(s_Random.Next(1, 10), cancellationToken);
 
         return $"Processed: Id={request.Id}, Data={request.Data}, Counter={_processingCounter}";
     }
@@ -73,7 +75,7 @@ public class DefaultValueRequestHandler : IRequestHandler<DefaultValueRequest, s
     public ValueTask<string> HandleAsync(DefaultValueRequest request, CancellationToken cancellationToken = default)
     {
         string dateStr = request.OptionalDate?.ToString("yyyy-MM-dd") ?? "null";
-        return ValueTask.FromResult($"Text: {request.Text}, Number: {request.Number}, Flag: {request.Flag}, Date: {dateStr}");
+        return new($"Text: {request.Text}, Number: {request.Number}, Flag: {request.Flag}, Date: {dateStr}");
     }
 }
 
@@ -81,7 +83,7 @@ public class UnicodeRequestHandler : IRequestHandler<UnicodeRequest, string>
 {
     public ValueTask<string> HandleAsync(UnicodeRequest request, CancellationToken cancellationToken = default)
     {
-        return ValueTask.FromResult($"Unicode processed: {request.Text} (Length: {request.Text.Length})");
+        return new($"Unicode processed: {request.Text} (Length: {request.Text.Length})");
     }
 }
 
@@ -89,6 +91,6 @@ public class MutableRequestHandler : IRequestHandler<MutableRequest, string>
 {
     public ValueTask<string> HandleAsync(MutableRequest request, CancellationToken cancellationToken = default)
     {
-        return ValueTask.FromResult($"Processed: {request.Text}, Value: {request.Value}");
+        return new($"Processed: {request.Text}, Value: {request.Value}");
     }
 }

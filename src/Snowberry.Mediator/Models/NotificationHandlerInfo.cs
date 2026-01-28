@@ -8,7 +8,7 @@ namespace Snowberry.Mediator.Models;
 /// </summary>
 public class NotificationHandlerInfo : IEquatable<NotificationHandlerInfo>
 {
-    public static IList<NotificationHandlerInfo>? TryParse([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)] Type type)
+    public static IList<NotificationHandlerInfo>? TryParse([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces | DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)] Type type)
     {
         if (type.IsAbstract || type.IsInterface)
             return default;
@@ -51,7 +51,7 @@ public class NotificationHandlerInfo : IEquatable<NotificationHandlerInfo>
     /// <summary>
     /// The handler type.
     /// </summary>
-    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)]
     public required Type HandlerType { get; init; }
 
     /// <inheritdoc/>
@@ -71,6 +71,16 @@ public class NotificationHandlerInfo : IEquatable<NotificationHandlerInfo>
     /// <inheritdoc/>
     public override int GetHashCode()
     {
+#if NET9_0_OR_GREATER
         return HashCode.Combine(NotificationType, HandlerType);
+#else
+        unchecked
+        {
+            int hash = 17;
+            hash = (hash * 31) + (NotificationType?.GetHashCode() ?? 0);
+            hash = (hash * 31) + (HandlerType?.GetHashCode() ?? 0);
+            return hash;
+        }
+#endif
     }
 }

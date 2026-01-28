@@ -1,16 +1,17 @@
 <Project>
 
     <PropertyGroup>
-        <PolySharpExcludeGeneratedTypes>*</PolySharpExcludeGeneratedTypes>
         <PolySharpIncludeRuntimeSupportedAttributes>true</PolySharpIncludeRuntimeSupportedAttributes>
 
         <PolySharpIncludeGeneratedTypes>
-            System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembersAttribute;
-            System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes;
-            System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute;
-            System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute;
-            System.Diagnostics.CodeAnalysis.RequiresDynamicCodeAttribute;
+            System.Runtime.CompilerServices.IsExternalInit;
+            System.Runtime.CompilerServices.RequiredMemberAttribute;
+            System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute;
             System.Diagnostics.CodeAnalysis.RequiresUnreferencedCodeAttribute;
+            System.Diagnostics.CodeAnalysis.RequiresDynamicCodeAttribute;
+            System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembersAttribute;
+            System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute;
+            System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes;
         </PolySharpIncludeGeneratedTypes>
     </PropertyGroup>
 

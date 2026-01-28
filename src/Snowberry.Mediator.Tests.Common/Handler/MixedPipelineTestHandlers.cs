@@ -10,7 +10,7 @@ public class MixedPipelineTestRequestHandler : IRequestHandler<MixedPipelineTest
 {
     public ValueTask<string> HandleAsync(MixedPipelineTestRequest request, CancellationToken cancellationToken = default)
     {
-        return ValueTask.FromResult($"Handled:{request.Message}:{request.Value}");
+        return new($"Handled:{request.Message}:{request.Value}");
     }
 }
 

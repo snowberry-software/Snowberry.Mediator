@@ -155,7 +155,7 @@ public static class DependencyInjectionHelper
                 handlerCollection.AllNotificationHandlers.Add(scanResult.NotificationHandlerTypes[j]);
     }
 
-    private static void AddPipelineBehaviors<TGlobalPipelineInterface, TGlobalPipelineRegistry, THandlerInfo>(
+    private static void AddPipelineBehaviors<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)] TGlobalPipelineInterface, TGlobalPipelineRegistry, THandlerInfo>(
         IServiceContext serviceContext,
         RegistrationServiceLifetime serviceLifetime,
         IList<THandlerInfo> pipelineBehaviorHandlers,

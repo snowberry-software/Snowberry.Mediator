@@ -7,7 +7,7 @@ public class PriorityTestRequestHandler : IRequestHandler<PriorityTestRequest, s
 {
     public ValueTask<string> HandleAsync(PriorityTestRequest request, CancellationToken cancellationToken = default)
     {
-        return ValueTask.FromResult($"Handled: {request.Message}");
+        return new($"Handled: {request.Message}");
     }
 }
 
@@ -15,7 +15,7 @@ public class MultiBehaviorRequestHandler : IRequestHandler<MultiBehaviorRequest,
 {
     public ValueTask<int> HandleAsync(MultiBehaviorRequest request, CancellationToken cancellationToken = default)
     {
-        return ValueTask.FromResult(request.Value);
+        return new(request.Value);
     }
 }
 
@@ -23,7 +23,7 @@ public class PerformanceTestRequestHandler : IRequestHandler<PerformanceTestRequ
 {
     public ValueTask<int> HandleAsync(PerformanceTestRequest request, CancellationToken cancellationToken = default)
     {
-        return ValueTask.FromResult(request.BaseValue);
+        return new(request.BaseValue);
     }
 }
 
@@ -31,6 +31,6 @@ public class InheritanceTestRequestHandler : IRequestHandler<InheritanceTestRequ
 {
     public ValueTask<string> HandleAsync(InheritanceTestRequest request, CancellationToken cancellationToken = default)
     {
-        return ValueTask.FromResult($"Handled: {request.Data}");
+        return new($"Handled: {request.Data}");
     }
 }

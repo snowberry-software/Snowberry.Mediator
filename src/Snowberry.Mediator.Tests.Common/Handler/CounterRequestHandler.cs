@@ -8,6 +8,6 @@ public class CounterRequestHandler : IRequestHandler<CounterRequest, int>
     /// <inheritdoc/>
     public ValueTask<int> HandleAsync(CounterRequest request, CancellationToken cancellationToken = default)
     {
-        return ValueTask.FromResult(CounterRequest.c_InitialValue);
+        return new(CounterRequest.c_InitialValue);
     }
 }
