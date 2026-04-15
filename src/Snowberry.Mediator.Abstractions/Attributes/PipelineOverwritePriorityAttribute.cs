@@ -9,6 +9,6 @@ public sealed class PipelineOverwritePriorityAttribute : Attribute
     /// <summary>
     /// The priority of the pipeline behavior.
     /// </summary>
-    /// <remarks>Higer values indicate higher priority, meaning they will be executed earlier in the pipeline.</remarks>
+    /// <remarks>Higher values indicate higher priority, meaning they will be executed earlier in the pipeline.</remarks>
     public int Priority { get; set; }
 }

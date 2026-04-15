@@ -134,11 +134,11 @@ public static class DependencyInjectionHelper
     {
         var scanResult = MediatorAssemblyHelper.ScanAssembly(assembly);
 
-        if (scanResult.RequestHandlerTypes != null)
+        if (options.RegisterRequestHandlers && scanResult.RequestHandlerTypes != null)
             for (int j = 0; j < scanResult.RequestHandlerTypes.Count; j++)
                 handlerCollection.AllHandlers.Add(scanResult.RequestHandlerTypes[j]);
 
-        if (scanResult.StreamRequestHandlerTypes != null)
+        if (options.RegisterStreamRequestHandlers && scanResult.StreamRequestHandlerTypes != null)
             for (int j = 0; j < scanResult.StreamRequestHandlerTypes.Count; j++)
                 handlerCollection.AllStreamHandlers.Add(scanResult.StreamRequestHandlerTypes[j]);
 
