@@ -15,7 +15,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Snowberry.DependencyInjection" Version="5.1.0" />
+		<PackageReference Include="Snowberry.DependencyInjection" Version="5.1.1" />
 	</ItemGroup>
 
 	<ItemGroup>
