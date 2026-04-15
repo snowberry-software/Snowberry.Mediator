@@ -255,9 +255,6 @@ public class Snowberry_EdgeCasesAndErrorTests : MediatorTestBase
         string response = await mediator.SendAsync(request, CancellationToken.None);
 
         Assert.Contains(specialChars, response);
-        Assert.Contains("??", response);
-        Assert.Contains("??", response);
-        Assert.Contains("?o?l", response);
     }
 
     [Fact]

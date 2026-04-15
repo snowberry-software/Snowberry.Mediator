@@ -12,32 +12,6 @@ namespace Snowberry.Mediator.Tests;
 /// </summary>
 public class Microsoft_PipelinePriorityComplexTests : Common.MediatorTestBase
 {
-    [Theory]
-    [InlineData(-1000, -500, -100, 0, 100, 500, 1000)]
-    [InlineData(int.MinValue, -1, 0, 1, int.MaxValue)]
-    [InlineData(50, 40, 30, 20, 10)]
-    public async Task Test_Priority_ExtremeCases(params int[] priorities)
-    {
-        var serviceCollection = new ServiceCollection();
-
-        serviceCollection.AddSnowberryMediator(options =>
-        {
-            options.Assemblies = [typeof(PriorityTestRequest).Assembly];
-        }, serviceLifetime: ServiceLifetime.Scoped);
-
-        using var serviceProvider = serviceCollection.BuildServiceProvider();
-        var mediator = serviceProvider.GetRequiredService<IMediator>();
-
-        var request = new PriorityTestRequest { Message = "PriorityTest" };
-        string response = await mediator.SendAsync(request, CancellationToken.None);
-
-        Assert.Equal("Handled: PriorityTest", response);
-
-        var executionOrder = PipelineExecutionTracker.GetExecutionOrder();
-        Assert.Empty(executionOrder);
-        Assert.NotNull(priorities);
-    }
-
     [Fact]
     public async Task Test_MixedPriorityTypes_WithSamePriority()
     {

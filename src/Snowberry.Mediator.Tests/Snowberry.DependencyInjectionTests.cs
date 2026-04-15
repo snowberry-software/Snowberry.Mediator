@@ -327,8 +327,10 @@ public class Snowberry_DependencyInjectionTests : MediatorTestBase
         Assert.Equal(nameof(BasicStreamPipelineBehavior), executionOrder[1]);
     }
 
-    [Fact]
-    public async Task Test_EmptyStreamRequest()
+    [Theory]
+    [InlineData(0)]
+    [InlineData(50)]
+    public async Task Test_StreamRequest_CountVariants(int count)
     {
         using var serviceContainer = new ServiceContainer();
 
@@ -339,7 +341,7 @@ public class Snowberry_DependencyInjectionTests : MediatorTestBase
 
         var mediator = serviceContainer.GetRequiredService<IMediator>();
 
-        var request = new NumberStreamRequest { Count = 0, StartValue = 1 };
+        var request = new NumberStreamRequest { Count = count, StartValue = 1 };
         var results = new List<int>();
 
         await foreach (int item in mediator.CreateStreamAsync(request, CancellationToken.None))
@@ -347,32 +349,12 @@ public class Snowberry_DependencyInjectionTests : MediatorTestBase
             results.Add(item);
         }
 
-        Assert.Empty(results);
-    }
-
-    [Fact]
-    public async Task Test_LargeStreamRequest()
-    {
-        using var serviceContainer = new ServiceContainer();
-
-        serviceContainer.AddSnowberryMediator(options =>
+        Assert.Equal(count, results.Count);
+        if (count > 0)
         {
-            options.Assemblies = [typeof(NumberStreamRequest).Assembly];
-        }, serviceLifetime: ServiceLifetime.Scoped);
-
-        var mediator = serviceContainer.GetRequiredService<IMediator>();
-
-        var request = new NumberStreamRequest { Count = 50, StartValue = 1 };
-        var results = new List<int>();
-
-        await foreach (int item in mediator.CreateStreamAsync(request, CancellationToken.None))
-        {
-            results.Add(item);
+            Assert.Equal(1, results[0]);
+            Assert.Equal(count, results[^1]);
         }
-
-        Assert.Equal(50, results.Count);
-        Assert.Equal(1, results[0]);
-        Assert.Equal(50, results[49]);
     }
 
     [Fact]
