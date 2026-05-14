@@ -1,5 +1,5 @@
-using Snowberry.Mediator.Abstractions;
 using System.Runtime.CompilerServices;
+using Snowberry.Mediator.Abstractions;
 using Snowberry.Mediator.Abstractions.Attributes;
 using Snowberry.Mediator.Abstractions.Pipeline;
 using Snowberry.Mediator.Tests.Common.Helper;
