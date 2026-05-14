@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Snowberry.Mediator.Abstractions;
 using Snowberry.Mediator.Abstractions.Pipeline;
 using Snowberry.Mediator.Tests.Common.Helper;
@@ -7,7 +8,7 @@ namespace Snowberry.Mediator.Tests.Common.Pipelines;
 
 public class SlowStreamPipelineBehavior : IStreamPipelineBehavior<NumberStreamRequest, int>
 {
-    public async IAsyncEnumerable<int> HandleAsync(NumberStreamRequest request, CancellationToken cancellationToken = default)
+    public async IAsyncEnumerable<int> HandleAsync(NumberStreamRequest request, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         StreamPipelineExecutionTracker.RecordExecution(nameof(SlowStreamPipelineBehavior));
 

@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Snowberry.Mediator.Abstractions;
 using Snowberry.Mediator.Abstractions.Attributes;
 using Snowberry.Mediator.Abstractions.Messages;
@@ -45,7 +46,7 @@ public class MediumPriorityGenericPipelineBehavior<TRequest, TResponse> : IPipel
 public class HighPriorityGenericStreamPipelineBehavior<TRequest, TResponse> : IStreamPipelineBehavior<TRequest, TResponse>
     where TRequest : class, IStreamRequest<TRequest, TResponse>
 {
-    public async IAsyncEnumerable<TResponse> HandleAsync(TRequest request, CancellationToken cancellationToken = default)
+    public async IAsyncEnumerable<TResponse> HandleAsync(TRequest request, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         StreamPipelineExecutionTracker.RecordExecution($"HighPriorityGenericStreamPipelineBehavior<{typeof(TRequest).Name}, {typeof(TResponse).Name}>");
         await foreach (var item in NextPipeline(request, cancellationToken).WithCancellation(cancellationToken))
@@ -64,7 +65,7 @@ public class HighPriorityGenericStreamPipelineBehavior<TRequest, TResponse> : IS
 public class MediumPriorityGenericStreamPipelineBehavior<TRequest, TResponse> : IStreamPipelineBehavior<TRequest, TResponse>
     where TRequest : class, IStreamRequest<TRequest, TResponse>
 {
-    public async IAsyncEnumerable<TResponse> HandleAsync(TRequest request, CancellationToken cancellationToken = default)
+    public async IAsyncEnumerable<TResponse> HandleAsync(TRequest request, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         StreamPipelineExecutionTracker.RecordExecution($"MediumPriorityGenericStreamPipelineBehavior<{typeof(TRequest).Name}, {typeof(TResponse).Name}>");
         await foreach (var item in NextPipeline(request, cancellationToken).WithCancellation(cancellationToken))

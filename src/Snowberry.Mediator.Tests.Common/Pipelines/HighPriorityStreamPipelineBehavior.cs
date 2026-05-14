@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Snowberry.Mediator.Abstractions;
 using Snowberry.Mediator.Abstractions.Attributes;
 using Snowberry.Mediator.Abstractions.Pipeline;
@@ -9,7 +10,7 @@ namespace Snowberry.Mediator.Tests.Common.Pipelines;
 [PipelineOverwritePriority(Priority = 100)]
 public class HighPriorityStreamPipelineBehavior : IStreamPipelineBehavior<NumberStreamRequest, int>
 {
-    public async IAsyncEnumerable<int> HandleAsync(NumberStreamRequest request, CancellationToken cancellationToken = default)
+    public async IAsyncEnumerable<int> HandleAsync(NumberStreamRequest request, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         StreamPipelineExecutionTracker.RecordExecution(nameof(HighPriorityStreamPipelineBehavior));
         await foreach (int item in NextPipeline(request, cancellationToken).WithCancellation(cancellationToken))

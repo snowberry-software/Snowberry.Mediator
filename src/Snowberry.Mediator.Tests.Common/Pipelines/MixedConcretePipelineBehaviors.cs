@@ -1,4 +1,5 @@
 using Snowberry.Mediator.Abstractions;
+using System.Runtime.CompilerServices;
 using Snowberry.Mediator.Abstractions.Attributes;
 using Snowberry.Mediator.Abstractions.Pipeline;
 using Snowberry.Mediator.Tests.Common.Helper;
@@ -42,7 +43,7 @@ public class LowPriorityConcretePipelineBehavior : IPipelineBehavior<MixedPipeli
 [PipelineOverwritePriority(Priority = 150)]
 public class HighPriorityConcreteStreamPipelineBehavior : IStreamPipelineBehavior<MixedStreamPipelineTestRequest, int>
 {
-    public async IAsyncEnumerable<int> HandleAsync(MixedStreamPipelineTestRequest request, CancellationToken cancellationToken = default)
+    public async IAsyncEnumerable<int> HandleAsync(MixedStreamPipelineTestRequest request, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         StreamPipelineExecutionTracker.RecordExecution(nameof(HighPriorityConcreteStreamPipelineBehavior));
         await foreach (int item in NextPipeline(request, cancellationToken).WithCancellation(cancellationToken))
@@ -60,7 +61,7 @@ public class HighPriorityConcreteStreamPipelineBehavior : IStreamPipelineBehavio
 [PipelineOverwritePriority(Priority = 30)]
 public class LowPriorityConcreteStreamPipelineBehavior : IStreamPipelineBehavior<MixedStreamPipelineTestRequest, int>
 {
-    public async IAsyncEnumerable<int> HandleAsync(MixedStreamPipelineTestRequest request, CancellationToken cancellationToken = default)
+    public async IAsyncEnumerable<int> HandleAsync(MixedStreamPipelineTestRequest request, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         StreamPipelineExecutionTracker.RecordExecution(nameof(LowPriorityConcreteStreamPipelineBehavior));
         await foreach (int item in NextPipeline(request, cancellationToken).WithCancellation(cancellationToken))

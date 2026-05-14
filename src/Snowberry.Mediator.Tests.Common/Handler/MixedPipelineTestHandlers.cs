@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Snowberry.Mediator.Abstractions.Handler;
 using Snowberry.Mediator.Tests.Common.Requests;
 
@@ -19,7 +20,7 @@ public class MixedPipelineTestRequestHandler : IRequestHandler<MixedPipelineTest
 /// </summary>
 public class MixedStreamPipelineTestRequestHandler : IStreamRequestHandler<MixedStreamPipelineTestRequest, int>
 {
-    public async IAsyncEnumerable<int> HandleAsync(MixedStreamPipelineTestRequest request, CancellationToken cancellationToken = default)
+    public async IAsyncEnumerable<int> HandleAsync(MixedStreamPipelineTestRequest request, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         for (int i = 0; i < request.Count; i++)
         {

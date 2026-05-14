@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Snowberry.Mediator.Abstractions.Handler;
 using Snowberry.Mediator.Tests.Common.Requests;
 
@@ -27,7 +28,7 @@ public class ExceptionThrowingRequestHandler : IRequestHandler<ExceptionThrowing
 
 public class ExceptionThrowingStreamHandler : IStreamRequestHandler<ExceptionThrowingStreamRequest, int>
 {
-    public async IAsyncEnumerable<int> HandleAsync(ExceptionThrowingStreamRequest request, CancellationToken cancellationToken = default)
+    public async IAsyncEnumerable<int> HandleAsync(ExceptionThrowingStreamRequest request, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         for (int i = 1; i <= request.ThrowAfterCount; i++)
         {

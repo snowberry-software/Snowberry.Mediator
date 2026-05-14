@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Snowberry.Mediator.Abstractions;
 using Snowberry.Mediator.Abstractions.Attributes;
 using Snowberry.Mediator.Abstractions.Pipeline;
@@ -10,7 +11,7 @@ namespace Snowberry.Mediator.Tests.Common.Pipelines;
 [PipelineOverwritePriority(Priority = 300)]
 public class ChainedStreamBehavior1 : IStreamPipelineBehavior<NumberStreamRequest, int>
 {
-    public async IAsyncEnumerable<int> HandleAsync(NumberStreamRequest request, CancellationToken cancellationToken = default)
+    public async IAsyncEnumerable<int> HandleAsync(NumberStreamRequest request, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         StreamPipelineExecutionTracker.RecordExecution(nameof(ChainedStreamBehavior1));
         await foreach (int item in NextPipeline(request, cancellationToken).WithCancellation(cancellationToken))
@@ -25,7 +26,7 @@ public class ChainedStreamBehavior1 : IStreamPipelineBehavior<NumberStreamReques
 [PipelineOverwritePriority(Priority = 200)]
 public class ChainedStreamBehavior2 : IStreamPipelineBehavior<NumberStreamRequest, int>
 {
-    public async IAsyncEnumerable<int> HandleAsync(NumberStreamRequest request, CancellationToken cancellationToken = default)
+    public async IAsyncEnumerable<int> HandleAsync(NumberStreamRequest request, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         StreamPipelineExecutionTracker.RecordExecution(nameof(ChainedStreamBehavior2));
         await foreach (int item in NextPipeline(request, cancellationToken).WithCancellation(cancellationToken))
@@ -40,7 +41,7 @@ public class ChainedStreamBehavior2 : IStreamPipelineBehavior<NumberStreamReques
 [PipelineOverwritePriority(Priority = 100)]
 public class ChainedStreamBehavior3 : IStreamPipelineBehavior<NumberStreamRequest, int>
 {
-    public async IAsyncEnumerable<int> HandleAsync(NumberStreamRequest request, CancellationToken cancellationToken = default)
+    public async IAsyncEnumerable<int> HandleAsync(NumberStreamRequest request, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         StreamPipelineExecutionTracker.RecordExecution(nameof(ChainedStreamBehavior3));
         await foreach (int item in NextPipeline(request, cancellationToken).WithCancellation(cancellationToken))
@@ -54,7 +55,7 @@ public class ChainedStreamBehavior3 : IStreamPipelineBehavior<NumberStreamReques
 
 public class ChainedStreamBehavior4 : IStreamPipelineBehavior<NumberStreamRequest, int>
 {
-    public async IAsyncEnumerable<int> HandleAsync(NumberStreamRequest request, CancellationToken cancellationToken = default)
+    public async IAsyncEnumerable<int> HandleAsync(NumberStreamRequest request, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         StreamPipelineExecutionTracker.RecordExecution(nameof(ChainedStreamBehavior4));
         await foreach (int item in NextPipeline(request, cancellationToken).WithCancellation(cancellationToken))
@@ -69,7 +70,7 @@ public class ChainedStreamBehavior4 : IStreamPipelineBehavior<NumberStreamReques
 // Backpressure simulation behavior
 public class BackpressureBehavior : IStreamPipelineBehavior<NumberStreamRequest, int>
 {
-    public async IAsyncEnumerable<int> HandleAsync(NumberStreamRequest request, CancellationToken cancellationToken = default)
+    public async IAsyncEnumerable<int> HandleAsync(NumberStreamRequest request, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         StreamPipelineExecutionTracker.RecordExecution(nameof(BackpressureBehavior));
         await foreach (int item in NextPipeline(request, cancellationToken).WithCancellation(cancellationToken))
@@ -86,7 +87,7 @@ public class BackpressureBehavior : IStreamPipelineBehavior<NumberStreamRequest,
 // Conditional filtering behavior
 public class ConditionalFilterBehavior : IStreamPipelineBehavior<FilterableStreamRequest, int>
 {
-    public async IAsyncEnumerable<int> HandleAsync(FilterableStreamRequest request, CancellationToken cancellationToken = default)
+    public async IAsyncEnumerable<int> HandleAsync(FilterableStreamRequest request, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         StreamPipelineExecutionTracker.RecordExecution(nameof(ConditionalFilterBehavior));
         await foreach (int item in NextPipeline(request, cancellationToken).WithCancellation(cancellationToken))
@@ -104,7 +105,7 @@ public class ConditionalFilterBehavior : IStreamPipelineBehavior<FilterableStrea
 // Exception recovery behavior
 public class ExceptionRecoveryBehavior : IStreamPipelineBehavior<FaultyStreamRequest, int>
 {
-    public async IAsyncEnumerable<int> HandleAsync(FaultyStreamRequest request, CancellationToken cancellationToken = default)
+    public async IAsyncEnumerable<int> HandleAsync(FaultyStreamRequest request, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         StreamPipelineExecutionTracker.RecordExecution(nameof(ExceptionRecoveryBehavior));
 
