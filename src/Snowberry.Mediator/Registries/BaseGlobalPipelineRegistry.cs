@@ -200,12 +200,6 @@ public class BaseGlobalPipelineRegistry<T> : IBaseGlobalPipelineRegistry<T>
         }
 
         /// <inheritdoc/>
-        public override string ToString()
-        {
-            return HandlerInfo.ToString();
-        }
-
-        /// <inheritdoc/>
         public override bool Equals(object? obj)
         {
             return obj is PipelineBehaviorValue<THandlerInfo> value && Equals(value);
@@ -228,6 +222,12 @@ public class BaseGlobalPipelineRegistry<T> : IBaseGlobalPipelineRegistry<T>
                 return HandlerInfo?.GetHashCode() ?? 0;
             }
 #endif
+        }
+
+        /// <inheritdoc/>
+        public override string ToString()
+        {
+            return HandlerInfo.ToString();
         }
 
         /// <summary>

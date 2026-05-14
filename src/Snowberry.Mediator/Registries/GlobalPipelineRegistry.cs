@@ -21,13 +21,6 @@ public sealed class GlobalPipelineRegistry : BaseGlobalPipelineRegistry<Pipeline
     private readonly ConcurrentDictionary<(Type Request, Type Response), Type[]> _typeCache = new();
 
     /// <inheritdoc/>
-    protected override void OnBuilt()
-    {
-        // Frozen state changed - invalidate the per-pair closed-type cache so the next dispatch rebuilds it.
-        _typeCache.Clear();
-    }
-
-    /// <inheritdoc/>
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Pipeline behaviors are explicitly registered, not discovered through reflection.")]
     [UnconditionalSuppressMessage("Trimming", "IL2055", Justification = "Pipeline behaviors are explicitly registered, not discovered through reflection.")]
     [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "Pipeline behaviors are explicitly registered, not discovered through reflection.")]
@@ -53,32 +46,11 @@ public sealed class GlobalPipelineRegistry : BaseGlobalPipelineRegistry<Pipeline
         return ExecuteSlow(serviceProvider, handler, request, cancellationToken);
     }
 
-    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Pipeline behaviors are explicitly registered, not discovered through reflection.")]
-    [UnconditionalSuppressMessage("Trimming", "IL2055", Justification = "Pipeline behaviors are explicitly registered, not discovered through reflection.")]
-    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "Pipeline behaviors are explicitly registered, not discovered through reflection.")]
-    private ValueTask<TResponse> ExecuteSlow<TRequest, TResponse>(IServiceProvider serviceProvider, IRequestHandler<TRequest, TResponse> handler, TRequest request, CancellationToken cancellationToken)
-        where TRequest : class, IRequest<TRequest, TResponse>
+    /// <inheritdoc/>
+    protected override void OnBuilt()
     {
-        EnsureBuilt();
-
-        var key = (typeof(TRequest), typeof(TResponse));
-        if (!_typeCache.TryGetValue(key, out var types))
-        {
-            types = BuildBehaviorTypesFor<TRequest, TResponse>();
-            _typeCache.TryAdd(key, types);
-        }
-
-        // One allocation per slow-path miss. Release-fence via Volatile.Write makes the prior readonly-field
-        // writes inside the constructor visible to any future Volatile.Read on the fast path.
-        Volatile.Write(
-            ref PipelineFastCache<TRequest, TResponse>.Current,
-            new FastCacheEntry(this, Generation, types));
-
-        if (types.Length == 0)
-            return handler.HandleAsync(request, cancellationToken);
-
-        return new PipelineWalker<TRequest, TResponse>(serviceProvider, handler, types, 0)
-            .InvokeAsync(request, cancellationToken);
+        // Frozen state changed - invalidate the per-pair closed-type cache so the next dispatch rebuilds it.
+        _typeCache.Clear();
     }
 
     [UnconditionalSuppressMessage("Trimming", "IL2055", Justification = "Pipeline behaviors are explicitly registered, not discovered through reflection.")]
@@ -129,6 +101,34 @@ public sealed class GlobalPipelineRegistry : BaseGlobalPipelineRegistry<Pipeline
 
         return result;
     }
+
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Pipeline behaviors are explicitly registered, not discovered through reflection.")]
+    [UnconditionalSuppressMessage("Trimming", "IL2055", Justification = "Pipeline behaviors are explicitly registered, not discovered through reflection.")]
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "Pipeline behaviors are explicitly registered, not discovered through reflection.")]
+    private ValueTask<TResponse> ExecuteSlow<TRequest, TResponse>(IServiceProvider serviceProvider, IRequestHandler<TRequest, TResponse> handler, TRequest request, CancellationToken cancellationToken)
+        where TRequest : class, IRequest<TRequest, TResponse>
+    {
+        EnsureBuilt();
+
+        var key = (typeof(TRequest), typeof(TResponse));
+        if (!_typeCache.TryGetValue(key, out var types))
+        {
+            types = BuildBehaviorTypesFor<TRequest, TResponse>();
+            _typeCache.TryAdd(key, types);
+        }
+
+        // One allocation per slow-path miss. Release-fence via Volatile.Write makes the prior readonly-field
+        // writes inside the constructor visible to any future Volatile.Read on the fast path.
+        Volatile.Write(
+            ref PipelineFastCache<TRequest, TResponse>.Current,
+            new FastCacheEntry(this, Generation, types));
+
+        if (types.Length == 0)
+            return handler.HandleAsync(request, cancellationToken);
+
+        return new PipelineWalker<TRequest, TResponse>(serviceProvider, handler, types, 0)
+            .InvokeAsync(request, cancellationToken);
+    }
 }
 
 /// <summary>
@@ -155,11 +155,11 @@ internal static class PipelineFastCache<TRequest, TResponse>
 /// </summary>
 internal sealed class FastCacheEntry
 {
-    /// <summary>The registry instance that produced this entry.</summary>
-    public readonly GlobalPipelineRegistry Owner;
-
     /// <summary>The <see cref="BaseGlobalPipelineRegistry{T}.Generation"/> value at the time the entry was built.</summary>
     public readonly int Generation;
+
+    /// <summary>The registry instance that produced this entry.</summary>
+    public readonly GlobalPipelineRegistry Owner;
 
     /// <summary>The closed behavior types in dispatch order (highest priority first).</summary>
     public readonly Type[] Types;

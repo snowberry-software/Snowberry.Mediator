@@ -41,6 +41,38 @@ public static class DependencyInjectionHelper
     /// <summary>
     /// Adds Mediator services to the specified service context.
     /// </summary>
+    /// <param name="serviceContext">The service context.</param>
+    /// <param name="options">The options.</param>
+    /// <param name="serviceLifetime">The service lifetime.</param>
+    /// <param name="append">Whether to append to existing registrations or replace them.</param>
+    /// <param name="customCallback">A custom callback to execute at the start during registration.</param>
+    [RequiresUnreferencedCode("Assembly scanning requires unreferenced code. Use explicit handler registration for AOT compatibility.")]
+    [RequiresDynamicCode("Creating generic handler types at runtime requires dynamic code. Use explicit handler registration for AOT compatibility.")]
+    public static void AddSnowberryMediator(
+        IServiceContext serviceContext,
+        MediatorOptions options,
+        RegistrationServiceLifetime serviceLifetime,
+        bool append,
+        CustomAddCallbackDelegate? customCallback = null)
+    {
+        AddSnowberryMediatorNoScan(serviceContext, options, serviceLifetime, append, (_, _, _, handlerCollection, _) =>
+        {
+            if (options.Assemblies != null && options.Assemblies.Count > 0)
+            {
+                for (int i = 0; i < options.Assemblies.Count; i++)
+                {
+                    var assembly = options.Assemblies[i];
+                    ScanAssembly(options, handlerCollection, assembly);
+                }
+            }
+
+            customCallback?.Invoke(serviceContext, options, serviceLifetime, handlerCollection, append);
+        });
+    }
+
+    /// <summary>
+    /// Adds Mediator services to the specified service context.
+    /// </summary>
     /// <remarks>This variant ignores the <see cref="MediatorOptions.Assemblies"/> option to be more compatible with AOT scenarios.</remarks>
     /// <param name="serviceContext">The service context.</param>
     /// <param name="options">The options.</param>
@@ -113,38 +145,6 @@ public static class DependencyInjectionHelper
     }
 
     /// <summary>
-    /// Adds Mediator services to the specified service context.
-    /// </summary>
-    /// <param name="serviceContext">The service context.</param>
-    /// <param name="options">The options.</param>
-    /// <param name="serviceLifetime">The service lifetime.</param>
-    /// <param name="append">Whether to append to existing registrations or replace them.</param>
-    /// <param name="customCallback">A custom callback to execute at the start during registration.</param>
-    [RequiresUnreferencedCode("Assembly scanning requires unreferenced code. Use explicit handler registration for AOT compatibility.")]
-    [RequiresDynamicCode("Creating generic handler types at runtime requires dynamic code. Use explicit handler registration for AOT compatibility.")]
-    public static void AddSnowberryMediator(
-        IServiceContext serviceContext,
-        MediatorOptions options,
-        RegistrationServiceLifetime serviceLifetime,
-        bool append,
-        CustomAddCallbackDelegate? customCallback = null)
-    {
-        AddSnowberryMediatorNoScan(serviceContext, options, serviceLifetime, append, (_, _, _, handlerCollection, _) =>
-        {
-            if (options.Assemblies != null && options.Assemblies.Count > 0)
-            {
-                for (int i = 0; i < options.Assemblies.Count; i++)
-                {
-                    var assembly = options.Assemblies[i];
-                    ScanAssembly(options, handlerCollection, assembly);
-                }
-            }
-
-            customCallback?.Invoke(serviceContext, options, serviceLifetime, handlerCollection, append);
-        });
-    }
-
-    /// <summary>
     /// Scans an assembly for mediator handler implementations and adds the discovered types to
     /// <paramref name="handlerCollection"/>. Honours the <c>Register*</c> and <c>Scan*</c> flags on
     /// <paramref name="options"/> to determine which handler categories to include.
@@ -176,6 +176,46 @@ public static class DependencyInjectionHelper
         if (options.RegisterNotificationHandlers && options.ScanNotificationHandlers && scanResult.NotificationHandlerTypes != null)
             for (int j = 0; j < scanResult.NotificationHandlerTypes.Count; j++)
                 handlerCollection.AllNotificationHandlers.Add(scanResult.NotificationHandlerTypes[j]);
+    }
+
+    private static void AddNotificationHandlers(
+        IServiceContext serviceContext,
+        RegistrationServiceLifetime serviceLifetime,
+        IList<NotificationHandlerInfo> notificationHandlers,
+        bool append
+    )
+    {
+        if (notificationHandlers.Count == 0)
+            return;
+
+        IGlobalNotificationHandlerRegistry<NotificationHandlerInfo>? globalNotificationHandlerRegistry = null;
+
+        if (!append || !serviceContext.IsServiceRegistered<IGlobalNotificationHandlerRegistry<NotificationHandlerInfo>>())
+        {
+            globalNotificationHandlerRegistry = new GlobalNotificationHandlerRegistry();
+            serviceContext.TryRegister(serviceType: typeof(IGlobalNotificationHandlerRegistry<NotificationHandlerInfo>), instance: globalNotificationHandlerRegistry);
+        }
+        else
+        {
+            globalNotificationHandlerRegistry = serviceContext.TryToGetSingleton<IGlobalNotificationHandlerRegistry<NotificationHandlerInfo>>(out bool foundSingleton);
+
+            if (!foundSingleton)
+            {
+                globalNotificationHandlerRegistry = new GlobalNotificationHandlerRegistry();
+                serviceContext.TryRegister(serviceType: typeof(IGlobalNotificationHandlerRegistry<NotificationHandlerInfo>), instance: globalNotificationHandlerRegistry);
+            }
+        }
+
+        for (int i = 0; i < notificationHandlers.Count; i++)
+        {
+            var handler = notificationHandlers[i];
+            globalNotificationHandlerRegistry!.Register(handler);
+
+            serviceContext.TryRegister(handler.HandlerType, handler.HandlerType, serviceLifetime);
+        }
+
+        // Snapshot the registered handlers into the read-optimized frozen state.
+        globalNotificationHandlerRegistry!.Build();
     }
 
     private static void AddPipelineBehaviors<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)] TGlobalPipelineInterface, TGlobalPipelineRegistry, THandlerInfo>(
@@ -220,46 +260,6 @@ public static class DependencyInjectionHelper
         globalPipelineRegistry!.Build();
     }
 
-    private static void AddNotificationHandlers(
-        IServiceContext serviceContext,
-        RegistrationServiceLifetime serviceLifetime,
-        IList<NotificationHandlerInfo> notificationHandlers,
-        bool append
-    )
-    {
-        if (notificationHandlers.Count == 0)
-            return;
-
-        IGlobalNotificationHandlerRegistry<NotificationHandlerInfo>? globalNotificationHandlerRegistry = null;
-
-        if (!append || !serviceContext.IsServiceRegistered<IGlobalNotificationHandlerRegistry<NotificationHandlerInfo>>())
-        {
-            globalNotificationHandlerRegistry = new GlobalNotificationHandlerRegistry();
-            serviceContext.TryRegister(serviceType: typeof(IGlobalNotificationHandlerRegistry<NotificationHandlerInfo>), instance: globalNotificationHandlerRegistry);
-        }
-        else
-        {
-            globalNotificationHandlerRegistry = serviceContext.TryToGetSingleton<IGlobalNotificationHandlerRegistry<NotificationHandlerInfo>>(out bool foundSingleton);
-
-            if (!foundSingleton)
-            {
-                globalNotificationHandlerRegistry = new GlobalNotificationHandlerRegistry();
-                serviceContext.TryRegister(serviceType: typeof(IGlobalNotificationHandlerRegistry<NotificationHandlerInfo>), instance: globalNotificationHandlerRegistry);
-            }
-        }
-
-        for (int i = 0; i < notificationHandlers.Count; i++)
-        {
-            var handler = notificationHandlers[i];
-            globalNotificationHandlerRegistry!.Register(handler);
-
-            serviceContext.TryRegister(handler.HandlerType, handler.HandlerType, serviceLifetime);
-        }
-
-        // Snapshot the registered handlers into the read-optimized frozen state.
-        globalNotificationHandlerRegistry!.Build();
-    }
-
     /// <summary>
     /// Mutable collection of handler-info entries gathered during registration. Each list holds the
     /// handlers of one category (request, stream request, pipeline behavior, stream pipeline behavior,
@@ -270,16 +270,16 @@ public static class DependencyInjectionHelper
         /// <summary>Registered <see cref="IRequestHandler{TRequest, TResponse}"/> handler-info entries.</summary>
         public readonly List<RequestHandlerInfo> AllHandlers = [];
 
-        /// <summary>Registered <see cref="IStreamRequestHandler{TRequest, TResponse}"/> handler-info entries.</summary>
-        public readonly List<StreamRequestHandlerInfo> AllStreamHandlers = [];
+        /// <summary>Registered <see cref="INotificationHandler{TNotification}"/> handler-info entries.</summary>
+        public readonly List<NotificationHandlerInfo> AllNotificationHandlers = [];
 
         /// <summary>Registered <see cref="IPipelineBehavior{TRequest, TResponse}"/> handler-info entries.</summary>
         public readonly List<PipelineBehaviorHandlerInfo> AllPipelineBehaviorHandlers = [];
 
+        /// <summary>Registered <see cref="IStreamRequestHandler{TRequest, TResponse}"/> handler-info entries.</summary>
+        public readonly List<StreamRequestHandlerInfo> AllStreamHandlers = [];
+
         /// <summary>Registered <see cref="IStreamPipelineBehavior{TRequest, TResponse}"/> handler-info entries.</summary>
         public readonly List<StreamPipelineBehaviorHandlerInfo> AllStreamPipelineBehaviorHandlers = [];
-
-        /// <summary>Registered <see cref="INotificationHandler{TNotification}"/> handler-info entries.</summary>
-        public readonly List<NotificationHandlerInfo> AllNotificationHandlers = [];
     }
 }

@@ -13,6 +13,40 @@ namespace Snowberry.Mediator.Tests;
 public class Microsoft_PipelinePriorityComplexTests : Common.MediatorTestBase
 {
     [Fact]
+    public async Task Test_DeepPipelineNesting_Performance()
+    {
+        var serviceCollection = new ServiceCollection();
+
+        for (int i = 0; i < 10; i++)
+        {
+            int priority = 1000 - (i * 100);
+            serviceCollection.AddScoped(sp =>
+                new PerformancePipelineBehavior($"Behavior{i:D2}", priority));
+        }
+
+        serviceCollection.AddSnowberryMediator(options =>
+        {
+            options.Assemblies = [typeof(PerformanceTestRequest).Assembly];
+        }, serviceLifetime: ServiceLifetime.Scoped);
+
+        using var serviceProvider = serviceCollection.BuildServiceProvider();
+        var mediator = serviceProvider.GetRequiredService<IMediator>();
+
+        var startTime = DateTime.UtcNow;
+
+        var request = new PerformanceTestRequest { BaseValue = 1 };
+        int response = await mediator.SendAsync(request, CancellationToken.None);
+
+        var duration = DateTime.UtcNow - startTime;
+
+        Assert.True(duration.TotalMilliseconds < 1000, $"Request took too long: {duration.TotalMilliseconds}ms");
+        Assert.Equal(1, response);
+
+        var executionOrder = PipelineExecutionTracker.GetExecutionOrder();
+        Assert.Empty(executionOrder);
+    }
+
+    [Fact]
     public async Task Test_MixedPriorityTypes_WithSamePriority()
     {
         var serviceCollection = new ServiceCollection();
@@ -46,40 +80,6 @@ public class Microsoft_PipelinePriorityComplexTests : Common.MediatorTestBase
         var last2 = executionOrder.Skip(3).Take(2).ToList();
         Assert.Contains(nameof(NoPriorityBehaviorA), last2);
         Assert.Contains(nameof(NoPriorityBehaviorB), last2);
-    }
-
-    [Fact]
-    public async Task Test_DeepPipelineNesting_Performance()
-    {
-        var serviceCollection = new ServiceCollection();
-
-        for (int i = 0; i < 10; i++)
-        {
-            int priority = 1000 - (i * 100);
-            serviceCollection.AddScoped(sp =>
-                new PerformancePipelineBehavior($"Behavior{i:D2}", priority));
-        }
-
-        serviceCollection.AddSnowberryMediator(options =>
-        {
-            options.Assemblies = [typeof(PerformanceTestRequest).Assembly];
-        }, serviceLifetime: ServiceLifetime.Scoped);
-
-        using var serviceProvider = serviceCollection.BuildServiceProvider();
-        var mediator = serviceProvider.GetRequiredService<IMediator>();
-
-        var startTime = DateTime.UtcNow;
-
-        var request = new PerformanceTestRequest { BaseValue = 1 };
-        int response = await mediator.SendAsync(request, CancellationToken.None);
-
-        var duration = DateTime.UtcNow - startTime;
-
-        Assert.True(duration.TotalMilliseconds < 1000, $"Request took too long: {duration.TotalMilliseconds}ms");
-        Assert.Equal(1, response);
-
-        var executionOrder = PipelineExecutionTracker.GetExecutionOrder();
-        Assert.Empty(executionOrder);
     }
 
     [Fact]

@@ -52,9 +52,8 @@ public class LargeDataRequestHandler : IRequestHandler<LargeDataRequest, int>
 
 public class ConcurrentTestRequestHandler : IRequestHandler<ConcurrentTestRequest, string>
 {
-    private static readonly Random s_Random = new();
-
     private static readonly object _lock = new();
+    private static readonly Random s_Random = new();
     private static int _processingCounter = 0;
 
     public async ValueTask<string> HandleAsync(ConcurrentTestRequest request, CancellationToken cancellationToken = default)

@@ -20,10 +20,10 @@ namespace Snowberry.Mediator.Registries;
 internal readonly struct StreamPipelineWalker<TRequest, TResponse> : IStreamPipelineContinuation<TRequest, TResponse>
     where TRequest : class, IStreamRequest<TRequest, TResponse>
 {
+    private readonly int _index;
     private readonly IServiceProvider _sp;
     private readonly IStreamRequestHandler<TRequest, TResponse> _terminal;
     private readonly Type[] _types;
-    private readonly int _index;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public StreamPipelineWalker(IServiceProvider sp, IStreamRequestHandler<TRequest, TResponse> terminal, Type[] types, int index)

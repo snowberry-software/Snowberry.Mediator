@@ -28,8 +28,8 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
     /// </summary>
     public class PluginNotification : INotification
     {
-        public string PluginName { get; set; } = string.Empty;
         public string Message { get; set; } = string.Empty;
+        public string PluginName { get; set; } = string.Empty;
         public int Version { get; set; }
     }
 
@@ -38,8 +38,13 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
     /// </summary>
     public class CorePluginHandler : INotificationHandler<PluginNotification>
     {
-        public static ConcurrentBag<PluginNotification> ProcessedNotifications =>
-            TestIsolationContext.GetOrCreateBag<PluginNotification>("CorePluginHandler.ProcessedNotifications");
+        public static void Clear()
+        {
+            var bag = ProcessedNotifications;
+            while (bag.TryTake(out _))
+            {
+            }
+        }
 
         public ValueTask HandleAsync(PluginNotification notification, CancellationToken cancellationToken = default)
         {
@@ -48,13 +53,8 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
             return default;
         }
 
-        public static void Clear()
-        {
-            var bag = ProcessedNotifications;
-            while (bag.TryTake(out _))
-            {
-            }
-        }
+        public static ConcurrentBag<PluginNotification> ProcessedNotifications =>
+            TestIsolationContext.GetOrCreateBag<PluginNotification>("CorePluginHandler.ProcessedNotifications");
     }
 
     /// <summary>
@@ -62,8 +62,13 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
     /// </summary>
     public class AdditionalPluginHandler : INotificationHandler<PluginNotification>
     {
-        public static ConcurrentBag<PluginNotification> ProcessedNotifications =>
-            TestIsolationContext.GetOrCreateBag<PluginNotification>("AdditionalPluginHandler.ProcessedNotifications");
+        public static void Clear()
+        {
+            var bag = ProcessedNotifications;
+            while (bag.TryTake(out _))
+            {
+            }
+        }
 
         public ValueTask HandleAsync(PluginNotification notification, CancellationToken cancellationToken = default)
         {
@@ -72,13 +77,8 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
             return default;
         }
 
-        public static void Clear()
-        {
-            var bag = ProcessedNotifications;
-            while (bag.TryTake(out _))
-            {
-            }
-        }
+        public static ConcurrentBag<PluginNotification> ProcessedNotifications =>
+            TestIsolationContext.GetOrCreateBag<PluginNotification>("AdditionalPluginHandler.ProcessedNotifications");
     }
 
     /// <summary>
@@ -86,8 +86,13 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
     /// </summary>
     public class ThirdPartyPluginHandler : INotificationHandler<PluginNotification>
     {
-        public static ConcurrentBag<PluginNotification> ProcessedNotifications =>
-            TestIsolationContext.GetOrCreateBag<PluginNotification>("ThirdPartyPluginHandler.ProcessedNotifications");
+        public static void Clear()
+        {
+            var bag = ProcessedNotifications;
+            while (bag.TryTake(out _))
+            {
+            }
+        }
 
         public ValueTask HandleAsync(PluginNotification notification, CancellationToken cancellationToken = default)
         {
@@ -96,13 +101,8 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
             return default;
         }
 
-        public static void Clear()
-        {
-            var bag = ProcessedNotifications;
-            while (bag.TryTake(out _))
-            {
-            }
-        }
+        public static ConcurrentBag<PluginNotification> ProcessedNotifications =>
+            TestIsolationContext.GetOrCreateBag<PluginNotification>("ThirdPartyPluginHandler.ProcessedNotifications");
     }
 
     /// <summary>
@@ -110,8 +110,13 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
     /// </summary>
     public class AnalyticsPluginHandler : INotificationHandler<PluginNotification>
     {
-        public static ConcurrentBag<PluginNotification> ProcessedNotifications =>
-            TestIsolationContext.GetOrCreateBag<PluginNotification>("AnalyticsPluginHandler.ProcessedNotifications");
+        public static void Clear()
+        {
+            var bag = ProcessedNotifications;
+            while (bag.TryTake(out _))
+            {
+            }
+        }
 
         public ValueTask HandleAsync(PluginNotification notification, CancellationToken cancellationToken = default)
         {
@@ -120,13 +125,8 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
             return default;
         }
 
-        public static void Clear()
-        {
-            var bag = ProcessedNotifications;
-            while (bag.TryTake(out _))
-            {
-            }
-        }
+        public static ConcurrentBag<PluginNotification> ProcessedNotifications =>
+            TestIsolationContext.GetOrCreateBag<PluginNotification>("AnalyticsPluginHandler.ProcessedNotifications");
     }
 
     /// <summary>
@@ -134,8 +134,8 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
     /// </summary>
     public class PluginRequest : IRequest<PluginRequest, string>
     {
-        public string RequestData { get; set; } = string.Empty;
         public int ProcessingLevel { get; set; }
+        public string RequestData { get; set; } = string.Empty;
     }
 
     /// <summary>
@@ -143,8 +143,13 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
     /// </summary>
     public class CorePluginRequestHandler : IRequestHandler<PluginRequest, string>
     {
-        public static ConcurrentBag<PluginRequest> ProcessedRequests =>
-            TestIsolationContext.GetOrCreateBag<PluginRequest>("CorePluginRequestHandler.ProcessedRequests");
+        public static void Clear()
+        {
+            var bag = ProcessedRequests;
+            while (bag.TryTake(out _))
+            {
+            }
+        }
 
         public ValueTask<string> HandleAsync(PluginRequest request, CancellationToken cancellationToken = default)
         {
@@ -153,13 +158,8 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
             return new($"Core processed: {request.RequestData}");
         }
 
-        public static void Clear()
-        {
-            var bag = ProcessedRequests;
-            while (bag.TryTake(out _))
-            {
-            }
-        }
+        public static ConcurrentBag<PluginRequest> ProcessedRequests =>
+            TestIsolationContext.GetOrCreateBag<PluginRequest>("CorePluginRequestHandler.ProcessedRequests");
     }
 
     /// <summary>
@@ -167,8 +167,13 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
     /// </summary>
     public class EnhancedPluginRequestHandler : IRequestHandler<PluginRequest, string>
     {
-        public static ConcurrentBag<PluginRequest> ProcessedRequests =>
-            TestIsolationContext.GetOrCreateBag<PluginRequest>("EnhancedPluginRequestHandler.ProcessedRequests");
+        public static void Clear()
+        {
+            var bag = ProcessedRequests;
+            while (bag.TryTake(out _))
+            {
+            }
+        }
 
         public ValueTask<string> HandleAsync(PluginRequest request, CancellationToken cancellationToken = default)
         {
@@ -177,13 +182,8 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
             return new($"Enhanced processed: {request.RequestData} (Level {request.ProcessingLevel})");
         }
 
-        public static void Clear()
-        {
-            var bag = ProcessedRequests;
-            while (bag.TryTake(out _))
-            {
-            }
-        }
+        public static ConcurrentBag<PluginRequest> ProcessedRequests =>
+            TestIsolationContext.GetOrCreateBag<PluginRequest>("EnhancedPluginRequestHandler.ProcessedRequests");
     }
 
     /// <summary>
@@ -191,8 +191,8 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
     /// </summary>
     public class PluginStreamRequest : IStreamRequest<PluginStreamRequest, int>
     {
-        public string Source { get; set; } = string.Empty;
         public int Count { get; set; }
+        public string Source { get; set; } = string.Empty;
         public int StartValue { get; set; }
     }
 
@@ -201,8 +201,13 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
     /// </summary>
     public class CorePluginStreamHandler : IStreamRequestHandler<PluginStreamRequest, int>
     {
-        public static ConcurrentBag<PluginStreamRequest> ProcessedRequests =>
-            TestIsolationContext.GetOrCreateBag<PluginStreamRequest>("CorePluginStreamHandler.ProcessedRequests");
+        public static void Clear()
+        {
+            var bag = ProcessedRequests;
+            while (bag.TryTake(out _))
+            {
+            }
+        }
 
         public async IAsyncEnumerable<int> HandleAsync(PluginStreamRequest request, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
@@ -216,13 +221,8 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
             }
         }
 
-        public static void Clear()
-        {
-            var bag = ProcessedRequests;
-            while (bag.TryTake(out _))
-            {
-            }
-        }
+        public static ConcurrentBag<PluginStreamRequest> ProcessedRequests =>
+            TestIsolationContext.GetOrCreateBag<PluginStreamRequest>("CorePluginStreamHandler.ProcessedRequests");
     }
 
     /// <summary>
@@ -230,8 +230,13 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
     /// </summary>
     public class EnhancedPluginStreamHandler : IStreamRequestHandler<PluginStreamRequest, int>
     {
-        public static ConcurrentBag<PluginStreamRequest> ProcessedRequests =>
-            TestIsolationContext.GetOrCreateBag<PluginStreamRequest>("EnhancedPluginStreamHandler.ProcessedRequests");
+        public static void Clear()
+        {
+            var bag = ProcessedRequests;
+            while (bag.TryTake(out _))
+            {
+            }
+        }
 
         public async IAsyncEnumerable<int> HandleAsync(PluginStreamRequest request, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
@@ -245,13 +250,8 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
             }
         }
 
-        public static void Clear()
-        {
-            var bag = ProcessedRequests;
-            while (bag.TryTake(out _))
-            {
-            }
-        }
+        public static ConcurrentBag<PluginStreamRequest> ProcessedRequests =>
+            TestIsolationContext.GetOrCreateBag<PluginStreamRequest>("EnhancedPluginStreamHandler.ProcessedRequests");
     }
 
     /// <summary>
@@ -268,8 +268,13 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
     /// </summary>
     public class ComplexPluginRequestHandler : IRequestHandler<ComplexPluginRequest, string>
     {
-        public static ConcurrentBag<ComplexPluginRequest> ProcessedRequests =>
-            TestIsolationContext.GetOrCreateBag<ComplexPluginRequest>("ComplexPluginRequestHandler.ProcessedRequests");
+        public static void Clear()
+        {
+            var bag = ProcessedRequests;
+            while (bag.TryTake(out _))
+            {
+            }
+        }
 
         public ValueTask<string> HandleAsync(ComplexPluginRequest request, CancellationToken cancellationToken = default)
         {
@@ -278,13 +283,8 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
             return new($"Complex processed: {request.Data} with {request.ProcessingSteps} steps");
         }
 
-        public static void Clear()
-        {
-            var bag = ProcessedRequests;
-            while (bag.TryTake(out _))
-            {
-            }
-        }
+        public static ConcurrentBag<ComplexPluginRequest> ProcessedRequests =>
+            TestIsolationContext.GetOrCreateBag<ComplexPluginRequest>("ComplexPluginRequestHandler.ProcessedRequests");
     }
 
     #endregion

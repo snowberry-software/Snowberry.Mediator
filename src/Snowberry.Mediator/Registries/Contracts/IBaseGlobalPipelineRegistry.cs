@@ -9,16 +9,16 @@ namespace Snowberry.Mediator.Registries.Contracts;
 public interface IBaseGlobalPipelineRegistry<T> where T : PipelineBehaviorHandlerInfo
 {
     /// <summary>
-    /// Registers a pipeline behavior.
-    /// </summary>
-    /// <param name="pipelineBehaviorHandlerInfo">The pipeline behavior.</param>
-    void Register(T pipelineBehaviorHandlerInfo);
-
-    /// <summary>
     /// Builds the read-optimized snapshot of registered behaviors. Called once after all registrations
     /// are complete. Subsequent registrations are picked up by the next <see cref="Build"/> call.
     /// </summary>
     void Build();
+
+    /// <summary>
+    /// Registers a pipeline behavior.
+    /// </summary>
+    /// <param name="pipelineBehaviorHandlerInfo">The pipeline behavior.</param>
+    void Register(T pipelineBehaviorHandlerInfo);
 
     /// <summary>
     /// Gets whether the registry is empty.

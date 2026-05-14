@@ -11,10 +11,10 @@ namespace Snowberry.Mediator;
 /// <inheritdoc cref="IMediator"/>.
 public sealed class Mediator : IMediator
 {
-    private readonly IServiceProvider _serviceProvider;
-    private readonly IGlobalPipelineRegistry? _pipelineRegistry;
-    private readonly IGlobalStreamPipelineRegistry? _streamPipelineRegistry;
     private readonly IGlobalNotificationHandlerRegistry<NotificationHandlerInfo>? _notificationRegistry;
+    private readonly IGlobalPipelineRegistry? _pipelineRegistry;
+    private readonly IServiceProvider _serviceProvider;
+    private readonly IGlobalStreamPipelineRegistry? _streamPipelineRegistry;
 
     public Mediator(IServiceProvider serviceProvider)
     {
@@ -24,26 +24,6 @@ public sealed class Mediator : IMediator
         _pipelineRegistry = Unsafe.As<IGlobalPipelineRegistry?>(serviceProvider.GetService(typeof(IGlobalPipelineRegistry)));
         _streamPipelineRegistry = Unsafe.As<IGlobalStreamPipelineRegistry?>(serviceProvider.GetService(typeof(IGlobalStreamPipelineRegistry)));
         _notificationRegistry = Unsafe.As<IGlobalNotificationHandlerRegistry<NotificationHandlerInfo>?>(serviceProvider.GetService(typeof(IGlobalNotificationHandlerRegistry<NotificationHandlerInfo>)));
-    }
-
-    /// <inheritdoc/>
-    public ValueTask<TResponse> SendAsync<TRequest, TResponse>(IRequest<TRequest, TResponse> request, CancellationToken cancellationToken = default)
-        where TRequest : class, IRequest<TRequest, TResponse>
-    {
-        _ = request ?? throw new ArgumentNullException(nameof(request));
-
-        cancellationToken.ThrowIfCancellationRequested();
-
-        object service = _serviceProvider.GetService(typeof(IRequestHandler<TRequest, TResponse>)) ?? throw new HandlerNotFoundException(typeof(TRequest), isStream: false);
-
-        var requestTyped = Unsafe.As<TRequest>(request);
-        var handler = Unsafe.As<IRequestHandler<TRequest, TResponse>>(service);
-
-        var pipelineRegistry = _pipelineRegistry;
-        if (pipelineRegistry is not null && !pipelineRegistry.IsEmpty)
-            return pipelineRegistry.ExecuteAsync(_serviceProvider, handler, requestTyped, cancellationToken);
-
-        return handler.HandleAsync(requestTyped, cancellationToken);
     }
 
     /// <inheritdoc/>
@@ -78,5 +58,25 @@ public sealed class Mediator : IMediator
             throw new NotificationHandlerNotFoundException(typeof(TNotification));
 
         return registry.PublishAsync(_serviceProvider, notification, cancellationToken);
+    }
+
+    /// <inheritdoc/>
+    public ValueTask<TResponse> SendAsync<TRequest, TResponse>(IRequest<TRequest, TResponse> request, CancellationToken cancellationToken = default)
+        where TRequest : class, IRequest<TRequest, TResponse>
+    {
+        _ = request ?? throw new ArgumentNullException(nameof(request));
+
+        cancellationToken.ThrowIfCancellationRequested();
+
+        object service = _serviceProvider.GetService(typeof(IRequestHandler<TRequest, TResponse>)) ?? throw new HandlerNotFoundException(typeof(TRequest), isStream: false);
+
+        var requestTyped = Unsafe.As<TRequest>(request);
+        var handler = Unsafe.As<IRequestHandler<TRequest, TResponse>>(service);
+
+        var pipelineRegistry = _pipelineRegistry;
+        if (pipelineRegistry is not null && !pipelineRegistry.IsEmpty)
+            return pipelineRegistry.ExecuteAsync(_serviceProvider, handler, requestTyped, cancellationToken);
+
+        return handler.HandleAsync(requestTyped, cancellationToken);
     }
 }

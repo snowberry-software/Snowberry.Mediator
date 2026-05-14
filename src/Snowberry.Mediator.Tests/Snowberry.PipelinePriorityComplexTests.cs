@@ -15,41 +15,6 @@ namespace Snowberry.Mediator.Tests;
 public class Snowberry_PipelinePriorityComplexTests : Common.MediatorTestBase
 {
     [Fact]
-    public async Task Test_MixedPriorityTypes_WithSamePriority()
-    {
-        using var serviceContainer = new ServiceContainer();
-
-        serviceContainer.AddSnowberryMediator(options =>
-        {
-            options.Assemblies = [typeof(SamePriorityBehaviorA).Assembly];
-            options.PipelineBehaviorTypes = [
-                typeof(SamePriorityBehaviorA),     // Priority 100
-                typeof(SamePriorityBehaviorB),     // Priority 100 
-                typeof(SamePriorityBehaviorC),     // Priority 100
-                typeof(NoPriorityBehaviorA),       // Priority 0 (default)
-                typeof(NoPriorityBehaviorB)        // Priority 0 (default)
-            ];
-        }, serviceLifetime: ServiceLifetime.Scoped);
-
-        var mediator = serviceContainer.GetRequiredService<IMediator>();
-
-        var request = new MultiBehaviorRequest { Value = 10 };
-        int response = await mediator.SendAsync(request, CancellationToken.None);
-
-        var executionOrder = PipelineExecutionTracker.GetExecutionOrder();
-        Assert.Equal(5, executionOrder.Count);
-
-        var first3 = executionOrder.Take(3).ToList();
-        Assert.Contains(nameof(SamePriorityBehaviorA), first3);
-        Assert.Contains(nameof(SamePriorityBehaviorB), first3);
-        Assert.Contains(nameof(SamePriorityBehaviorC), first3);
-
-        var last2 = executionOrder.Skip(3).Take(2).ToList();
-        Assert.Contains(nameof(NoPriorityBehaviorA), last2);
-        Assert.Contains(nameof(NoPriorityBehaviorB), last2);
-    }
-
-    [Fact]
     public async Task Test_DeepPipelineNesting_Performance()
     {
         using var serviceContainer = new ServiceContainer(ServiceContainerOptions.Default & ~ServiceContainerOptions.ReadOnly);
@@ -82,6 +47,41 @@ public class Snowberry_PipelinePriorityComplexTests : Common.MediatorTestBase
 
         var executionOrder = PipelineExecutionTracker.GetExecutionOrder();
         Assert.Empty(executionOrder);
+    }
+
+    [Fact]
+    public async Task Test_MixedPriorityTypes_WithSamePriority()
+    {
+        using var serviceContainer = new ServiceContainer();
+
+        serviceContainer.AddSnowberryMediator(options =>
+        {
+            options.Assemblies = [typeof(SamePriorityBehaviorA).Assembly];
+            options.PipelineBehaviorTypes = [
+                typeof(SamePriorityBehaviorA),     // Priority 100
+                typeof(SamePriorityBehaviorB),     // Priority 100 
+                typeof(SamePriorityBehaviorC),     // Priority 100
+                typeof(NoPriorityBehaviorA),       // Priority 0 (default)
+                typeof(NoPriorityBehaviorB)        // Priority 0 (default)
+            ];
+        }, serviceLifetime: ServiceLifetime.Scoped);
+
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
+
+        var request = new MultiBehaviorRequest { Value = 10 };
+        int response = await mediator.SendAsync(request, CancellationToken.None);
+
+        var executionOrder = PipelineExecutionTracker.GetExecutionOrder();
+        Assert.Equal(5, executionOrder.Count);
+
+        var first3 = executionOrder.Take(3).ToList();
+        Assert.Contains(nameof(SamePriorityBehaviorA), first3);
+        Assert.Contains(nameof(SamePriorityBehaviorB), first3);
+        Assert.Contains(nameof(SamePriorityBehaviorC), first3);
+
+        var last2 = executionOrder.Skip(3).Take(2).ToList();
+        Assert.Contains(nameof(NoPriorityBehaviorA), last2);
+        Assert.Contains(nameof(NoPriorityBehaviorB), last2);
     }
 
     [Fact]

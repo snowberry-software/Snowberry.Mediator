@@ -8,6 +8,18 @@ namespace Snowberry.Mediator.Abstractions.Mediator;
 public interface IMediatorSender
 {
     /// <summary>
+    /// Creates an asynchronous stream of responses of type <typeparamref name="TResponse"/> from a stream request.
+    /// </summary>
+    /// <typeparam name="TResponse">The response type.</typeparam>
+    /// <param name="request">The request.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>An asynchronous enumerable of <typeparamref name="TResponse"/>.</returns>
+    IAsyncEnumerable<TResponse> CreateStreamAsync<TRequest, TResponse>(
+        IStreamRequest<TRequest, TResponse> request,
+        CancellationToken cancellationToken = default)
+        where TRequest : class, IStreamRequest<TRequest, TResponse>;
+
+    /// <summary>
     /// Sends a request through the mediator and returns a response of type <typeparamref name="TResponse"/>.
     /// </summary>
     /// <typeparam name="TRequest">The request type.</typeparam>
@@ -19,16 +31,4 @@ public interface IMediatorSender
         IRequest<TRequest, TResponse> request,
         CancellationToken cancellationToken = default)
         where TRequest : class, IRequest<TRequest, TResponse>;
-
-    /// <summary>
-    /// Creates an asynchronous stream of responses of type <typeparamref name="TResponse"/> from a stream request.
-    /// </summary>
-    /// <typeparam name="TResponse">The response type.</typeparam>
-    /// <param name="request">The request.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>An asynchronous enumerable of <typeparamref name="TResponse"/>.</returns>
-    IAsyncEnumerable<TResponse> CreateStreamAsync<TRequest, TResponse>(
-        IStreamRequest<TRequest, TResponse> request,
-        CancellationToken cancellationToken = default)
-        where TRequest : class, IStreamRequest<TRequest, TResponse>;
 }

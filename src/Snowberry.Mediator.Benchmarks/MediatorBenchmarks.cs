@@ -8,41 +8,103 @@ namespace Snowberry.Mediator.Benchmarks;
 [MemoryDiagnoser]
 public class MediatorBenchmarks
 {
-    private IMediator _mediatorNoPipeline = null!;
-    private IMediator _mediatorSpecific1 = null!;
-    private IMediator _mediatorSpecific3 = null!;
-    private IMediator _mediatorSpecific10 = null!;
-    private IMediator _mediatorOpenGeneric1 = null!;
-    private IMediator _mediatorOpenGeneric3 = null!;
-    private IMediator _mediatorMixed4 = null!;
-    private IMediator _mediatorPublishSpecific3 = null!;
-    private IMediator _mediatorPublishOpenGeneric3 = null!;
-    private IMediator _mediatorPublishMixed3 = null!;
-    private IMediator _mediatorStreamNoPipeline = null!;
-    private IMediator _mediatorStreamSpecific1 = null!;
-    private IMediator _mediatorStreamSpecific3 = null!;
-    private IMediator _mediatorStreamSpecific10 = null!;
-    private IMediator _mediatorStreamOpenGeneric3 = null!;
-    private IMediator _mediatorSpecific1Async = null!;
-    private IMediator _mediatorOpenGeneric1Async = null!;
+    private readonly Mixed4Request _mixed4Request = new();
+    private readonly MixedNotification3 _mixedNotification3 = new();
 
     private readonly NoPipelineRequest _noPipelineRequest = new();
-    private readonly Specific1Request _specific1Request = new();
-    private readonly Specific3Request _specific3Request = new();
-    private readonly Specific10Request _specific10Request = new();
+    private readonly OpenGeneric1AsyncRequest _openGeneric1AsyncRequest = new();
     private readonly OpenGeneric1Request _openGeneric1Request = new();
     private readonly OpenGeneric3Request _openGeneric3Request = new();
-    private readonly Mixed4Request _mixed4Request = new();
-    private readonly SpecificNotification3 _specificNotification3 = new();
     private readonly OpenGenericNotification3 _openGenericNotification3 = new();
-    private readonly MixedNotification3 _mixedNotification3 = new();
+    private readonly Specific10Request _specific10Request = new();
+    private readonly Specific1AsyncRequest _specific1AsyncRequest = new();
+    private readonly Specific1Request _specific1Request = new();
+    private readonly Specific3Request _specific3Request = new();
+    private readonly SpecificNotification3 _specificNotification3 = new();
     private readonly StreamNoPipelineRequest _streamNoPipelineRequest = new();
+    private readonly StreamOpenGeneric3Request _streamOpenGeneric3Request = new();
+    private readonly StreamSpecific10Request _streamSpecific10Request = new();
     private readonly StreamSpecific1Request _streamSpecific1Request = new();
     private readonly StreamSpecific3Request _streamSpecific3Request = new();
-    private readonly StreamSpecific10Request _streamSpecific10Request = new();
-    private readonly StreamOpenGeneric3Request _streamOpenGeneric3Request = new();
-    private readonly Specific1AsyncRequest _specific1AsyncRequest = new();
-    private readonly OpenGeneric1AsyncRequest _openGeneric1AsyncRequest = new();
+    private IMediator _mediatorMixed4 = null!;
+    private IMediator _mediatorNoPipeline = null!;
+    private IMediator _mediatorOpenGeneric1 = null!;
+    private IMediator _mediatorOpenGeneric1Async = null!;
+    private IMediator _mediatorOpenGeneric3 = null!;
+    private IMediator _mediatorPublishMixed3 = null!;
+    private IMediator _mediatorPublishOpenGeneric3 = null!;
+    private IMediator _mediatorPublishSpecific3 = null!;
+    private IMediator _mediatorSpecific1 = null!;
+    private IMediator _mediatorSpecific10 = null!;
+    private IMediator _mediatorSpecific1Async = null!;
+    private IMediator _mediatorSpecific3 = null!;
+    private IMediator _mediatorStreamNoPipeline = null!;
+    private IMediator _mediatorStreamOpenGeneric3 = null!;
+    private IMediator _mediatorStreamSpecific1 = null!;
+    private IMediator _mediatorStreamSpecific10 = null!;
+    private IMediator _mediatorStreamSpecific3 = null!;
+
+    private static IMediator BuildMediator(Action<MediatorOptions> configure)
+    {
+        var services = new ServiceCollection();
+        services.AddSnowberryMediator(configure, ServiceLifetime.Singleton);
+        var provider = services.BuildServiceProvider();
+        return provider.GetRequiredService<IMediator>();
+    }
+
+    [Benchmark]
+    public ValueTask Publish_Mixed3()
+        => _mediatorPublishMixed3.PublishAsync(_mixedNotification3);
+
+    [Benchmark]
+    public ValueTask Publish_OpenGeneric3()
+        => _mediatorPublishOpenGeneric3.PublishAsync(_openGenericNotification3);
+
+    // ---------- Publish ----------
+
+    [Benchmark]
+    public ValueTask Publish_Specific3()
+        => _mediatorPublishSpecific3.PublishAsync(_specificNotification3);
+
+    [Benchmark]
+    public ValueTask<int> Send_Mixed4()
+        => _mediatorMixed4.SendAsync(_mixed4Request);
+
+    // ---------- Send ----------
+
+    [Benchmark(Baseline = true)]
+    public ValueTask<int> Send_NoPipeline()
+        => _mediatorNoPipeline.SendAsync(_noPipelineRequest);
+
+    [Benchmark]
+    public ValueTask<int> Send_OpenGeneric1()
+        => _mediatorOpenGeneric1.SendAsync(_openGeneric1Request);
+
+    [Benchmark]
+    public ValueTask<int> Send_OpenGeneric1_Async()
+        => _mediatorOpenGeneric1Async.SendAsync(_openGeneric1AsyncRequest);
+
+    [Benchmark]
+    public ValueTask<int> Send_OpenGeneric3()
+        => _mediatorOpenGeneric3.SendAsync(_openGeneric3Request);
+
+    [Benchmark]
+    public ValueTask<int> Send_Specific1()
+        => _mediatorSpecific1.SendAsync(_specific1Request);
+
+    [Benchmark]
+    public ValueTask<int> Send_Specific10()
+        => _mediatorSpecific10.SendAsync(_specific10Request);
+
+    // ---------- Phase 0.5 diagnostic variants (async/await - exposes AsyncStateMachineBox vs delegate) ----------
+
+    [Benchmark]
+    public ValueTask<int> Send_Specific1_Async()
+        => _mediatorSpecific1Async.SendAsync(_specific1AsyncRequest);
+
+    [Benchmark]
+    public ValueTask<int> Send_Specific3()
+        => _mediatorSpecific3.SendAsync(_specific3Request);
 
     [GlobalSetup]
     public void Setup()
@@ -212,58 +274,6 @@ public class MediatorBenchmarks
         });
     }
 
-    private static IMediator BuildMediator(Action<MediatorOptions> configure)
-    {
-        var services = new ServiceCollection();
-        services.AddSnowberryMediator(configure, ServiceLifetime.Singleton);
-        var provider = services.BuildServiceProvider();
-        return provider.GetRequiredService<IMediator>();
-    }
-
-    // ---------- Send ----------
-
-    [Benchmark(Baseline = true)]
-    public ValueTask<int> Send_NoPipeline()
-        => _mediatorNoPipeline.SendAsync(_noPipelineRequest);
-
-    [Benchmark]
-    public ValueTask<int> Send_Specific1()
-        => _mediatorSpecific1.SendAsync(_specific1Request);
-
-    [Benchmark]
-    public ValueTask<int> Send_Specific3()
-        => _mediatorSpecific3.SendAsync(_specific3Request);
-
-    [Benchmark]
-    public ValueTask<int> Send_Specific10()
-        => _mediatorSpecific10.SendAsync(_specific10Request);
-
-    [Benchmark]
-    public ValueTask<int> Send_OpenGeneric1()
-        => _mediatorOpenGeneric1.SendAsync(_openGeneric1Request);
-
-    [Benchmark]
-    public ValueTask<int> Send_OpenGeneric3()
-        => _mediatorOpenGeneric3.SendAsync(_openGeneric3Request);
-
-    [Benchmark]
-    public ValueTask<int> Send_Mixed4()
-        => _mediatorMixed4.SendAsync(_mixed4Request);
-
-    // ---------- Publish ----------
-
-    [Benchmark]
-    public ValueTask Publish_Specific3()
-        => _mediatorPublishSpecific3.PublishAsync(_specificNotification3);
-
-    [Benchmark]
-    public ValueTask Publish_OpenGeneric3()
-        => _mediatorPublishOpenGeneric3.PublishAsync(_openGenericNotification3);
-
-    [Benchmark]
-    public ValueTask Publish_Mixed3()
-        => _mediatorPublishMixed3.PublishAsync(_mixedNotification3);
-
     // ---------- Stream ----------
 
     [Benchmark]
@@ -271,6 +281,28 @@ public class MediatorBenchmarks
     {
         int sum = 0;
         await foreach (var i in _mediatorStreamNoPipeline.CreateStreamAsync(_streamNoPipelineRequest))
+        {
+            sum += i;
+        }
+        return sum;
+    }
+
+    [Benchmark]
+    public async ValueTask<int> Stream_OpenGeneric3_Enumerate10()
+    {
+        int sum = 0;
+        await foreach (var i in _mediatorStreamOpenGeneric3.CreateStreamAsync(_streamOpenGeneric3Request))
+        {
+            sum += i;
+        }
+        return sum;
+    }
+
+    [Benchmark]
+    public async ValueTask<int> Stream_Specific10_Enumerate10()
+    {
+        int sum = 0;
+        await foreach (var i in _mediatorStreamSpecific10.CreateStreamAsync(_streamSpecific10Request))
         {
             sum += i;
         }
@@ -298,36 +330,4 @@ public class MediatorBenchmarks
         }
         return sum;
     }
-
-    [Benchmark]
-    public async ValueTask<int> Stream_Specific10_Enumerate10()
-    {
-        int sum = 0;
-        await foreach (var i in _mediatorStreamSpecific10.CreateStreamAsync(_streamSpecific10Request))
-        {
-            sum += i;
-        }
-        return sum;
-    }
-
-    [Benchmark]
-    public async ValueTask<int> Stream_OpenGeneric3_Enumerate10()
-    {
-        int sum = 0;
-        await foreach (var i in _mediatorStreamOpenGeneric3.CreateStreamAsync(_streamOpenGeneric3Request))
-        {
-            sum += i;
-        }
-        return sum;
-    }
-
-    // ---------- Phase 0.5 diagnostic variants (async/await - exposes AsyncStateMachineBox vs delegate) ----------
-
-    [Benchmark]
-    public ValueTask<int> Send_Specific1_Async()
-        => _mediatorSpecific1Async.SendAsync(_specific1AsyncRequest);
-
-    [Benchmark]
-    public ValueTask<int> Send_OpenGeneric1_Async()
-        => _mediatorOpenGeneric1Async.SendAsync(_openGeneric1AsyncRequest);
 }

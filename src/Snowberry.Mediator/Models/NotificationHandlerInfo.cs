@@ -43,17 +43,6 @@ public class NotificationHandlerInfo : IEquatable<NotificationHandlerInfo>
         return results;
     }
 
-    /// <summary>
-    /// The notification type.
-    /// </summary>
-    public required Type NotificationType { get; init; }
-
-    /// <summary>
-    /// The handler type.
-    /// </summary>
-    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)]
-    public required Type HandlerType { get; init; }
-
     /// <inheritdoc/>
     public override bool Equals(object? obj)
     {
@@ -83,4 +72,15 @@ public class NotificationHandlerInfo : IEquatable<NotificationHandlerInfo>
         }
 #endif
     }
+
+    /// <summary>
+    /// The handler type.
+    /// </summary>
+    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)]
+    public required Type HandlerType { get; init; }
+
+    /// <summary>
+    /// The notification type.
+    /// </summary>
+    public required Type NotificationType { get; init; }
 }

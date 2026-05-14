@@ -10,25 +10,17 @@ public static class PipelineExecutionTracker
 {
     private static readonly AsyncLocal<ConcurrentQueue<string>> _asyncLocalExecutionOrder = new();
 
-    private static ConcurrentQueue<string> ExecutionOrder =>
-        _asyncLocalExecutionOrder.Value ??= new ConcurrentQueue<string>();
-
-    public static void RecordExecution(string behaviorName)
-    {
-        ExecutionOrder.Enqueue(behaviorName);
-    }
-
-    public static List<string> GetExecutionOrder()
-    {
-        return ExecutionOrder.ToList();
-    }
-
     public static void Clear()
     {
         var queue = ExecutionOrder;
         while (queue.TryDequeue(out _))
         {
         }
+    }
+
+    public static List<string> GetExecutionOrder()
+    {
+        return ExecutionOrder.ToList();
     }
 
     /// <summary>
@@ -39,4 +31,12 @@ public static class PipelineExecutionTracker
     {
         _asyncLocalExecutionOrder.Value = new ConcurrentQueue<string>();
     }
+
+    public static void RecordExecution(string behaviorName)
+    {
+        ExecutionOrder.Enqueue(behaviorName);
+    }
+
+    private static ConcurrentQueue<string> ExecutionOrder =>
+        _asyncLocalExecutionOrder.Value ??= new ConcurrentQueue<string>();
 }

@@ -10,22 +10,14 @@ public static class NotificationHandlerExecutionTracker
 {
     private static readonly AsyncLocal<ConcurrentBag<string>> _asyncLocalExecutions = new();
 
-    private static ConcurrentBag<string> Executions =>
-        _asyncLocalExecutions.Value ??= [];
-
-    public static void RecordExecution(string handlerName)
+    public static void Clear()
     {
-        Executions.Add(handlerName);
+        _asyncLocalExecutions.Value = [];
     }
 
     public static List<string> GetExecutions()
     {
         return Executions.ToList();
-    }
-
-    public static void Clear()
-    {
-        _asyncLocalExecutions.Value = [];
     }
 
     /// <summary>
@@ -35,4 +27,12 @@ public static class NotificationHandlerExecutionTracker
     {
         _asyncLocalExecutions.Value = [];
     }
+
+    public static void RecordExecution(string handlerName)
+    {
+        Executions.Add(handlerName);
+    }
+
+    private static ConcurrentBag<string> Executions =>
+        _asyncLocalExecutions.Value ??= [];
 }
