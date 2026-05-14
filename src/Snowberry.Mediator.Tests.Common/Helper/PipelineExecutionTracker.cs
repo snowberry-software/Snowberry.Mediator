@@ -8,7 +8,7 @@ namespace Snowberry.Mediator.Tests.Common.Helper;
 /// </summary>
 public static class PipelineExecutionTracker
 {
-    private static readonly AsyncLocal<ConcurrentQueue<string>> _asyncLocalExecutionOrder = new();
+    private static readonly AsyncLocal<ConcurrentQueue<string>> s_AsyncLocalExecutionOrder = new();
 
     public static void Clear()
     {
@@ -29,7 +29,7 @@ public static class PipelineExecutionTracker
     /// </summary>
     public static void InitializeContext()
     {
-        _asyncLocalExecutionOrder.Value = new ConcurrentQueue<string>();
+        s_AsyncLocalExecutionOrder.Value = new ConcurrentQueue<string>();
     }
 
     public static void RecordExecution(string behaviorName)
@@ -38,5 +38,5 @@ public static class PipelineExecutionTracker
     }
 
     private static ConcurrentQueue<string> ExecutionOrder =>
-        _asyncLocalExecutionOrder.Value ??= new ConcurrentQueue<string>();
+        s_AsyncLocalExecutionOrder.Value ??= new ConcurrentQueue<string>();
 }

@@ -8,7 +8,7 @@ namespace Snowberry.Mediator.Tests.Common.Helper;
 /// </summary>
 public static class TestIsolationContext
 {
-    private static readonly AsyncLocal<ConcurrentDictionary<string, object>> _asyncLocalContext = new();
+    private static readonly AsyncLocal<ConcurrentDictionary<string, object>> s_AsyncLocalContext = new();
 
     /// <summary>
     /// Clears all state in the current test context.
@@ -55,9 +55,9 @@ public static class TestIsolationContext
     /// </summary>
     public static void InitializeContext()
     {
-        _asyncLocalContext.Value = new ConcurrentDictionary<string, object>();
+        s_AsyncLocalContext.Value = new ConcurrentDictionary<string, object>();
     }
 
     private static ConcurrentDictionary<string, object> Context =>
-        _asyncLocalContext.Value ??= new ConcurrentDictionary<string, object>();
+        s_AsyncLocalContext.Value ??= new ConcurrentDictionary<string, object>();
 }

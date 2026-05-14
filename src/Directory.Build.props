@@ -3,4 +3,9 @@
         <SignAssembly>true</SignAssembly>
         <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)Snowberry.Mediator.snk</AssemblyOriginatorKeyFile>
     </PropertyGroup>
+    
+      <PropertyGroup>
+    <!-- <EnableNETAnalyzers>true</EnableNETAnalyzers> -->
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+  </PropertyGroup>
 </Project>

@@ -31,7 +31,7 @@ public sealed class GlobalPipelineRegistry : BaseGlobalPipelineRegistry<Pipeline
             return handler.HandleAsync(request, cancellationToken);
 
         // Fast path - single static-generic acquire-fence read of the cached entry.
-        var entry = Volatile.Read(ref PipelineFastCache<TRequest, TResponse>.Current);
+        var entry = Volatile.Read(ref PipelineFastCache<TRequest, TResponse>.s_Current);
         if (entry is not null
             && ReferenceEquals(entry.Owner, this)
             && entry.Generation == Generation)
@@ -120,7 +120,7 @@ public sealed class GlobalPipelineRegistry : BaseGlobalPipelineRegistry<Pipeline
         // One allocation per slow-path miss. Release-fence via Volatile.Write makes the prior readonly-field
         // writes inside the constructor visible to any future Volatile.Read on the fast path.
         Volatile.Write(
-            ref PipelineFastCache<TRequest, TResponse>.Current,
+            ref PipelineFastCache<TRequest, TResponse>.s_Current,
             new FastCacheEntry(this, Generation, types));
 
         if (types.Length == 0)
@@ -133,7 +133,7 @@ public sealed class GlobalPipelineRegistry : BaseGlobalPipelineRegistry<Pipeline
 
 /// <summary>
 /// Per-<c>(TRequest, TResponse)</c> static cache holding the closed behavior-type array for that pair.
-/// The single <see cref="Current"/> field is published via <see cref="Volatile.Write"/> and acquired via
+/// The single <see cref="s_Current"/> field is published via <see cref="Volatile.Write"/> and acquired via
 /// <see cref="Volatile.Read"/>; readers reconcile against the registry's
 /// <see cref="BaseGlobalPipelineRegistry{T}.Generation"/> to detect rebuilds.
 /// </summary>
@@ -146,7 +146,7 @@ internal static class PipelineFastCache<TRequest, TResponse>
     /// The most recently published cache entry, or <see langword="null"/> if no entry exists yet for
     /// this <c>(TRequest, TResponse)</c> pair.
     /// </summary>
-    internal static FastCacheEntry? Current;
+    internal static FastCacheEntry? s_Current;
 }
 
 /// <summary>

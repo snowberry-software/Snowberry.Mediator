@@ -8,11 +8,11 @@ namespace Snowberry.Mediator.Tests.Common.Helper;
 /// </summary>
 public static class NotificationHandlerExecutionTracker
 {
-    private static readonly AsyncLocal<ConcurrentBag<string>> _asyncLocalExecutions = new();
+    private static readonly AsyncLocal<ConcurrentBag<string>> s_AsyncLocalExecutions = new();
 
     public static void Clear()
     {
-        _asyncLocalExecutions.Value = [];
+        s_AsyncLocalExecutions.Value = [];
     }
 
     public static List<string> GetExecutions()
@@ -25,7 +25,7 @@ public static class NotificationHandlerExecutionTracker
     /// </summary>
     public static void InitializeContext()
     {
-        _asyncLocalExecutions.Value = [];
+        s_AsyncLocalExecutions.Value = [];
     }
 
     public static void RecordExecution(string handlerName)
@@ -34,5 +34,5 @@ public static class NotificationHandlerExecutionTracker
     }
 
     private static ConcurrentBag<string> Executions =>
-        _asyncLocalExecutions.Value ??= [];
+        s_AsyncLocalExecutions.Value ??= [];
 }

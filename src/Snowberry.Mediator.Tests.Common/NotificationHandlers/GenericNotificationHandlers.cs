@@ -151,13 +151,13 @@ public class TestSpecificValidationHandler<TNotification> : INotificationHandler
     where TNotification : INotification
 {
     // Use AsyncLocal to isolate state per test execution context
-    private static readonly AsyncLocal<bool> _shouldThrowException = new();
-    private static readonly AsyncLocal<List<string>> _validationResults = new();
+    private static readonly AsyncLocal<bool> s_ShouldThrowException = new();
+    private static readonly AsyncLocal<List<string>> s_ValidationResults = new();
 
     public static void ClearValidationResults()
     {
-        _validationResults.Value = [];
-        _shouldThrowException.Value = false;
+        s_ValidationResults.Value = [];
+        s_ShouldThrowException.Value = false;
     }
 
     public ValueTask HandleAsync(TNotification notification, CancellationToken cancellationToken = default)
@@ -175,10 +175,10 @@ public class TestSpecificValidationHandler<TNotification> : INotificationHandler
 
     public static bool ShouldThrowException
     {
-        get => _shouldThrowException.Value;
-        set => _shouldThrowException.Value = value;
+        get => s_ShouldThrowException.Value;
+        set => s_ShouldThrowException.Value = value;
     }
 
     public static List<string> ValidationResults =>
-        _validationResults.Value ??= [];
+        s_ValidationResults.Value ??= [];
 }
