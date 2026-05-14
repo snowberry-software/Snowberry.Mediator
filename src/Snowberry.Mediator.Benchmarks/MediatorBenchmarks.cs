@@ -1,0 +1,259 @@
+using BenchmarkDotNet.Attributes;
+using Microsoft.Extensions.DependencyInjection;
+using Snowberry.Mediator.Abstractions;
+using Snowberry.Mediator.Extensions.DependencyInjection;
+
+namespace Snowberry.Mediator.Benchmarks;
+
+[MemoryDiagnoser]
+public class MediatorBenchmarks
+{
+    private IMediator _mediatorNoPipeline = null!;
+    private IMediator _mediatorSpecific1 = null!;
+    private IMediator _mediatorSpecific3 = null!;
+    private IMediator _mediatorSpecific10 = null!;
+    private IMediator _mediatorOpenGeneric1 = null!;
+    private IMediator _mediatorOpenGeneric3 = null!;
+    private IMediator _mediatorMixed4 = null!;
+    private IMediator _mediatorPublishSpecific3 = null!;
+    private IMediator _mediatorPublishOpenGeneric3 = null!;
+    private IMediator _mediatorPublishMixed3 = null!;
+    private IMediator _mediatorStreamNoPipeline = null!;
+    private IMediator _mediatorStreamSpecific3 = null!;
+    private IMediator _mediatorSpecific1Async = null!;
+    private IMediator _mediatorOpenGeneric1Async = null!;
+
+    private readonly NoPipelineRequest _noPipelineRequest = new();
+    private readonly Specific1Request _specific1Request = new();
+    private readonly Specific3Request _specific3Request = new();
+    private readonly Specific10Request _specific10Request = new();
+    private readonly OpenGeneric1Request _openGeneric1Request = new();
+    private readonly OpenGeneric3Request _openGeneric3Request = new();
+    private readonly Mixed4Request _mixed4Request = new();
+    private readonly SpecificNotification3 _specificNotification3 = new();
+    private readonly OpenGenericNotification3 _openGenericNotification3 = new();
+    private readonly MixedNotification3 _mixedNotification3 = new();
+    private readonly StreamNoPipelineRequest _streamNoPipelineRequest = new();
+    private readonly StreamSpecific3Request _streamSpecific3Request = new();
+    private readonly Specific1AsyncRequest _specific1AsyncRequest = new();
+    private readonly OpenGeneric1AsyncRequest _openGeneric1AsyncRequest = new();
+
+    [GlobalSetup]
+    public void Setup()
+    {
+        _mediatorNoPipeline = BuildMediator(opt =>
+        {
+            opt.RequestHandlerTypes = [typeof(NoPipelineRequestHandler)];
+        });
+
+        _mediatorSpecific1 = BuildMediator(opt =>
+        {
+            opt.RequestHandlerTypes = [typeof(Specific1RequestHandler)];
+            opt.PipelineBehaviorTypes = [typeof(Specific1Behavior1)];
+        });
+
+        _mediatorSpecific3 = BuildMediator(opt =>
+        {
+            opt.RequestHandlerTypes = [typeof(Specific3RequestHandler)];
+            opt.PipelineBehaviorTypes =
+            [
+                typeof(Specific3Behavior1),
+                typeof(Specific3Behavior2),
+                typeof(Specific3Behavior3),
+            ];
+        });
+
+        _mediatorSpecific10 = BuildMediator(opt =>
+        {
+            opt.RequestHandlerTypes = [typeof(Specific10RequestHandler)];
+            opt.PipelineBehaviorTypes =
+            [
+                typeof(Specific10Behavior1),
+                typeof(Specific10Behavior2),
+                typeof(Specific10Behavior3),
+                typeof(Specific10Behavior4),
+                typeof(Specific10Behavior5),
+                typeof(Specific10Behavior6),
+                typeof(Specific10Behavior7),
+                typeof(Specific10Behavior8),
+                typeof(Specific10Behavior9),
+                typeof(Specific10Behavior10),
+            ];
+        });
+
+        _mediatorOpenGeneric1 = BuildMediator(opt =>
+        {
+            opt.RequestHandlerTypes = [typeof(OpenGeneric1RequestHandler)];
+            opt.PipelineBehaviorTypes = [typeof(OpenBehavior1<,>)];
+        });
+
+        _mediatorOpenGeneric3 = BuildMediator(opt =>
+        {
+            opt.RequestHandlerTypes = [typeof(OpenGeneric3RequestHandler)];
+            opt.PipelineBehaviorTypes =
+            [
+                typeof(OpenBehavior1<,>),
+                typeof(OpenBehavior2<,>),
+                typeof(OpenBehavior3<,>),
+            ];
+        });
+
+        _mediatorMixed4 = BuildMediator(opt =>
+        {
+            opt.RequestHandlerTypes = [typeof(Mixed4RequestHandler)];
+            opt.PipelineBehaviorTypes =
+            [
+                typeof(Mixed4SpecificBehavior1),
+                typeof(Mixed4SpecificBehavior2),
+                typeof(MixedOpenBehavior1<,>),
+                typeof(MixedOpenBehavior2<,>),
+            ];
+        });
+
+        _mediatorPublishSpecific3 = BuildMediator(opt =>
+        {
+            opt.NotificationHandlerTypes =
+            [
+                typeof(SpecificNotification3Handler1),
+                typeof(SpecificNotification3Handler2),
+                typeof(SpecificNotification3Handler3),
+            ];
+        });
+
+        _mediatorPublishOpenGeneric3 = BuildMediator(opt =>
+        {
+            opt.NotificationHandlerTypes =
+            [
+                typeof(OpenNotificationHandler1<>),
+                typeof(OpenNotificationHandler2<>),
+                typeof(OpenNotificationHandler3<>),
+            ];
+            // We need at least one concrete notification "registered" implicitly via the publish call;
+            // open-generic handlers are constructed on demand.
+        });
+
+        _mediatorPublishMixed3 = BuildMediator(opt =>
+        {
+            opt.NotificationHandlerTypes =
+            [
+                typeof(MixedNotification3Specific1),
+                typeof(MixedNotification3Specific2),
+                typeof(MixedOpenNotificationHandler<>),
+            ];
+        });
+
+        _mediatorStreamNoPipeline = BuildMediator(opt =>
+        {
+            opt.StreamRequestHandlerTypes = [typeof(StreamNoPipelineRequestHandler)];
+        });
+
+        _mediatorStreamSpecific3 = BuildMediator(opt =>
+        {
+            opt.StreamRequestHandlerTypes = [typeof(StreamSpecific3RequestHandler)];
+            opt.StreamPipelineBehaviorTypes =
+            [
+                typeof(StreamSpecific3Behavior1),
+                typeof(StreamSpecific3Behavior2),
+                typeof(StreamSpecific3Behavior3),
+            ];
+        });
+
+        _mediatorSpecific1Async = BuildMediator(opt =>
+        {
+            opt.RequestHandlerTypes = [typeof(Specific1AsyncRequestHandler)];
+            opt.PipelineBehaviorTypes = [typeof(Specific1AsyncBehavior1)];
+        });
+
+        _mediatorOpenGeneric1Async = BuildMediator(opt =>
+        {
+            opt.RequestHandlerTypes = [typeof(OpenGeneric1AsyncRequestHandler)];
+            opt.PipelineBehaviorTypes = [typeof(OpenAsyncBehavior1<,>)];
+        });
+    }
+
+    private static IMediator BuildMediator(Action<MediatorOptions> configure)
+    {
+        var services = new ServiceCollection();
+        services.AddSnowberryMediator(configure, ServiceLifetime.Singleton);
+        var provider = services.BuildServiceProvider();
+        return provider.GetRequiredService<IMediator>();
+    }
+
+    // ---------- Send ----------
+
+    [Benchmark(Baseline = true)]
+    public ValueTask<int> Send_NoPipeline()
+        => _mediatorNoPipeline.SendAsync<NoPipelineRequest, int>(_noPipelineRequest);
+
+    [Benchmark]
+    public ValueTask<int> Send_Specific1()
+        => _mediatorSpecific1.SendAsync<Specific1Request, int>(_specific1Request);
+
+    [Benchmark]
+    public ValueTask<int> Send_Specific3()
+        => _mediatorSpecific3.SendAsync<Specific3Request, int>(_specific3Request);
+
+    [Benchmark]
+    public ValueTask<int> Send_Specific10()
+        => _mediatorSpecific10.SendAsync<Specific10Request, int>(_specific10Request);
+
+    [Benchmark]
+    public ValueTask<int> Send_OpenGeneric1()
+        => _mediatorOpenGeneric1.SendAsync<OpenGeneric1Request, int>(_openGeneric1Request);
+
+    [Benchmark]
+    public ValueTask<int> Send_OpenGeneric3()
+        => _mediatorOpenGeneric3.SendAsync<OpenGeneric3Request, int>(_openGeneric3Request);
+
+    [Benchmark]
+    public ValueTask<int> Send_Mixed4()
+        => _mediatorMixed4.SendAsync<Mixed4Request, int>(_mixed4Request);
+
+    // ---------- Publish ----------
+
+    [Benchmark]
+    public ValueTask Publish_Specific3()
+        => _mediatorPublishSpecific3.PublishAsync(_specificNotification3);
+
+    [Benchmark]
+    public ValueTask Publish_OpenGeneric3()
+        => _mediatorPublishOpenGeneric3.PublishAsync(_openGenericNotification3);
+
+    [Benchmark]
+    public ValueTask Publish_Mixed3()
+        => _mediatorPublishMixed3.PublishAsync(_mixedNotification3);
+
+    // ---------- Stream ----------
+
+    [Benchmark]
+    public async ValueTask<int> Stream_NoPipeline_Enumerate10()
+    {
+        int sum = 0;
+        await foreach (var i in _mediatorStreamNoPipeline.CreateStreamAsync<StreamNoPipelineRequest, int>(_streamNoPipelineRequest))
+        {
+            sum += i;
+        }
+        return sum;
+    }
+
+    [Benchmark]
+    public async ValueTask<int> Stream_Specific3_Enumerate10()
+    {
+        int sum = 0;
+        await foreach (var i in _mediatorStreamSpecific3.CreateStreamAsync<StreamSpecific3Request, int>(_streamSpecific3Request))
+        {
+            sum += i;
+        }
+        return sum;
+    }
+
+    // ---------- Phase 0.5 diagnostic variants (async/await — exposes AsyncStateMachineBox vs delegate) ----------
+
+    [Benchmark]
+    public ValueTask<int> Send_Specific1_Async()
+        => _mediatorSpecific1Async.SendAsync<Specific1AsyncRequest, int>(_specific1AsyncRequest);
+
+    [Benchmark]
+    public ValueTask<int> Send_OpenGeneric1_Async()
+        => _mediatorOpenGeneric1Async.SendAsync<OpenGeneric1AsyncRequest, int>(_openGeneric1AsyncRequest);
+}

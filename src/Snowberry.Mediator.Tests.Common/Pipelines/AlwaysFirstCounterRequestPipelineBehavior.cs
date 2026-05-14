@@ -1,4 +1,3 @@
-﻿using Snowberry.Mediator.Abstractions;
 using Snowberry.Mediator.Abstractions.Attributes;
 using Snowberry.Mediator.Abstractions.Pipeline;
 using Snowberry.Mediator.Tests.Common.Helper;
@@ -10,13 +9,11 @@ namespace Snowberry.Mediator.Tests.Common.Pipelines;
 public class AlwaysFirstCounterRequestPipelineBehavior : IPipelineBehavior<CounterRequest, int>
 {
     /// <inheritdoc/>
-    public async ValueTask<int> HandleAsync(CounterRequest request, CancellationToken cancellationToken = default)
+    public async ValueTask<int> HandleAsync<TNext>(CounterRequest request, TNext next, CancellationToken cancellationToken = default)
+        where TNext : struct, IPipelineContinuation<CounterRequest, int>
     {
         PipelineExecutionTracker.RecordExecution(nameof(AlwaysFirstCounterRequestPipelineBehavior));
-        int response = await NextPipeline(request, cancellationToken);
+        int response = await next.InvokeAsync(request, cancellationToken);
         return response + 1;
     }
-
-    /// <inheritdoc/>
-    public PipelineHandlerDelegate<CounterRequest, int> NextPipeline { get; set; } = null!;
 }

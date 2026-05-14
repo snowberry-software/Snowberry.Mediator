@@ -1,4 +1,3 @@
-using Snowberry.Mediator.Abstractions;
 using Snowberry.Mediator.Abstractions.Pipeline;
 using Snowberry.Mediator.Tests.Common.Helper;
 using Snowberry.Mediator.Tests.Common.Requests;
@@ -7,7 +6,8 @@ namespace Snowberry.Mediator.Tests.Common.Pipelines;
 
 public class CancellationCheckingPipelineBehavior : IPipelineBehavior<DelayedRequest, string>
 {
-    public async ValueTask<string> HandleAsync(DelayedRequest request, CancellationToken cancellationToken = default)
+    public async ValueTask<string> HandleAsync<TNext>(DelayedRequest request, TNext next, CancellationToken cancellationToken = default)
+        where TNext : struct, IPipelineContinuation<DelayedRequest, string>
     {
         PipelineExecutionTracker.RecordExecution(nameof(CancellationCheckingPipelineBehavior));
 
@@ -18,12 +18,10 @@ public class CancellationCheckingPipelineBehavior : IPipelineBehavior<DelayedReq
 
         cancellationToken.ThrowIfCancellationRequested();
 
-        string response = await NextPipeline(request, cancellationToken);
+        string response = await next.InvokeAsync(request, cancellationToken);
 
         cancellationToken.ThrowIfCancellationRequested();
 
         return response;
     }
-
-    public PipelineHandlerDelegate<DelayedRequest, string> NextPipeline { get; set; } = null!;
 }

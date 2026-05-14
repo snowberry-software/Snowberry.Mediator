@@ -1,4 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using Snowberry.Mediator.Abstractions;
 using Snowberry.Mediator.Abstractions.Exceptions;
@@ -7,14 +7,16 @@ using Snowberry.Mediator.Abstractions.Messages;
 using Snowberry.Mediator.Abstractions.Pipeline;
 using Snowberry.Mediator.Models;
 using Snowberry.Mediator.Registries.Contracts;
-using ZLinq;
 
 namespace Snowberry.Mediator.Registries;
 
 /// <summary>
-/// The global stream pipeline registry implementation.
+/// Default <see cref="IGlobalStreamPipelineRegistry"/> implementation. Tracks
+/// <see cref="Abstractions.Pipeline.IStreamPipelineBehavior{TRequest, TResponse}"/> registrations and
+/// dispatches stream requests through them in priority order, resolving each behavior from the supplied
+/// <see cref="IServiceProvider"/> on every call.
 /// </summary>
-public class GlobalStreamPipelineRegistry : BaseGlobalPipelineRegistry<StreamPipelineBehaviorHandlerInfo>, IGlobalStreamPipelineRegistry
+public sealed class GlobalStreamPipelineRegistry : BaseGlobalPipelineRegistry<StreamPipelineBehaviorHandlerInfo>, IGlobalStreamPipelineRegistry
 {
     /// <inheritdoc/>
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Stream pipeline behaviors are explicitly registered, not discovered through reflection.")]
@@ -26,132 +28,89 @@ public class GlobalStreamPipelineRegistry : BaseGlobalPipelineRegistry<StreamPip
         if (IsEmpty)
             return handler.HandleAsync(request, cancellationToken);
 
+        EnsureBuilt();
+
         var requestType = typeof(TRequest);
+        bool hasSpecific = TryGetFrozenSpecific(requestType, out var specific);
+        var openGeneric = FrozenOpenGenericHandlers;
 
-        // Get specific handlers for this request type
-        _pipelineBehaviors.TryGetValue(requestType, out var behaviorValues);
-
-        // If we only have specific handlers, use the fast path
-        if (_openGenericHandlers.Count == 0 && behaviorValues != null)
+        if (openGeneric.Length == 0 && hasSpecific)
         {
             StreamPipelineHandlerDelegate<TRequest, TResponse> next = handler.HandleAsync;
-
-            var sortedHandlers = behaviorValues
-                .AsValueEnumerable()
-                .OrderByDescending(x => x.SortIndex);
-
-            foreach (var pipelineBehavior in sortedHandlers)
+            for (int i = 0; i < specific.Length; i++)
             {
                 var current = Unsafe.As<IStreamPipelineBehavior<TRequest, TResponse>>(
-                    serviceProvider.GetService(pipelineBehavior.HandlerInfo.HandlerType)
+                    serviceProvider.GetService(specific[i].HandlerInfo.HandlerType)
                     ?? throw new PipelineBehaviorNotFoundException(typeof(TRequest), isStream: true));
-
                 current.NextPipeline = next;
                 next = current.HandleAsync;
             }
-
             return next(request, cancellationToken);
         }
 
-        // If we only have open generic handlers, process them directly
-        if (behaviorValues == null || behaviorValues.Count == 0)
+        if (!hasSpecific)
         {
             StreamPipelineHandlerDelegate<TRequest, TResponse> next = handler.HandleAsync;
-
-            // Process open generic handlers in reverse order (by SortIndex)
-            var sortedHandlers = _openGenericHandlers
-                .AsValueEnumerable()
-                .OrderByDescending(x => x.SortIndex);
-
             var responseType = typeof(TResponse);
-
-            foreach (var openGenericHandler in sortedHandlers)
+            for (int i = 0; i < openGeneric.Length; i++)
             {
-                var handlerType = openGenericHandler.HandlerInfo.HandlerType;
-                var current = Unsafe.As<IStreamPipelineBehavior<TRequest, TResponse>>(serviceProvider.GetService(handlerType.MakeGenericType(requestType, responseType)))!;
+                var handlerType = openGeneric[i].HandlerInfo.HandlerType;
+                var current = Unsafe.As<IStreamPipelineBehavior<TRequest, TResponse>>(
+                    serviceProvider.GetService(handlerType.MakeGenericType(requestType, responseType)))!;
                 current.NextPipeline = next;
                 next = current.HandleAsync;
             }
-
             return next(request, cancellationToken);
         }
 
-        // Mixed case: we have both specific and open generic handlers
-        // Process them by priority without creating any temporary collections
-        StreamPipelineHandlerDelegate<TRequest, TResponse> finalNext = handler.HandleAsync;
+        return ExecuteMixed(serviceProvider, handler, specific, openGeneric, request, requestType, cancellationToken);
+    }
 
-        // Find the highest priority first, then work backwards
-        // This avoids any allocations by processing handlers multiple times
-        int maxPriority = int.MinValue;
-        int minPriority = int.MaxValue;
+    [UnconditionalSuppressMessage("Trimming", "IL2055", Justification = "Stream pipeline behaviors are explicitly registered, not discovered through reflection.")]
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "Stream pipeline behaviors are explicitly registered, not discovered through reflection.")]
+    private static IAsyncEnumerable<TResponse> ExecuteMixed<TRequest, TResponse>(
+        IServiceProvider serviceProvider,
+        IStreamRequestHandler<TRequest, TResponse> handler,
+        PipelineBehaviorValue<StreamPipelineBehaviorHandlerInfo>[] specific,
+        PipelineBehaviorValue<StreamPipelineBehaviorHandlerInfo>[] openGeneric,
+        TRequest request,
+        Type requestType,
+        CancellationToken cancellationToken)
+        where TRequest : class, IStreamRequest<TRequest, TResponse>
+    {
+        var responseType = typeof(TResponse);
+        StreamPipelineHandlerDelegate<TRequest, TResponse> next = handler.HandleAsync;
 
-        // First pass: find priority range from specific handlers
-        if (behaviorValues != null)
+        // Same merge invariant as GlobalPipelineRegistry: iterate forward, pick higher SortIndex (lower
+        // effective priority) first so the highest-priority behavior ends up outermost. Tie-break to specific.
+        int i = 0;
+        int j = 0;
+        while (i < specific.Length || j < openGeneric.Length)
         {
-            for (int i = 0; i < behaviorValues.Count; i++)
-            {
-                var specificHandler = behaviorValues[i];
-                int priority = specificHandler.SortIndex;
+            bool pickSpecific;
+            if (i >= specific.Length) pickSpecific = false;
+            else if (j >= openGeneric.Length) pickSpecific = true;
+            else pickSpecific = specific[i].SortIndex >= openGeneric[j].SortIndex;
 
-                if (priority > maxPriority)
-                    maxPriority = priority;
-                if (priority < minPriority)
-                    minPriority = priority;
+            IStreamPipelineBehavior<TRequest, TResponse> current;
+            if (pickSpecific)
+            {
+                current = Unsafe.As<IStreamPipelineBehavior<TRequest, TResponse>>(
+                    serviceProvider.GetService(specific[i].HandlerInfo.HandlerType)
+                    ?? throw new PipelineBehaviorNotFoundException(typeof(TRequest), isStream: true));
+                i++;
             }
+            else
+            {
+                var handlerType = openGeneric[j].HandlerInfo.HandlerType;
+                current = Unsafe.As<IStreamPipelineBehavior<TRequest, TResponse>>(
+                    serviceProvider.GetService(handlerType.MakeGenericType(requestType, responseType)))!;
+                j++;
+            }
+            current.NextPipeline = next;
+            next = current.HandleAsync;
         }
 
-        // First pass: find priority range from open generic handlers  
-        for (int i = 0; i < _openGenericHandlers.Count; i++)
-        {
-            var openGenericHandler = _openGenericHandlers[i];
-            int priority = openGenericHandler.SortIndex;
-
-            if (priority > maxPriority)
-                maxPriority = priority;
-            if (priority < minPriority)
-                minPriority = priority;
-        }
-
-        // Process handlers from highest to lowest priority (reverse order for pipeline building)
-        for (int currentPriority = maxPriority; currentPriority >= minPriority; currentPriority--)
-        {
-            // Process specific handlers at this priority level
-            if (behaviorValues != null)
-            {
-                for (int i = 0; i < behaviorValues.Count; i++)
-                {
-                    var specificHandler = behaviorValues[i];
-
-                    if (specificHandler.SortIndex != currentPriority)
-                        continue;
-
-                    var current = Unsafe.As<IStreamPipelineBehavior<TRequest, TResponse>>(
-                        serviceProvider.GetService(specificHandler.HandlerInfo.HandlerType)
-                        ?? throw new PipelineBehaviorNotFoundException(typeof(TRequest), isStream: true));
-
-                    current.NextPipeline = finalNext;
-                    finalNext = current.HandleAsync;
-                }
-            }
-
-            var responseType = typeof(TResponse);
-
-            for (int i = 0; i < _openGenericHandlers.Count; i++)
-            {
-                var openGenericHandler = _openGenericHandlers[i];
-
-                if (openGenericHandler.SortIndex != currentPriority)
-                    continue;
-
-                var handlerType = openGenericHandler.HandlerInfo.HandlerType;
-
-                var current = Unsafe.As<IStreamPipelineBehavior<TRequest, TResponse>>(serviceProvider.GetService(handlerType.MakeGenericType(requestType, responseType)))!;
-
-                current.NextPipeline = finalNext;
-                finalNext = current.HandleAsync;
-            }
-        }
-
-        return finalNext(request, cancellationToken);
+        return next(request, cancellationToken);
     }
 }

@@ -1,4 +1,4 @@
-﻿using System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using Snowberry.Mediator.Abstractions;
 using Snowberry.Mediator.Abstractions.Exceptions;
 using Snowberry.Mediator.Abstractions.Handler;
@@ -9,13 +9,21 @@ using Snowberry.Mediator.Registries.Contracts;
 namespace Snowberry.Mediator;
 
 /// <inheritdoc cref="IMediator"/>.
-public class Mediator : IMediator
+public sealed class Mediator : IMediator
 {
     private readonly IServiceProvider _serviceProvider;
+    private readonly IGlobalPipelineRegistry? _pipelineRegistry;
+    private readonly IGlobalStreamPipelineRegistry? _streamPipelineRegistry;
+    private readonly IGlobalNotificationHandlerRegistry<NotificationHandlerInfo>? _notificationRegistry;
 
     public Mediator(IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;
+        // Registries are registered as singleton instances in DI — resolve once at construction so per-call
+        // dispatch never pays the GetService cost. Each is optional; null = no behaviors/handlers of that kind.
+        _pipelineRegistry = Unsafe.As<IGlobalPipelineRegistry?>(serviceProvider.GetService(typeof(IGlobalPipelineRegistry)));
+        _streamPipelineRegistry = Unsafe.As<IGlobalStreamPipelineRegistry?>(serviceProvider.GetService(typeof(IGlobalStreamPipelineRegistry)));
+        _notificationRegistry = Unsafe.As<IGlobalNotificationHandlerRegistry<NotificationHandlerInfo>?>(serviceProvider.GetService(typeof(IGlobalNotificationHandlerRegistry<NotificationHandlerInfo>)));
     }
 
     /// <inheritdoc/>
@@ -29,11 +37,10 @@ public class Mediator : IMediator
         object service = _serviceProvider.GetService(typeof(IRequestHandler<TRequest, TResponse>)) ?? throw new HandlerNotFoundException(typeof(TRequest), isStream: false);
 
         var requestTyped = Unsafe.As<TRequest>(request);
-
-        var pipelineRegistry = Unsafe.As<IGlobalPipelineRegistry?>(_serviceProvider.GetService(typeof(IGlobalPipelineRegistry)));
         var handler = Unsafe.As<IRequestHandler<TRequest, TResponse>>(service);
 
-        if (pipelineRegistry is not null)
+        var pipelineRegistry = _pipelineRegistry;
+        if (pipelineRegistry is not null && !pipelineRegistry.IsEmpty)
             return pipelineRegistry.ExecuteAsync(_serviceProvider, handler, requestTyped, cancellationToken);
 
         return handler.HandleAsync(requestTyped, cancellationToken);
@@ -50,11 +57,10 @@ public class Mediator : IMediator
         object service = _serviceProvider.GetService(typeof(IStreamRequestHandler<TRequest, TResponse>)) ?? throw new HandlerNotFoundException(typeof(TRequest), isStream: true);
 
         var requestTyped = Unsafe.As<TRequest>(request);
-
-        var streamPipelineRegistry = Unsafe.As<IGlobalStreamPipelineRegistry?>(_serviceProvider.GetService(typeof(IGlobalStreamPipelineRegistry)));
         var handler = Unsafe.As<IStreamRequestHandler<TRequest, TResponse>>(service);
 
-        if (streamPipelineRegistry is not null)
+        var streamPipelineRegistry = _streamPipelineRegistry;
+        if (streamPipelineRegistry is not null && !streamPipelineRegistry.IsEmpty)
             return streamPipelineRegistry.ExecuteAsync(_serviceProvider, handler, requestTyped, cancellationToken);
 
         return handler.HandleAsync(requestTyped, cancellationToken);
@@ -67,9 +73,8 @@ public class Mediator : IMediator
 
         cancellationToken.ThrowIfCancellationRequested();
 
-        var registry = Unsafe.As<IGlobalNotificationHandlerRegistry<NotificationHandlerInfo>?>(_serviceProvider.GetService(typeof(IGlobalNotificationHandlerRegistry<NotificationHandlerInfo>)));
-
-        if (registry == null)
+        var registry = _notificationRegistry;
+        if (registry is null)
             throw new NotificationHandlerNotFoundException(typeof(TNotification));
 
         return registry.PublishAsync(_serviceProvider, notification, cancellationToken);

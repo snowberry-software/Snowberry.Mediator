@@ -13,14 +13,13 @@ namespace Snowberry.Mediator.Tests.Common.Pipelines;
 public class HighPriorityGenericPipelineBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
     where TRequest : class, IRequest<TRequest, TResponse>
 {
-    public async ValueTask<TResponse> HandleAsync(TRequest request, CancellationToken cancellationToken = default)
+    public async ValueTask<TResponse> HandleAsync<TNext>(TRequest request, TNext next, CancellationToken cancellationToken = default)
+        where TNext : struct, IPipelineContinuation<TRequest, TResponse>
     {
         PipelineExecutionTracker.RecordExecution($"HighPriorityGenericPipelineBehavior<{typeof(TRequest).Name}, {typeof(TResponse).Name}>");
-        var response = await NextPipeline(request, cancellationToken);
+        var response = await next.InvokeAsync(request, cancellationToken);
         return response;
     }
-
-    public PipelineHandlerDelegate<TRequest, TResponse> NextPipeline { get; set; } = null!;
 }
 
 /// <summary>
@@ -30,14 +29,13 @@ public class HighPriorityGenericPipelineBehavior<TRequest, TResponse> : IPipelin
 public class MediumPriorityGenericPipelineBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
     where TRequest : class, IRequest<TRequest, TResponse>
 {
-    public async ValueTask<TResponse> HandleAsync(TRequest request, CancellationToken cancellationToken = default)
+    public async ValueTask<TResponse> HandleAsync<TNext>(TRequest request, TNext next, CancellationToken cancellationToken = default)
+        where TNext : struct, IPipelineContinuation<TRequest, TResponse>
     {
         PipelineExecutionTracker.RecordExecution($"MediumPriorityGenericPipelineBehavior<{typeof(TRequest).Name}, {typeof(TResponse).Name}>");
-        var response = await NextPipeline(request, cancellationToken);
+        var response = await next.InvokeAsync(request, cancellationToken);
         return response;
     }
-
-    public PipelineHandlerDelegate<TRequest, TResponse> NextPipeline { get; set; } = null!;
 }
 
 /// <summary>

@@ -12,10 +12,25 @@ using Snowberry.Mediator.Registries.Contracts;
 namespace Snowberry.Mediator.DependencyInjection.Shared;
 
 /// <summary>
-/// Helper type for adding Mediator services to a service context.
+/// Container-agnostic helper that registers Mediator services into any <see cref="IServiceContext"/>
+/// implementation. Provides both a fully-AOT-friendly explicit-registration variant
+/// (<see cref="AddSnowberryMediatorNoScan"/>) and a reflection-based assembly-scanning variant
+/// (<see cref="AddSnowberryMediator"/>).
 /// </summary>
 public static class DependencyInjectionHelper
 {
+    /// <summary>
+    /// Callback signature invoked by <see cref="AddSnowberryMediatorNoScan"/> and
+    /// <see cref="AddSnowberryMediator"/> after the <see cref="HandlerCollection"/> is created but before
+    /// handler registrations are applied. Allows callers to inject additional handler types into the
+    /// collection.
+    /// </summary>
+    /// <param name="serviceContext">The service context being populated.</param>
+    /// <param name="options">The mediator options.</param>
+    /// <param name="serviceLifetime">The lifetime applied to registered services.</param>
+    /// <param name="handlerCollection">The mutable handler collection populated during registration.</param>
+    /// <param name="append">Whether registrations are appended to existing services
+    /// (<see langword="true"/>) or replace them (<see langword="false"/>).</param>
     public delegate void CustomAddCallbackDelegate(
         IServiceContext serviceContext,
         MediatorOptions options,
@@ -129,6 +144,14 @@ public static class DependencyInjectionHelper
         });
     }
 
+    /// <summary>
+    /// Scans an assembly for mediator handler implementations and adds the discovered types to
+    /// <paramref name="handlerCollection"/>. Honours the <c>Register*</c> and <c>Scan*</c> flags on
+    /// <paramref name="options"/> to determine which handler categories to include.
+    /// </summary>
+    /// <param name="options">The mediator options controlling which handler categories to scan.</param>
+    /// <param name="handlerCollection">The destination collection that receives discovered handlers.</param>
+    /// <param name="assembly">The assembly to scan.</param>
     [RequiresUnreferencedCode("Assembly scanning requires unreferenced code. Use explicit handler registration for AOT compatibility.")]
     public static void ScanAssembly(MediatorOptions options, HandlerCollection handlerCollection, Assembly assembly)
     {
@@ -192,6 +215,9 @@ public static class DependencyInjectionHelper
 
             serviceContext.TryRegister(handler.HandlerType, handler.HandlerType, serviceLifetime);
         }
+
+        // Snapshot the registered behaviors into the read-optimized frozen state.
+        globalPipelineRegistry!.Build();
     }
 
     private static void AddNotificationHandlers(
@@ -229,14 +255,31 @@ public static class DependencyInjectionHelper
 
             serviceContext.TryRegister(handler.HandlerType, handler.HandlerType, serviceLifetime);
         }
+
+        // Snapshot the registered handlers into the read-optimized frozen state.
+        globalNotificationHandlerRegistry!.Build();
     }
 
+    /// <summary>
+    /// Mutable collection of handler-info entries gathered during registration. Each list holds the
+    /// handlers of one category (request, stream request, pipeline behavior, stream pipeline behavior,
+    /// notification handler) before they are registered with the service context.
+    /// </summary>
     public class HandlerCollection
     {
+        /// <summary>Registered <see cref="Abstractions.Handler.IRequestHandler{TRequest, TResponse}"/> handler-info entries.</summary>
         public readonly List<RequestHandlerInfo> AllHandlers = [];
+
+        /// <summary>Registered <see cref="Abstractions.Handler.IStreamRequestHandler{TRequest, TResponse}"/> handler-info entries.</summary>
         public readonly List<StreamRequestHandlerInfo> AllStreamHandlers = [];
+
+        /// <summary>Registered <see cref="Abstractions.Pipeline.IPipelineBehavior{TRequest, TResponse}"/> handler-info entries.</summary>
         public readonly List<PipelineBehaviorHandlerInfo> AllPipelineBehaviorHandlers = [];
+
+        /// <summary>Registered <see cref="Abstractions.Pipeline.IStreamPipelineBehavior{TRequest, TResponse}"/> handler-info entries.</summary>
         public readonly List<StreamPipelineBehaviorHandlerInfo> AllStreamPipelineBehaviorHandlers = [];
+
+        /// <summary>Registered <see cref="Abstractions.Handler.INotificationHandler{TNotification}"/> handler-info entries.</summary>
         public readonly List<NotificationHandlerInfo> AllNotificationHandlers = [];
     }
 }

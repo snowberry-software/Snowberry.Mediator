@@ -27,6 +27,12 @@ public interface IGlobalNotificationHandlerRegistry<TNotificationHandlerInfo>
         where TNotification : INotification;
 
     /// <summary>
+    /// Builds the read-optimized snapshot of registered handlers. Called once after all registrations
+    /// are complete. Subsequent registrations are picked up by the next <see cref="Build"/> call.
+    /// </summary>
+    void Build();
+
+    /// <summary>
     /// Gets whether the registry is empty.
     /// </summary>
     bool IsEmpty { get; }

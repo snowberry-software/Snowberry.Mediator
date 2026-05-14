@@ -12,14 +12,13 @@ namespace Snowberry.Mediator.Tests.Common.Pipelines;
 [PipelineOverwritePriority(Priority = 200)]
 public class HighPriorityConcretePipelineBehavior : IPipelineBehavior<MixedPipelineTestRequest, string>
 {
-    public async ValueTask<string> HandleAsync(MixedPipelineTestRequest request, CancellationToken cancellationToken = default)
+    public async ValueTask<string> HandleAsync<TNext>(MixedPipelineTestRequest request, TNext next, CancellationToken cancellationToken = default)
+        where TNext : struct, IPipelineContinuation<MixedPipelineTestRequest, string>
     {
         PipelineExecutionTracker.RecordExecution(nameof(HighPriorityConcretePipelineBehavior));
-        string response = await NextPipeline(request, cancellationToken);
+        string response = await next.InvokeAsync(request, cancellationToken);
         return $"[H:{response}]"; // High priority wrapper
     }
-
-    public PipelineHandlerDelegate<MixedPipelineTestRequest, string> NextPipeline { get; set; } = null!;
 }
 
 /// <summary>
@@ -28,14 +27,13 @@ public class HighPriorityConcretePipelineBehavior : IPipelineBehavior<MixedPipel
 [PipelineOverwritePriority(Priority = 25)]
 public class LowPriorityConcretePipelineBehavior : IPipelineBehavior<MixedPipelineTestRequest, string>
 {
-    public async ValueTask<string> HandleAsync(MixedPipelineTestRequest request, CancellationToken cancellationToken = default)
+    public async ValueTask<string> HandleAsync<TNext>(MixedPipelineTestRequest request, TNext next, CancellationToken cancellationToken = default)
+        where TNext : struct, IPipelineContinuation<MixedPipelineTestRequest, string>
     {
         PipelineExecutionTracker.RecordExecution(nameof(LowPriorityConcretePipelineBehavior));
-        string response = await NextPipeline(request, cancellationToken);
+        string response = await next.InvokeAsync(request, cancellationToken);
         return $"[L:{response}]"; // Low priority wrapper
     }
-
-    public PipelineHandlerDelegate<MixedPipelineTestRequest, string> NextPipeline { get; set; } = null!;
 }
 
 /// <summary>

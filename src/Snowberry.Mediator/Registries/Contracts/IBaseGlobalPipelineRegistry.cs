@@ -15,6 +15,12 @@ public interface IBaseGlobalPipelineRegistry<T> where T : PipelineBehaviorHandle
     void Register(T pipelineBehaviorHandlerInfo);
 
     /// <summary>
+    /// Builds the read-optimized snapshot of registered behaviors. Called once after all registrations
+    /// are complete. Subsequent registrations are picked up by the next <see cref="Build"/> call.
+    /// </summary>
+    void Build();
+
+    /// <summary>
     /// Gets whether the registry is empty.
     /// </summary>
     bool IsEmpty { get; }

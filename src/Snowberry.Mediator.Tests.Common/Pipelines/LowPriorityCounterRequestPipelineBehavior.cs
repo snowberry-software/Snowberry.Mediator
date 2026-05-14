@@ -1,4 +1,3 @@
-using Snowberry.Mediator.Abstractions;
 using Snowberry.Mediator.Abstractions.Attributes;
 using Snowberry.Mediator.Abstractions.Pipeline;
 using Snowberry.Mediator.Tests.Common.Helper;
@@ -9,12 +8,11 @@ namespace Snowberry.Mediator.Tests.Common.Pipelines;
 [PipelineOverwritePriority(Priority = 10)]
 public class LowPriorityCounterRequestPipelineBehavior : IPipelineBehavior<CounterRequest, int>
 {
-    public async ValueTask<int> HandleAsync(CounterRequest request, CancellationToken cancellationToken = default)
+    public async ValueTask<int> HandleAsync<TNext>(CounterRequest request, TNext next, CancellationToken cancellationToken = default)
+        where TNext : struct, IPipelineContinuation<CounterRequest, int>
     {
         PipelineExecutionTracker.RecordExecution(nameof(LowPriorityCounterRequestPipelineBehavior));
-        int response = await NextPipeline(request, cancellationToken);
+        int response = await next.InvokeAsync(request, cancellationToken);
         return response + 100;
     }
-
-    public PipelineHandlerDelegate<CounterRequest, int> NextPipeline { get; set; } = null!;
 }

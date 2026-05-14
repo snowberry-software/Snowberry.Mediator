@@ -1070,7 +1070,7 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
 
             // Verify all executions across scopes
             var executions = NotificationHandlerExecutionTracker.GetExecutions();
-            Assert.Equal(6, executions.Count); // 2 handlers × 3 scopes
+            Assert.Equal(6, executions.Count); // 2 handlers ï¿½ 3 scopes
 
             Assert.Equal(3, executions.Count(e => e == nameof(CorePluginHandler)));
             Assert.Equal(3, executions.Count(e => e == nameof(AdditionalPluginHandler)));
@@ -1226,14 +1226,13 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
     [PipelineOverwritePriority(Priority = 200)]
     public class HighPriorityPluginBehavior : IPipelineBehavior<PriorityPluginRequest, string>
     {
-        public async ValueTask<string> HandleAsync(PriorityPluginRequest request, CancellationToken cancellationToken = default)
+        public async ValueTask<string> HandleAsync<TNext>(PriorityPluginRequest request, TNext next, CancellationToken cancellationToken = default)
+            where TNext : struct, IPipelineContinuation<PriorityPluginRequest, string>
         {
             PipelineExecutionTracker.RecordExecution(nameof(HighPriorityPluginBehavior));
-            string result = await NextPipeline(request, cancellationToken);
+            string result = await next.InvokeAsync(request, cancellationToken);
             return $"[High:{result}]";
         }
-
-        public PipelineHandlerDelegate<PriorityPluginRequest, string> NextPipeline { get; set; } = null!;
     }
 
     /// <summary>
@@ -1242,14 +1241,13 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
     [PipelineOverwritePriority(Priority = 100)]
     public class MediumPriorityPluginBehavior : IPipelineBehavior<PriorityPluginRequest, string>
     {
-        public async ValueTask<string> HandleAsync(PriorityPluginRequest request, CancellationToken cancellationToken = default)
+        public async ValueTask<string> HandleAsync<TNext>(PriorityPluginRequest request, TNext next, CancellationToken cancellationToken = default)
+            where TNext : struct, IPipelineContinuation<PriorityPluginRequest, string>
         {
             PipelineExecutionTracker.RecordExecution(nameof(MediumPriorityPluginBehavior));
-            string result = await NextPipeline(request, cancellationToken);
+            string result = await next.InvokeAsync(request, cancellationToken);
             return $"[Medium:{result}]";
         }
-
-        public PipelineHandlerDelegate<PriorityPluginRequest, string> NextPipeline { get; set; } = null!;
     }
 
     /// <summary>
@@ -1258,14 +1256,13 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
     [PipelineOverwritePriority(Priority = 50)]
     public class LowPriorityPluginBehavior : IPipelineBehavior<PriorityPluginRequest, string>
     {
-        public async ValueTask<string> HandleAsync(PriorityPluginRequest request, CancellationToken cancellationToken = default)
+        public async ValueTask<string> HandleAsync<TNext>(PriorityPluginRequest request, TNext next, CancellationToken cancellationToken = default)
+            where TNext : struct, IPipelineContinuation<PriorityPluginRequest, string>
         {
             PipelineExecutionTracker.RecordExecution(nameof(LowPriorityPluginBehavior));
-            string result = await NextPipeline(request, cancellationToken);
+            string result = await next.InvokeAsync(request, cancellationToken);
             return $"[Low:{result}]";
         }
-
-        public PipelineHandlerDelegate<PriorityPluginRequest, string> NextPipeline { get; set; } = null!;
     }
 
     /// <summary>
@@ -1273,14 +1270,13 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
     /// </summary>
     public class DefaultPriorityPluginBehavior : IPipelineBehavior<PriorityPluginRequest, string>
     {
-        public async ValueTask<string> HandleAsync(PriorityPluginRequest request, CancellationToken cancellationToken = default)
+        public async ValueTask<string> HandleAsync<TNext>(PriorityPluginRequest request, TNext next, CancellationToken cancellationToken = default)
+            where TNext : struct, IPipelineContinuation<PriorityPluginRequest, string>
         {
             PipelineExecutionTracker.RecordExecution(nameof(DefaultPriorityPluginBehavior));
-            string result = await NextPipeline(request, cancellationToken);
+            string result = await next.InvokeAsync(request, cancellationToken);
             return $"[Default:{result}]";
         }
-
-        public PipelineHandlerDelegate<PriorityPluginRequest, string> NextPipeline { get; set; } = null!;
     }
 
     /// <summary>
