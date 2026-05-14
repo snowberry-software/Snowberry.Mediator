@@ -22,7 +22,7 @@ The mediator resolves handlers from an `IServiceProvider` (provided at construct
   - `IStreamRequest<TRequest, TResponse>` / `IStreamRequestHandler<TRequest, TResponse>`
   - `INotification` / `INotificationHandler<TNotification>`
   - `IPipelineBehavior<TRequest, TResponse>` / `IPipelineContinuation<TRequest, TResponse>`
-  - `IStreamPipelineBehavior<TRequest, TResponse>`
+  - `IStreamPipelineBehavior<TRequest, TResponse>` / `IStreamPipelineContinuation<TRequest, TResponse>`
 - Assembly scanning helper to discover handlers, pipeline behaviors and notification handlers (`MediatorAssemblyHelper`).
 - Global registries for pipeline and notification handlers used at runtime by `Mediator`.
 - Zero per-call allocation through the mediator's own dispatch code (see [Performance](#performance)). `SendAsync` / `PublishAsync` return `ValueTask` / `ValueTask<T>` and never allocate a state machine inside the library - any per-call allocation that remains comes from your own handlers if they use `async`/`await` and suspend.
@@ -108,7 +108,7 @@ public sealed class LoggingBehavior<TRequest, TResponse> : IPipelineBehavior<TRe
 
 The `TNext : struct, IPipelineContinuation<,>` constraint lets the JIT specialize the method per continuation type and devirtualize `next.InvokeAsync(...)` to a direct call. Combined with the static-generic walker the library uses internally, this keeps the synchronous dispatch path allocation-free regardless of chain length.
 
-Stream pipeline behaviors (`IStreamPipelineBehavior<TRequest, TResponse>`) keep the classic `NextPipeline` delegate property - the compiler-generated `async IAsyncEnumerable<T>` state machine dominates allocation in that path, so the struct-continuation pattern would not produce a measurable improvement there.
+Stream pipeline behaviors (`IStreamPipelineBehavior<TRequest, TResponse>`) follow the same shape — their `HandleAsync<TNext>(request, next, ct)` returns `IAsyncEnumerable<TResponse>` and `next` is constrained as `where TNext : struct, IStreamPipelineContinuation<TRequest, TResponse>`. One mental model for both request and stream pipelines.
 
 ## Pipeline behavior ordering and priority
 
@@ -143,8 +143,11 @@ Representative numbers on .NET 10 (`BenchmarkDotNet 0.14.0`, `MemoryDiagnoser`):
 | `Publish_Specific3` (3 sync handlers)     |   ~39.8 ns |       0 B |
 | `Publish_OpenGeneric3`                    |   ~44.3 ns |       0 B |
 | `Publish_Mixed3`                          |   ~46.2 ns |       0 B |
-| `Stream_NoPipeline_Enumerate10`           |  ~114.9 ns |     104 B¹ |
-| `Stream_Specific3_Enumerate10`            |  ~560.2 ns |     936 B¹ |
+| `Stream_NoPipeline_Enumerate10`           |  ~134.4 ns |     104 B¹ |
+| `Stream_Specific1_Enumerate10`            |  ~287.6 ns |     352 B¹ |
+| `Stream_Specific3_Enumerate10`            |  ~580.7 ns |     848 B¹ |
+| `Stream_Specific10_Enumerate10`           | ~1547.2 ns |    2584 B¹ |
+| `Stream_OpenGeneric3_Enumerate10`         |  ~617.7 ns |     848 B¹ |
 | `Send_Specific1_Async` (awaiting handler) |  ~466.6 ns |     264 B² |
 
 ¹ The stream allocations are the compiler-emitted `async IAsyncEnumerable<T>` enumerator state machines in user code - one per behavior plus the terminal handler.
@@ -165,5 +168,6 @@ How the library reaches these numbers:
 - Open-generic behavior types are closed once per `(TRequest, TResponse)` pair via `MakeGenericType` and cached - the cost is paid on the first Send for each pair, never repeated. Notification open-generic handler types are cached the same way per notification type.
 - The synchronous request pipeline uses a `readonly struct` walker that implements `IPipelineContinuation<TRequest, TResponse>` and is passed by value through the chain. The JIT specializes each behavior's `HandleAsync<TNext>` per walker type, so chain steps are direct calls with no delegate allocation.
 - A static-generic fast cache (`PipelineFastCache<TRequest, TResponse>`) holds the closed behavior-type array for a hot pair. Hot-path lookup is a single `Volatile.Read` of an immutable carrier object plus an owner/generation check; multi-registry scenarios (e.g. test suites) fall back to a per-instance `ConcurrentDictionary` with no correctness impact.
+- The stream pipeline (`IStreamPipelineBehavior` / `IStreamPipelineContinuation`) uses the same walker and `StreamPipelineFastCache` pattern. The remaining 104+ B per stream behavior shown in the table is the compiler-generated `async IAsyncEnumerable<T>` state machine in **your** code, allocated once per `CreateStreamAsync` call per behavior; the mediator's own per-call overhead is zero.
 
 Benchmarks live in the `Snowberry.Mediator.Benchmarks` project.

@@ -1305,16 +1305,15 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
     [PipelineOverwritePriority(Priority = 150)]
     public class HighPriorityStreamBehavior : IStreamPipelineBehavior<PriorityStreamRequest, int>
     {
-        public async IAsyncEnumerable<int> HandleAsync(PriorityStreamRequest request, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        public async IAsyncEnumerable<int> HandleAsync<TNext>(PriorityStreamRequest request, TNext next, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+            where TNext : struct, IStreamPipelineContinuation<PriorityStreamRequest, int>
         {
             StreamPipelineExecutionTracker.RecordExecution(nameof(HighPriorityStreamBehavior));
-            await foreach (int item in NextPipeline(request, cancellationToken).WithCancellation(cancellationToken))
+            await foreach (int item in next.InvokeAsync(request, cancellationToken).WithCancellation(cancellationToken))
             {
                 yield return item * 10; // Multiply by 10 first
             }
         }
-
-        public StreamPipelineHandlerDelegate<PriorityStreamRequest, int> NextPipeline { get; set; } = null!;
     }
 
     /// <summary>
@@ -1323,16 +1322,15 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
     [PipelineOverwritePriority(Priority = 75)]
     public class MediumPriorityStreamBehavior : IStreamPipelineBehavior<PriorityStreamRequest, int>
     {
-        public async IAsyncEnumerable<int> HandleAsync(PriorityStreamRequest request, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        public async IAsyncEnumerable<int> HandleAsync<TNext>(PriorityStreamRequest request, TNext next, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+            where TNext : struct, IStreamPipelineContinuation<PriorityStreamRequest, int>
         {
             StreamPipelineExecutionTracker.RecordExecution(nameof(MediumPriorityStreamBehavior));
-            await foreach (int item in NextPipeline(request, cancellationToken).WithCancellation(cancellationToken))
+            await foreach (int item in next.InvokeAsync(request, cancellationToken).WithCancellation(cancellationToken))
             {
                 yield return item + 100; // Add 100 second
             }
         }
-
-        public StreamPipelineHandlerDelegate<PriorityStreamRequest, int> NextPipeline { get; set; } = null!;
     }
 
     /// <summary>
@@ -1341,16 +1339,15 @@ public class Snowberry_AppendMediatorTests : Common.MediatorTestBase
     [PipelineOverwritePriority(Priority = 25)]
     public class LowPriorityStreamBehavior : IStreamPipelineBehavior<PriorityStreamRequest, int>
     {
-        public async IAsyncEnumerable<int> HandleAsync(PriorityStreamRequest request, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        public async IAsyncEnumerable<int> HandleAsync<TNext>(PriorityStreamRequest request, TNext next, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+            where TNext : struct, IStreamPipelineContinuation<PriorityStreamRequest, int>
         {
             StreamPipelineExecutionTracker.RecordExecution(nameof(LowPriorityStreamBehavior));
-            await foreach (int item in NextPipeline(request, cancellationToken).WithCancellation(cancellationToken))
+            await foreach (int item in next.InvokeAsync(request, cancellationToken).WithCancellation(cancellationToken))
             {
                 yield return item * 2; // Multiply by 2 third
             }
         }
-
-        public StreamPipelineHandlerDelegate<PriorityStreamRequest, int> NextPipeline { get; set; } = null!;
     }
 
     /// <summary>

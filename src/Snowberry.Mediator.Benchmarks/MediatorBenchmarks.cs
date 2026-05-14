@@ -19,7 +19,10 @@ public class MediatorBenchmarks
     private IMediator _mediatorPublishOpenGeneric3 = null!;
     private IMediator _mediatorPublishMixed3 = null!;
     private IMediator _mediatorStreamNoPipeline = null!;
+    private IMediator _mediatorStreamSpecific1 = null!;
     private IMediator _mediatorStreamSpecific3 = null!;
+    private IMediator _mediatorStreamSpecific10 = null!;
+    private IMediator _mediatorStreamOpenGeneric3 = null!;
     private IMediator _mediatorSpecific1Async = null!;
     private IMediator _mediatorOpenGeneric1Async = null!;
 
@@ -34,7 +37,10 @@ public class MediatorBenchmarks
     private readonly OpenGenericNotification3 _openGenericNotification3 = new();
     private readonly MixedNotification3 _mixedNotification3 = new();
     private readonly StreamNoPipelineRequest _streamNoPipelineRequest = new();
+    private readonly StreamSpecific1Request _streamSpecific1Request = new();
     private readonly StreamSpecific3Request _streamSpecific3Request = new();
+    private readonly StreamSpecific10Request _streamSpecific10Request = new();
+    private readonly StreamOpenGeneric3Request _streamOpenGeneric3Request = new();
     private readonly Specific1AsyncRequest _specific1AsyncRequest = new();
     private readonly OpenGeneric1AsyncRequest _openGeneric1AsyncRequest = new();
 
@@ -147,6 +153,12 @@ public class MediatorBenchmarks
             opt.StreamRequestHandlerTypes = [typeof(StreamNoPipelineRequestHandler)];
         });
 
+        _mediatorStreamSpecific1 = BuildMediator(opt =>
+        {
+            opt.StreamRequestHandlerTypes = [typeof(StreamSpecific1RequestHandler)];
+            opt.StreamPipelineBehaviorTypes = [typeof(StreamSpecific1Behavior1)];
+        });
+
         _mediatorStreamSpecific3 = BuildMediator(opt =>
         {
             opt.StreamRequestHandlerTypes = [typeof(StreamSpecific3RequestHandler)];
@@ -155,6 +167,35 @@ public class MediatorBenchmarks
                 typeof(StreamSpecific3Behavior1),
                 typeof(StreamSpecific3Behavior2),
                 typeof(StreamSpecific3Behavior3),
+            ];
+        });
+
+        _mediatorStreamSpecific10 = BuildMediator(opt =>
+        {
+            opt.StreamRequestHandlerTypes = [typeof(StreamSpecific10RequestHandler)];
+            opt.StreamPipelineBehaviorTypes =
+            [
+                typeof(StreamSpecific10Behavior1),
+                typeof(StreamSpecific10Behavior2),
+                typeof(StreamSpecific10Behavior3),
+                typeof(StreamSpecific10Behavior4),
+                typeof(StreamSpecific10Behavior5),
+                typeof(StreamSpecific10Behavior6),
+                typeof(StreamSpecific10Behavior7),
+                typeof(StreamSpecific10Behavior8),
+                typeof(StreamSpecific10Behavior9),
+                typeof(StreamSpecific10Behavior10),
+            ];
+        });
+
+        _mediatorStreamOpenGeneric3 = BuildMediator(opt =>
+        {
+            opt.StreamRequestHandlerTypes = [typeof(StreamOpenGeneric3RequestHandler)];
+            opt.StreamPipelineBehaviorTypes =
+            [
+                typeof(OpenStreamBehavior1<,>),
+                typeof(OpenStreamBehavior2<,>),
+                typeof(OpenStreamBehavior3<,>),
             ];
         });
 
@@ -237,10 +278,43 @@ public class MediatorBenchmarks
     }
 
     [Benchmark]
+    public async ValueTask<int> Stream_Specific1_Enumerate10()
+    {
+        int sum = 0;
+        await foreach (var i in _mediatorStreamSpecific1.CreateStreamAsync(_streamSpecific1Request))
+        {
+            sum += i;
+        }
+        return sum;
+    }
+
+    [Benchmark]
     public async ValueTask<int> Stream_Specific3_Enumerate10()
     {
         int sum = 0;
         await foreach (var i in _mediatorStreamSpecific3.CreateStreamAsync(_streamSpecific3Request))
+        {
+            sum += i;
+        }
+        return sum;
+    }
+
+    [Benchmark]
+    public async ValueTask<int> Stream_Specific10_Enumerate10()
+    {
+        int sum = 0;
+        await foreach (var i in _mediatorStreamSpecific10.CreateStreamAsync(_streamSpecific10Request))
+        {
+            sum += i;
+        }
+        return sum;
+    }
+
+    [Benchmark]
+    public async ValueTask<int> Stream_OpenGeneric3_Enumerate10()
+    {
+        int sum = 0;
+        await foreach (var i in _mediatorStreamOpenGeneric3.CreateStreamAsync(_streamOpenGeneric3Request))
         {
             sum += i;
         }

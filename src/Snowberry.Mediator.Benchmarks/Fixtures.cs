@@ -289,7 +289,37 @@ public sealed class StreamNoPipelineRequestHandler : IStreamRequestHandler<Strea
     }
 }
 
-// ---------- Stream Specific3 (stream pipeline contract is unchanged in Tier 2) ----------
+// ---------- Stream Specific1 ----------
+
+public sealed class StreamSpecific1Request : IStreamRequest<StreamSpecific1Request, int>;
+
+public sealed class StreamSpecific1RequestHandler : IStreamRequestHandler<StreamSpecific1Request, int>
+{
+    public async IAsyncEnumerable<int> HandleAsync(StreamSpecific1Request request,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        for (int i = 0; i < 10; i++)
+        {
+            yield return i;
+        }
+        await Task.CompletedTask;
+    }
+}
+
+public sealed class StreamSpecific1Behavior1 : IStreamPipelineBehavior<StreamSpecific1Request, int>
+{
+    public async IAsyncEnumerable<int> HandleAsync<TNext>(StreamSpecific1Request request, TNext next,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        where TNext : struct, IStreamPipelineContinuation<StreamSpecific1Request, int>
+    {
+        await foreach (var item in next.InvokeAsync(request, cancellationToken).WithCancellation(cancellationToken))
+        {
+            yield return item;
+        }
+    }
+}
+
+// ---------- Stream Specific3 ----------
 
 public sealed class StreamSpecific3Request : IStreamRequest<StreamSpecific3Request, int>;
 
@@ -308,17 +338,117 @@ public sealed class StreamSpecific3RequestHandler : IStreamRequestHandler<Stream
 
 public abstract class StreamSpecific3BehaviorBase : IStreamPipelineBehavior<StreamSpecific3Request, int>
 {
-    public async IAsyncEnumerable<int> HandleAsync(StreamSpecific3Request request,
+    public async IAsyncEnumerable<int> HandleAsync<TNext>(StreamSpecific3Request request, TNext next,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        where TNext : struct, IStreamPipelineContinuation<StreamSpecific3Request, int>
     {
-        await foreach (var item in NextPipeline(request, cancellationToken).WithCancellation(cancellationToken))
+        await foreach (var item in next.InvokeAsync(request, cancellationToken).WithCancellation(cancellationToken))
         {
             yield return item;
         }
     }
-    public StreamPipelineHandlerDelegate<StreamSpecific3Request, int> NextPipeline { get; set; } = null!;
 }
 
 public sealed class StreamSpecific3Behavior1 : StreamSpecific3BehaviorBase;
 public sealed class StreamSpecific3Behavior2 : StreamSpecific3BehaviorBase;
 public sealed class StreamSpecific3Behavior3 : StreamSpecific3BehaviorBase;
+
+// ---------- Stream Specific10 ----------
+
+public sealed class StreamSpecific10Request : IStreamRequest<StreamSpecific10Request, int>;
+
+public sealed class StreamSpecific10RequestHandler : IStreamRequestHandler<StreamSpecific10Request, int>
+{
+    public async IAsyncEnumerable<int> HandleAsync(StreamSpecific10Request request,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        for (int i = 0; i < 10; i++)
+        {
+            yield return i;
+        }
+        await Task.CompletedTask;
+    }
+}
+
+public abstract class StreamSpecific10BehaviorBase : IStreamPipelineBehavior<StreamSpecific10Request, int>
+{
+    public async IAsyncEnumerable<int> HandleAsync<TNext>(StreamSpecific10Request request, TNext next,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        where TNext : struct, IStreamPipelineContinuation<StreamSpecific10Request, int>
+    {
+        await foreach (var item in next.InvokeAsync(request, cancellationToken).WithCancellation(cancellationToken))
+        {
+            yield return item;
+        }
+    }
+}
+
+public sealed class StreamSpecific10Behavior1 : StreamSpecific10BehaviorBase;
+public sealed class StreamSpecific10Behavior2 : StreamSpecific10BehaviorBase;
+public sealed class StreamSpecific10Behavior3 : StreamSpecific10BehaviorBase;
+public sealed class StreamSpecific10Behavior4 : StreamSpecific10BehaviorBase;
+public sealed class StreamSpecific10Behavior5 : StreamSpecific10BehaviorBase;
+public sealed class StreamSpecific10Behavior6 : StreamSpecific10BehaviorBase;
+public sealed class StreamSpecific10Behavior7 : StreamSpecific10BehaviorBase;
+public sealed class StreamSpecific10Behavior8 : StreamSpecific10BehaviorBase;
+public sealed class StreamSpecific10Behavior9 : StreamSpecific10BehaviorBase;
+public sealed class StreamSpecific10Behavior10 : StreamSpecific10BehaviorBase;
+
+// ---------- Stream OpenGeneric3 ----------
+
+public sealed class StreamOpenGeneric3Request : IStreamRequest<StreamOpenGeneric3Request, int>;
+
+public sealed class StreamOpenGeneric3RequestHandler : IStreamRequestHandler<StreamOpenGeneric3Request, int>
+{
+    public async IAsyncEnumerable<int> HandleAsync(StreamOpenGeneric3Request request,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        for (int i = 0; i < 10; i++)
+        {
+            yield return i;
+        }
+        await Task.CompletedTask;
+    }
+}
+
+public sealed class OpenStreamBehavior1<TRequest, TResponse> : IStreamPipelineBehavior<TRequest, TResponse>
+    where TRequest : class, IStreamRequest<TRequest, TResponse>
+{
+    public async IAsyncEnumerable<TResponse> HandleAsync<TNext>(TRequest request, TNext next,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        where TNext : struct, IStreamPipelineContinuation<TRequest, TResponse>
+    {
+        await foreach (var item in next.InvokeAsync(request, cancellationToken).WithCancellation(cancellationToken))
+        {
+            yield return item;
+        }
+    }
+}
+
+public sealed class OpenStreamBehavior2<TRequest, TResponse> : IStreamPipelineBehavior<TRequest, TResponse>
+    where TRequest : class, IStreamRequest<TRequest, TResponse>
+{
+    public async IAsyncEnumerable<TResponse> HandleAsync<TNext>(TRequest request, TNext next,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        where TNext : struct, IStreamPipelineContinuation<TRequest, TResponse>
+    {
+        await foreach (var item in next.InvokeAsync(request, cancellationToken).WithCancellation(cancellationToken))
+        {
+            yield return item;
+        }
+    }
+}
+
+public sealed class OpenStreamBehavior3<TRequest, TResponse> : IStreamPipelineBehavior<TRequest, TResponse>
+    where TRequest : class, IStreamRequest<TRequest, TResponse>
+{
+    public async IAsyncEnumerable<TResponse> HandleAsync<TNext>(TRequest request, TNext next,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        where TNext : struct, IStreamPipelineContinuation<TRequest, TResponse>
+    {
+        await foreach (var item in next.InvokeAsync(request, cancellationToken).WithCancellation(cancellationToken))
+        {
+            yield return item;
+        }
+    }
+}
