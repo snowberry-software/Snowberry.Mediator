@@ -12,7 +12,7 @@ namespace Snowberry.Mediator.Tests;
 /// <summary>
 /// Stress-tests the Tier 3b <c>PipelineFastCache&lt;TRequest, TResponse&gt;</c> by running two
 /// independently-configured mediators in parallel against the same <see cref="CounterRequest"/> type.
-/// The fast cache is keyed by <c>(TRequest, TResponse)</c> alone — but identifies its owner registry
+/// The fast cache is keyed by <c>(TRequest, TResponse)</c> alone - but identifies its owner registry
 /// via reference identity + generation. Alternating dispatches must thrash the cache and still
 /// produce the correct response for each mediator's configured behaviors.
 /// </summary>

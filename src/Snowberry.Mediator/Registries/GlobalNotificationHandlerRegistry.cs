@@ -15,7 +15,7 @@ namespace Snowberry.Mediator.Registries;
 /// <summary>
 /// Default <see cref="IGlobalNotificationHandlerRegistry{TNotificationHandlerInfo}"/> implementation.
 /// Tracks both concrete and open-generic
-/// <see cref="Abstractions.Handler.INotificationHandler{TNotification}"/> registrations and dispatches
+/// <see cref="INotificationHandler{TNotification}"/> registrations and dispatches
 /// notifications to every matching handler in registration order, resolving each handler from the supplied
 /// <see cref="IServiceProvider"/> on every publish.
 /// </summary>

@@ -14,7 +14,7 @@ public interface IPipelineBehavior<TRequest, TResponse>
     /// <summary>
     /// Handles the request and forwards to <paramref name="next"/>, optionally adding behavior-specific logic.
     /// </summary>
-    /// <typeparam name="TNext">The struct continuation type — the JIT specializes the method per
+    /// <typeparam name="TNext">The struct continuation type - the JIT specializes the method per
     /// continuation type so that <c>next.InvokeAsync(...)</c> is a direct call with no delegate or boxing.</typeparam>
     /// <param name="request">The request.</param>
     /// <param name="next">The continuation to the next step in the pipeline.</param>

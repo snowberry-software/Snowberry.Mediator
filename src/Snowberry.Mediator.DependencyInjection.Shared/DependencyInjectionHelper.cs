@@ -267,19 +267,19 @@ public static class DependencyInjectionHelper
     /// </summary>
     public class HandlerCollection
     {
-        /// <summary>Registered <see cref="Abstractions.Handler.IRequestHandler{TRequest, TResponse}"/> handler-info entries.</summary>
+        /// <summary>Registered <see cref="IRequestHandler{TRequest, TResponse}"/> handler-info entries.</summary>
         public readonly List<RequestHandlerInfo> AllHandlers = [];
 
-        /// <summary>Registered <see cref="Abstractions.Handler.IStreamRequestHandler{TRequest, TResponse}"/> handler-info entries.</summary>
+        /// <summary>Registered <see cref="IStreamRequestHandler{TRequest, TResponse}"/> handler-info entries.</summary>
         public readonly List<StreamRequestHandlerInfo> AllStreamHandlers = [];
 
-        /// <summary>Registered <see cref="Abstractions.Pipeline.IPipelineBehavior{TRequest, TResponse}"/> handler-info entries.</summary>
+        /// <summary>Registered <see cref="IPipelineBehavior{TRequest, TResponse}"/> handler-info entries.</summary>
         public readonly List<PipelineBehaviorHandlerInfo> AllPipelineBehaviorHandlers = [];
 
-        /// <summary>Registered <see cref="Abstractions.Pipeline.IStreamPipelineBehavior{TRequest, TResponse}"/> handler-info entries.</summary>
+        /// <summary>Registered <see cref="IStreamPipelineBehavior{TRequest, TResponse}"/> handler-info entries.</summary>
         public readonly List<StreamPipelineBehaviorHandlerInfo> AllStreamPipelineBehaviorHandlers = [];
 
-        /// <summary>Registered <see cref="Abstractions.Handler.INotificationHandler{TNotification}"/> handler-info entries.</summary>
+        /// <summary>Registered <see cref="INotificationHandler{TNotification}"/> handler-info entries.</summary>
         public readonly List<NotificationHandlerInfo> AllNotificationHandlers = [];
     }
 }

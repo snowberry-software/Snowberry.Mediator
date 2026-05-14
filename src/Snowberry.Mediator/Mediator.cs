@@ -19,7 +19,7 @@ public sealed class Mediator : IMediator
     public Mediator(IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;
-        // Registries are registered as singleton instances in DI — resolve once at construction so per-call
+        // Registries are registered as singleton instances in DI - resolve once at construction so per-call
         // dispatch never pays the GetService cost. Each is optional; null = no behaviors/handlers of that kind.
         _pipelineRegistry = Unsafe.As<IGlobalPipelineRegistry?>(serviceProvider.GetService(typeof(IGlobalPipelineRegistry)));
         _streamPipelineRegistry = Unsafe.As<IGlobalStreamPipelineRegistry?>(serviceProvider.GetService(typeof(IGlobalStreamPipelineRegistry)));

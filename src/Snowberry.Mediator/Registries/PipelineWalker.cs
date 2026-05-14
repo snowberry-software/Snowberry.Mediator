@@ -14,7 +14,7 @@ namespace Snowberry.Mediator.Registries;
 /// <remarks>
 /// When the consuming behavior is constrained <c>where TNext : struct, IPipelineContinuation&lt;,&gt;</c>,
 /// the JIT specializes the behavior method per walker type and devirtualizes <see cref="InvokeAsync"/> to a
-/// direct call — no delegate, no boxing, zero allocation on synchronous fast paths.
+/// direct call - no delegate, no boxing, zero allocation on synchronous fast paths.
 /// </remarks>
 internal readonly struct PipelineWalker<TRequest, TResponse> : IPipelineContinuation<TRequest, TResponse>
     where TRequest : class, IRequest<TRequest, TResponse>

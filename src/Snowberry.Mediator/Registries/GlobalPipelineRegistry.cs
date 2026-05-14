@@ -16,14 +16,14 @@ namespace Snowberry.Mediator.Registries;
 public sealed class GlobalPipelineRegistry : BaseGlobalPipelineRegistry<PipelineBehaviorHandlerInfo>, IGlobalPipelineRegistry
 {
     // Per-(TRequest,TResponse) cache of closed behavior types in execution order (index 0 = highest priority).
-    // Per-instance so different registries — common in test suites — cannot conflict on shared request types.
+    // Per-instance so different registries - common in test suites - cannot conflict on shared request types.
     // Lookups are lock-free; misses build then TryAdd race-tolerantly.
     private readonly ConcurrentDictionary<(Type Request, Type Response), Type[]> _typeCache = new();
 
     /// <inheritdoc/>
     protected override void OnBuilt()
     {
-        // Frozen state changed — invalidate the per-pair closed-type cache so the next dispatch rebuilds it.
+        // Frozen state changed - invalidate the per-pair closed-type cache so the next dispatch rebuilds it.
         _typeCache.Clear();
     }
 
@@ -37,7 +37,7 @@ public sealed class GlobalPipelineRegistry : BaseGlobalPipelineRegistry<Pipeline
         if (IsEmpty)
             return handler.HandleAsync(request, cancellationToken);
 
-        // Fast path — single static-generic acquire-fence read of the cached entry.
+        // Fast path - single static-generic acquire-fence read of the cached entry.
         var entry = Volatile.Read(ref PipelineFastCache<TRequest, TResponse>.Current);
         if (entry is not null
             && ReferenceEquals(entry.Owner, this)
@@ -50,7 +50,7 @@ public sealed class GlobalPipelineRegistry : BaseGlobalPipelineRegistry<Pipeline
                 .InvokeAsync(request, cancellationToken);
         }
 
-        return ExecuteSlow<TRequest, TResponse>(serviceProvider, handler, request, cancellationToken);
+        return ExecuteSlow(serviceProvider, handler, request, cancellationToken);
     }
 
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Pipeline behaviors are explicitly registered, not discovered through reflection.")]
@@ -103,7 +103,7 @@ public sealed class GlobalPipelineRegistry : BaseGlobalPipelineRegistry<Pipeline
         // forward, so the OUTPUT must be ASCENDING by SortIndex (= HIGHEST priority first). Iterate both
         // inputs back-to-front, picking the lower SortIndex (= higher priority) at each step. Tie-break:
         // pick SPECIFIC so it lands at a lower output index (outer in the walker chain, runs first within
-        // that priority level) — matches the previous "specifics processed before open-generics at each
+        // that priority level) - matches the previous "specifics processed before open-generics at each
         // priority level" ordering.
         int i = specificLen - 1;
         int j = openGeneric.Length - 1;

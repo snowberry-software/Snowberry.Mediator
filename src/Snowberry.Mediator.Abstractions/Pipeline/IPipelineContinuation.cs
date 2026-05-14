@@ -6,7 +6,7 @@ namespace Snowberry.Mediator.Abstractions.Pipeline;
 /// Contract for the next-step continuation passed to <see cref="IPipelineBehavior{TRequest,TResponse}.HandleAsync{TNext}"/>.
 /// </summary>
 /// <remarks>
-/// Implementations are mutable struct-based "walkers" supplied by the mediator infrastructure — callers should
+/// Implementations are mutable struct-based "walkers" supplied by the mediator infrastructure - callers should
 /// only invoke <see cref="InvokeAsync"/>. Constrain the generic next-parameter as
 /// <c>where TNext : struct, IPipelineContinuation&lt;TRequest, TResponse&gt;</c> to let the JIT specialize the
 /// pipeline-behavior method and devirtualize the continuation call without allocating a delegate.

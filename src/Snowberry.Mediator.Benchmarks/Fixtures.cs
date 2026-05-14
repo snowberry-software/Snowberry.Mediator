@@ -32,7 +32,7 @@ public sealed class Specific1Behavior1 : IPipelineBehavior<Specific1Request, int
         => next.InvokeAsync(request, cancellationToken);
 }
 
-// Async (await Task.Yield) variant — for Phase 0.5 diagnosis (state-machine box source)
+// Async (await Task.Yield) variant - for Phase 0.5 diagnosis (state-machine box source)
 public sealed class Specific1AsyncRequest : IRequest<Specific1AsyncRequest, int>;
 
 public sealed class Specific1AsyncRequestHandler : IRequestHandler<Specific1AsyncRequest, int>

@@ -12,7 +12,7 @@ namespace Snowberry.Mediator.Registries;
 
 /// <summary>
 /// Default <see cref="IGlobalStreamPipelineRegistry"/> implementation. Tracks
-/// <see cref="Abstractions.Pipeline.IStreamPipelineBehavior{TRequest, TResponse}"/> registrations and
+/// <see cref="IStreamPipelineBehavior{TRequest, TResponse}"/> registrations and
 /// dispatches stream requests through them in priority order, resolving each behavior from the supplied
 /// <see cref="IServiceProvider"/> on every call.
 /// </summary>

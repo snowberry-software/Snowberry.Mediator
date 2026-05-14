@@ -183,31 +183,31 @@ public class MediatorBenchmarks
 
     [Benchmark(Baseline = true)]
     public ValueTask<int> Send_NoPipeline()
-        => _mediatorNoPipeline.SendAsync<NoPipelineRequest, int>(_noPipelineRequest);
+        => _mediatorNoPipeline.SendAsync(_noPipelineRequest);
 
     [Benchmark]
     public ValueTask<int> Send_Specific1()
-        => _mediatorSpecific1.SendAsync<Specific1Request, int>(_specific1Request);
+        => _mediatorSpecific1.SendAsync(_specific1Request);
 
     [Benchmark]
     public ValueTask<int> Send_Specific3()
-        => _mediatorSpecific3.SendAsync<Specific3Request, int>(_specific3Request);
+        => _mediatorSpecific3.SendAsync(_specific3Request);
 
     [Benchmark]
     public ValueTask<int> Send_Specific10()
-        => _mediatorSpecific10.SendAsync<Specific10Request, int>(_specific10Request);
+        => _mediatorSpecific10.SendAsync(_specific10Request);
 
     [Benchmark]
     public ValueTask<int> Send_OpenGeneric1()
-        => _mediatorOpenGeneric1.SendAsync<OpenGeneric1Request, int>(_openGeneric1Request);
+        => _mediatorOpenGeneric1.SendAsync(_openGeneric1Request);
 
     [Benchmark]
     public ValueTask<int> Send_OpenGeneric3()
-        => _mediatorOpenGeneric3.SendAsync<OpenGeneric3Request, int>(_openGeneric3Request);
+        => _mediatorOpenGeneric3.SendAsync(_openGeneric3Request);
 
     [Benchmark]
     public ValueTask<int> Send_Mixed4()
-        => _mediatorMixed4.SendAsync<Mixed4Request, int>(_mixed4Request);
+        => _mediatorMixed4.SendAsync(_mixed4Request);
 
     // ---------- Publish ----------
 
@@ -229,7 +229,7 @@ public class MediatorBenchmarks
     public async ValueTask<int> Stream_NoPipeline_Enumerate10()
     {
         int sum = 0;
-        await foreach (var i in _mediatorStreamNoPipeline.CreateStreamAsync<StreamNoPipelineRequest, int>(_streamNoPipelineRequest))
+        await foreach (var i in _mediatorStreamNoPipeline.CreateStreamAsync(_streamNoPipelineRequest))
         {
             sum += i;
         }
@@ -240,20 +240,20 @@ public class MediatorBenchmarks
     public async ValueTask<int> Stream_Specific3_Enumerate10()
     {
         int sum = 0;
-        await foreach (var i in _mediatorStreamSpecific3.CreateStreamAsync<StreamSpecific3Request, int>(_streamSpecific3Request))
+        await foreach (var i in _mediatorStreamSpecific3.CreateStreamAsync(_streamSpecific3Request))
         {
             sum += i;
         }
         return sum;
     }
 
-    // ---------- Phase 0.5 diagnostic variants (async/await — exposes AsyncStateMachineBox vs delegate) ----------
+    // ---------- Phase 0.5 diagnostic variants (async/await - exposes AsyncStateMachineBox vs delegate) ----------
 
     [Benchmark]
     public ValueTask<int> Send_Specific1_Async()
-        => _mediatorSpecific1Async.SendAsync<Specific1AsyncRequest, int>(_specific1AsyncRequest);
+        => _mediatorSpecific1Async.SendAsync(_specific1AsyncRequest);
 
     [Benchmark]
     public ValueTask<int> Send_OpenGeneric1_Async()
-        => _mediatorOpenGeneric1Async.SendAsync<OpenGeneric1AsyncRequest, int>(_openGeneric1AsyncRequest);
+        => _mediatorOpenGeneric1Async.SendAsync(_openGeneric1AsyncRequest);
 }

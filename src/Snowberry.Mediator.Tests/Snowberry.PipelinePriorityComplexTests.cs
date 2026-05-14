@@ -57,7 +57,7 @@ public class Snowberry_PipelinePriorityComplexTests : Common.MediatorTestBase
         for (int i = 0; i < 10; i++)
         {
             int priority = 1000 - (i * 100);
-            serviceContainer.RegisterScoped<PerformancePipelineBehavior>(instanceFactory: (sp, key) =>
+            serviceContainer.RegisterScoped(instanceFactory: (sp, key) =>
             {
                 return new PerformancePipelineBehavior($"Behavior{i:D2}", priority);
             });
