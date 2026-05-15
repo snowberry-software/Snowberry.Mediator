@@ -37,6 +37,15 @@ public sealed class MediatorInstrumentation : IDisposable
     }
 
     /// <summary>
+    /// Disposes the underlying <see cref="ActivitySource"/> and <see cref="Meter"/>.
+    /// </summary>
+    public void Dispose()
+    {
+        ActivitySource.Dispose();
+        Meter.Dispose();
+    }
+
+    /// <summary>
     /// Gets the <see cref="ActivitySource"/> from which dispatch-level <see cref="Activity"/>
     /// instances are emitted.
     /// </summary>
@@ -47,6 +56,20 @@ public sealed class MediatorInstrumentation : IDisposable
     /// emitted.
     /// </summary>
     public Meter Meter { get; }
+
+    /// <summary>
+    /// Gets the <see cref="Counter{T}"/> incremented for every
+    /// <see cref="IMediatorPublisher.PublishAsync{TNotification}"/> dispatch. Instrument name:
+    /// <c>snowberry.mediator.publish.count</c>.
+    /// </summary>
+    public Counter<long> PublishCount { get; }
+
+    /// <summary>
+    /// Gets the <see cref="Histogram{T}"/> that records the duration of every
+    /// <see cref="IMediatorPublisher.PublishAsync{TNotification}"/> dispatch in milliseconds.
+    /// Instrument name: <c>snowberry.mediator.publish.duration</c>.
+    /// </summary>
+    public Histogram<double> PublishDuration { get; }
 
     /// <summary>
     /// Gets the <see cref="Counter{T}"/> incremented for every <see cref="IMediatorSender.SendAsync{TRequest, TResponse}"/>
@@ -74,27 +97,4 @@ public sealed class MediatorInstrumentation : IDisposable
     /// milliseconds. Instrument name: <c>snowberry.mediator.stream.duration</c>.
     /// </summary>
     public Histogram<double> StreamDuration { get; }
-
-    /// <summary>
-    /// Gets the <see cref="Counter{T}"/> incremented for every
-    /// <see cref="IMediatorPublisher.PublishAsync{TNotification}"/> dispatch. Instrument name:
-    /// <c>snowberry.mediator.publish.count</c>.
-    /// </summary>
-    public Counter<long> PublishCount { get; }
-
-    /// <summary>
-    /// Gets the <see cref="Histogram{T}"/> that records the duration of every
-    /// <see cref="IMediatorPublisher.PublishAsync{TNotification}"/> dispatch in milliseconds.
-    /// Instrument name: <c>snowberry.mediator.publish.duration</c>.
-    /// </summary>
-    public Histogram<double> PublishDuration { get; }
-
-    /// <summary>
-    /// Disposes the underlying <see cref="ActivitySource"/> and <see cref="Meter"/>.
-    /// </summary>
-    public void Dispose()
-    {
-        ActivitySource.Dispose();
-        Meter.Dispose();
-    }
 }

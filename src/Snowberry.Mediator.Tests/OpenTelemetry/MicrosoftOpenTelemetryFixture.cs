@@ -8,9 +8,8 @@ namespace Snowberry.Mediator.Tests.OpenTelemetry;
 
 internal sealed class MicrosoftOpenTelemetryFixture : IDisposable
 {
-    private readonly ServiceProvider _provider;
     private readonly OpenTelemetryListenerCapture _capture;
-    public string SourceName { get; }
+    private readonly ServiceProvider _provider;
 
     public MicrosoftOpenTelemetryFixture(
         Action<MediatorOptions> configureMediator,
@@ -44,18 +43,19 @@ internal sealed class MicrosoftOpenTelemetryFixture : IDisposable
         Mediator = _provider.GetRequiredService<IMediator>();
     }
 
-    public IMediator Mediator { get; }
-
-    public IServiceProvider Services => _provider;
-
-    public IReadOnlyList<System.Diagnostics.Activity> StoppedActivities => _capture.StoppedActivities;
-
-    public IReadOnlyList<MetricMeasurement> Measurements => _capture.Measurements;
-
     public void Dispose()
     {
         _capture.Dispose();
         _provider.Dispose();
         MediatorDiagnostics.ResetForTests();
     }
+
+    public IReadOnlyList<MetricMeasurement> Measurements => _capture.Measurements;
+
+    public IMediator Mediator { get; }
+
+    public IServiceProvider Services => _provider;
+    public string SourceName { get; }
+
+    public IReadOnlyList<System.Diagnostics.Activity> StoppedActivities => _capture.StoppedActivities;
 }

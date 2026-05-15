@@ -15,11 +15,36 @@ namespace Snowberry.Mediator.Benchmarks;
 [MemoryDiagnoser]
 public class MediatorPerStepSpanBenchmarks
 {
-    private readonly Specific10Request _specific10Request = new();
     private readonly MixedNotification3 _mixedNotification3 = new();
+    private readonly Specific10Request _specific10Request = new();
+    private IMediator _mediatorPublishMixed3WithSpans = null!;
 
     private IMediator _mediatorSpecific10WithSpans = null!;
-    private IMediator _mediatorPublishMixed3WithSpans = null!;
+
+    private static IMediator BuildMediatorWithOtel(Action<MediatorOptions> configure, Action<OpenTelemetry.MediatorTelemetryOptions> configureTelemetry)
+    {
+        var services = new ServiceCollection();
+        services.AddSnowberryMediator(configure, ServiceLifetime.Singleton);
+        services.AddSnowberryMediatorOpenTelemetry(configureTelemetry);
+        var provider = services.BuildServiceProvider();
+        return provider.GetRequiredService<IMediator>();
+    }
+
+    /// <summary>
+    /// Per-handler-span overhead with the flag enabled but no listener attached.
+    /// </summary>
+    [Benchmark]
+    public ValueTask Publish_Mixed3_PerHandlerSpans_NoListener()
+        => _mediatorPublishMixed3WithSpans.PublishAsync(_mixedNotification3);
+
+    /// <summary>
+    /// Per-behavior-span overhead with the flag enabled but no listener attached. Measures the cost
+    /// of the slow-path async state machine being instantiated when <c>StartActivity</c> still
+    /// returns null. Expected: ~50–80 ns / ~80 B per behavior step.
+    /// </summary>
+    [Benchmark]
+    public ValueTask<int> Send_Specific10_PerBehaviorSpans_NoListener()
+        => _mediatorSpecific10WithSpans.SendAsync(_specific10Request);
 
     [GlobalSetup]
     public void Setup()
@@ -58,29 +83,4 @@ public class MediatorPerStepSpanBenchmarks
             },
             tel => tel.EnableNotificationHandlerSpans = true);
     }
-
-    private static IMediator BuildMediatorWithOtel(Action<MediatorOptions> configure, Action<global::Snowberry.Mediator.OpenTelemetry.MediatorTelemetryOptions> configureTelemetry)
-    {
-        var services = new ServiceCollection();
-        services.AddSnowberryMediator(configure, ServiceLifetime.Singleton);
-        services.AddSnowberryMediatorOpenTelemetry(configureTelemetry);
-        var provider = services.BuildServiceProvider();
-        return provider.GetRequiredService<IMediator>();
-    }
-
-    /// <summary>
-    /// Per-behavior-span overhead with the flag enabled but no listener attached. Measures the cost
-    /// of the slow-path async state machine being instantiated when <c>StartActivity</c> still
-    /// returns null. Expected: ~50–80 ns / ~80 B per behavior step.
-    /// </summary>
-    [Benchmark]
-    public ValueTask<int> Send_Specific10_PerBehaviorSpans_NoListener()
-        => _mediatorSpecific10WithSpans.SendAsync(_specific10Request);
-
-    /// <summary>
-    /// Per-handler-span overhead with the flag enabled but no listener attached.
-    /// </summary>
-    [Benchmark]
-    public ValueTask Publish_Mixed3_PerHandlerSpans_NoListener()
-        => _mediatorPublishMixed3WithSpans.PublishAsync(_mixedNotification3);
 }

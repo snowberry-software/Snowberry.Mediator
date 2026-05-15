@@ -35,23 +35,6 @@ internal readonly struct StreamPipelineWalker<TRequest, TResponse> : IStreamPipe
         _index = index;
     }
 
-    [SuppressMessage("Trimming", "IL2026", Justification = "Stream pipeline behavior types are explicitly registered.")]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public IAsyncEnumerable<TResponse> InvokeAsync(TRequest request, CancellationToken cancellationToken)
-    {
-        if (_index >= _types.Length)
-            return _terminal.HandleAsync(request, cancellationToken);
-
-        var behaviorType = _types[_index];
-        var behavior = Unsafe.As<IStreamPipelineBehavior<TRequest, TResponse>>(_sp.GetService(behaviorType))!;
-        var next = new StreamPipelineWalker<TRequest, TResponse>(_sp, _terminal, _types, _index + 1);
-
-        if (!MediatorDiagnostics.IsPipelineEnabled)
-            return behavior.HandleAsync(request, next, cancellationToken);
-
-        return InvokeInstrumentedAsync(behavior, behaviorType, request, next, cancellationToken);
-    }
-
     private static async IAsyncEnumerable<TResponse> InvokeInstrumentedAsync(
         IStreamPipelineBehavior<TRequest, TResponse> behavior,
         Type behaviorType,
@@ -78,5 +61,22 @@ internal readonly struct StreamPipelineWalker<TRequest, TResponse> : IStreamPipe
         {
             if (status != "success") activity?.SetStatus(ActivityStatusCode.Error);
         }
+    }
+
+    [SuppressMessage("Trimming", "IL2026", Justification = "Stream pipeline behavior types are explicitly registered.")]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public IAsyncEnumerable<TResponse> InvokeAsync(TRequest request, CancellationToken cancellationToken)
+    {
+        if (_index >= _types.Length)
+            return _terminal.HandleAsync(request, cancellationToken);
+
+        var behaviorType = _types[_index];
+        var behavior = Unsafe.As<IStreamPipelineBehavior<TRequest, TResponse>>(_sp.GetService(behaviorType))!;
+        var next = new StreamPipelineWalker<TRequest, TResponse>(_sp, _terminal, _types, _index + 1);
+
+        if (!MediatorDiagnostics.IsPipelineEnabled)
+            return behavior.HandleAsync(request, next, cancellationToken);
+
+        return InvokeInstrumentedAsync(behavior, behaviorType, request, next, cancellationToken);
     }
 }

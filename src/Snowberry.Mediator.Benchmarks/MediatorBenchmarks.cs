@@ -29,26 +29,26 @@ public class MediatorBenchmarks
     private readonly StreamSpecific3Request _streamSpecific3Request = new();
     private IMediator _mediatorMixed4 = null!;
     private IMediator _mediatorNoPipeline = null!;
+
+    // OTel-decorated mediators (no listener attached → fast path).
+    private IMediator _mediatorNoPipelineOtel = null!;
     private IMediator _mediatorOpenGeneric1 = null!;
     private IMediator _mediatorOpenGeneric1Async = null!;
     private IMediator _mediatorOpenGeneric3 = null!;
     private IMediator _mediatorPublishMixed3 = null!;
     private IMediator _mediatorPublishOpenGeneric3 = null!;
     private IMediator _mediatorPublishSpecific3 = null!;
+    private IMediator _mediatorPublishSpecific3Otel = null!;
     private IMediator _mediatorSpecific1 = null!;
     private IMediator _mediatorSpecific10 = null!;
     private IMediator _mediatorSpecific1Async = null!;
     private IMediator _mediatorSpecific3 = null!;
     private IMediator _mediatorStreamNoPipeline = null!;
+    private IMediator _mediatorStreamNoPipelineOtel = null!;
     private IMediator _mediatorStreamOpenGeneric3 = null!;
     private IMediator _mediatorStreamSpecific1 = null!;
     private IMediator _mediatorStreamSpecific10 = null!;
     private IMediator _mediatorStreamSpecific3 = null!;
-
-    // OTel-decorated mediators (no listener attached → fast path).
-    private IMediator _mediatorNoPipelineOtel = null!;
-    private IMediator _mediatorStreamNoPipelineOtel = null!;
-    private IMediator _mediatorPublishSpecific3Otel = null!;
 
     private static IMediator BuildMediator(Action<MediatorOptions> configure)
     {
@@ -82,6 +82,10 @@ public class MediatorBenchmarks
         => _mediatorPublishSpecific3.PublishAsync(_specificNotification3);
 
     [Benchmark]
+    public ValueTask Publish_Specific3_OtelDecoratedNoListener()
+        => _mediatorPublishSpecific3Otel.PublishAsync(_specificNotification3);
+
+    [Benchmark]
     public ValueTask<int> Send_Mixed4()
         => _mediatorMixed4.SendAsync(_mixed4Request);
 
@@ -90,6 +94,12 @@ public class MediatorBenchmarks
     [Benchmark(Baseline = true)]
     public ValueTask<int> Send_NoPipeline()
         => _mediatorNoPipeline.SendAsync(_noPipelineRequest);
+
+    // ---------- OTel decorator (no listener) — fast-path regression guard ----------
+
+    [Benchmark]
+    public ValueTask<int> Send_NoPipeline_OtelDecoratedNoListener()
+        => _mediatorNoPipelineOtel.SendAsync(_noPipelineRequest);
 
     [Benchmark]
     public ValueTask<int> Send_OpenGeneric1()
@@ -312,27 +322,6 @@ public class MediatorBenchmarks
         });
     }
 
-    // ---------- OTel decorator (no listener) — fast-path regression guard ----------
-
-    [Benchmark]
-    public ValueTask<int> Send_NoPipeline_OtelDecoratedNoListener()
-        => _mediatorNoPipelineOtel.SendAsync(_noPipelineRequest);
-
-    [Benchmark]
-    public async ValueTask<int> Stream_NoPipeline_OtelDecoratedNoListener_Enumerate10()
-    {
-        int sum = 0;
-        await foreach (var i in _mediatorStreamNoPipelineOtel.CreateStreamAsync(_streamNoPipelineRequest))
-        {
-            sum += i;
-        }
-        return sum;
-    }
-
-    [Benchmark]
-    public ValueTask Publish_Specific3_OtelDecoratedNoListener()
-        => _mediatorPublishSpecific3Otel.PublishAsync(_specificNotification3);
-
     // ---------- Stream ----------
 
     [Benchmark]
@@ -340,6 +329,17 @@ public class MediatorBenchmarks
     {
         int sum = 0;
         await foreach (var i in _mediatorStreamNoPipeline.CreateStreamAsync(_streamNoPipelineRequest))
+        {
+            sum += i;
+        }
+        return sum;
+    }
+
+    [Benchmark]
+    public async ValueTask<int> Stream_NoPipeline_OtelDecoratedNoListener_Enumerate10()
+    {
+        int sum = 0;
+        await foreach (var i in _mediatorStreamNoPipelineOtel.CreateStreamAsync(_streamNoPipelineRequest))
         {
             sum += i;
         }

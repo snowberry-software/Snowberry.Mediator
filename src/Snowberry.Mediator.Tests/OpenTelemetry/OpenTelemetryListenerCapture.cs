@@ -12,10 +12,10 @@ namespace Snowberry.Mediator.Tests.OpenTelemetry;
 internal sealed class OpenTelemetryListenerCapture : IDisposable
 {
     private readonly ActivityListener _activityListener;
+    private readonly object _lock = new();
+    private readonly List<MetricMeasurement> _measurements = [];
     private readonly MeterListener _meterListener;
     private readonly List<Activity> _stopped = [];
-    private readonly List<MetricMeasurement> _measurements = [];
-    private readonly object _lock = new();
 
     public OpenTelemetryListenerCapture(string sourceName)
     {
@@ -51,21 +51,17 @@ internal sealed class OpenTelemetryListenerCapture : IDisposable
         _meterListener.Start();
     }
 
-    public IReadOnlyList<Activity> StoppedActivities
+    public void Dispose()
     {
-        get { lock (_lock) return _stopped.ToArray(); }
+        _activityListener.Dispose();
+        _meterListener.Dispose();
     }
-
-    public IReadOnlyList<MetricMeasurement> Measurements
-    {
-        get { lock (_lock) return _measurements.ToArray(); }
-    }
-
-    private void OnLongMeasurement(Instrument instrument, long value, ReadOnlySpan<KeyValuePair<string, object?>> tags, object? state)
-        => RecordMeasurement(instrument, (double)value, tags);
 
     private void OnDoubleMeasurement(Instrument instrument, double value, ReadOnlySpan<KeyValuePair<string, object?>> tags, object? state)
         => RecordMeasurement(instrument, value, tags);
+
+    private void OnLongMeasurement(Instrument instrument, long value, ReadOnlySpan<KeyValuePair<string, object?>> tags, object? state)
+        => RecordMeasurement(instrument, (double)value, tags);
 
     private void RecordMeasurement(Instrument instrument, double value, ReadOnlySpan<KeyValuePair<string, object?>> tags)
     {
@@ -75,10 +71,14 @@ internal sealed class OpenTelemetryListenerCapture : IDisposable
             _measurements.Add(new MetricMeasurement(instrument.Name, value, copied));
     }
 
-    public void Dispose()
+    public IReadOnlyList<MetricMeasurement> Measurements
     {
-        _activityListener.Dispose();
-        _meterListener.Dispose();
+        get { lock (_lock) return _measurements.ToArray(); }
+    }
+
+    public IReadOnlyList<Activity> StoppedActivities
+    {
+        get { lock (_lock) return _stopped.ToArray(); }
     }
 }
 
@@ -91,14 +91,14 @@ internal readonly struct MetricMeasurement
         Tags = tags;
     }
 
-    public string InstrumentName { get; }
-    public double Value { get; }
-    public KeyValuePair<string, object?>[] Tags { get; }
-
     public object? Tag(string key)
     {
         foreach (var t in Tags)
             if (t.Key == key) return t.Value;
         return null;
     }
+
+    public string InstrumentName { get; }
+    public KeyValuePair<string, object?>[] Tags { get; }
+    public double Value { get; }
 }

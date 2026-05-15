@@ -9,6 +9,23 @@ namespace Snowberry.Mediator.Tests.OpenTelemetry;
 public class OpenTelemetry_BuilderExtensionTests
 {
     [Fact]
+    public void MeterProvider_AddSnowberryMediatorInstrumentation_RegistersDefaultMeter()
+    {
+        var captured = new List<Metric>();
+        using var provider = Sdk.CreateMeterProviderBuilder()
+            .AddSnowberryMediatorInstrumentation()
+            .AddInMemoryExporter(captured)
+            .Build();
+
+        using var meter = new System.Diagnostics.Metrics.Meter("Snowberry.Mediator");
+        var counter = meter.CreateCounter<long>("test.counter");
+        counter.Add(1);
+
+        provider!.ForceFlush();
+        Assert.NotEmpty(captured);
+    }
+
+    [Fact]
     public void TracerProvider_AddSnowberryMediatorInstrumentation_RegistersAllThreeSources()
     {
         var captured = new List<System.Diagnostics.Activity>();
@@ -48,22 +65,5 @@ public class OpenTelemetry_BuilderExtensionTests
         provider!.ForceFlush();
         Assert.Single(captured);
         Assert.Equal("yes", captured[0].OperationName);
-    }
-
-    [Fact]
-    public void MeterProvider_AddSnowberryMediatorInstrumentation_RegistersDefaultMeter()
-    {
-        var captured = new List<Metric>();
-        using var provider = Sdk.CreateMeterProviderBuilder()
-            .AddSnowberryMediatorInstrumentation()
-            .AddInMemoryExporter(captured)
-            .Build();
-
-        using var meter = new System.Diagnostics.Metrics.Meter("Snowberry.Mediator");
-        var counter = meter.CreateCounter<long>("test.counter");
-        counter.Add(1);
-
-        provider!.ForceFlush();
-        Assert.NotEmpty(captured);
     }
 }

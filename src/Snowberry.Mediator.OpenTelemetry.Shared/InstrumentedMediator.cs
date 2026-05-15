@@ -16,11 +16,11 @@ namespace Snowberry.Mediator.OpenTelemetry;
 /// </summary>
 public sealed class InstrumentedMediator : IMediator
 {
+    private readonly bool _enableMetrics;
+    private readonly bool _enableTracing;
     private readonly IMediator _inner;
     private readonly MediatorInstrumentation _instrumentation;
     private readonly MediatorTelemetryOptions _options;
-    private readonly bool _enableTracing;
-    private readonly bool _enableMetrics;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="InstrumentedMediator"/> class that wraps the
@@ -45,26 +45,18 @@ public sealed class InstrumentedMediator : IMediator
         _enableMetrics = options.EnableMetrics;
     }
 
-    internal IMediator Inner => _inner;
+    private static double ElapsedMilliseconds(long startTimestamp)
+        => (Stopwatch.GetTimestamp() - startTimestamp) * 1000.0 / Stopwatch.Frequency;
 
-    /// <inheritdoc/>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ValueTask<TResponse> SendAsync<TRequest, TResponse>(
-        IRequest<TRequest, TResponse> request,
-        CancellationToken cancellationToken = default)
-        where TRequest : class, IRequest<TRequest, TResponse>
+    private static void RecordHookFailure(Activity activity, Exception ex, string hookName)
     {
-        var inst = _instrumentation;
-        bool tracingActive = _enableTracing && inst.ActivitySource.HasListeners();
-        bool metricsActive = _enableMetrics && (inst.SendCount.Enabled || inst.SendDuration.Enabled);
-
-        if (!tracingActive && !metricsActive)
-            return _inner.SendAsync<TRequest, TResponse>(request, cancellationToken);
-
-        if (_options.Filter is { } filter && !filter(request))
-            return _inner.SendAsync<TRequest, TResponse>(request, cancellationToken);
-
-        return SendInstrumentedAsync<TRequest, TResponse>(request, tracingActive, metricsActive, cancellationToken);
+        var tags = new ActivityTagsCollection
+        {
+            { "exception.type", ex.GetType().FullName },
+            { "exception.message", ex.Message },
+            { "snowberry.mediator.hook.name", hookName },
+        };
+        activity.AddEvent(new ActivityEvent("snowberry.mediator.enrichment.failed", tags: tags));
     }
 
     /// <inheritdoc/>
@@ -79,12 +71,12 @@ public sealed class InstrumentedMediator : IMediator
         bool metricsActive = _enableMetrics && (inst.StreamCount.Enabled || inst.StreamDuration.Enabled);
 
         if (!tracingActive && !metricsActive)
-            return _inner.CreateStreamAsync<TRequest, TResponse>(request, cancellationToken);
+            return _inner.CreateStreamAsync(request, cancellationToken);
 
         if (_options.Filter is { } filter && !filter(request))
-            return _inner.CreateStreamAsync<TRequest, TResponse>(request, cancellationToken);
+            return _inner.CreateStreamAsync(request, cancellationToken);
 
-        return CreateStreamInstrumentedAsync<TRequest, TResponse>(request, tracingActive, metricsActive, cancellationToken);
+        return CreateStreamInstrumentedAsync(request, tracingActive, metricsActive, cancellationToken);
     }
 
     /// <inheritdoc/>
@@ -104,66 +96,27 @@ public sealed class InstrumentedMediator : IMediator
         if (_options.Filter is { } filter && !filter(notification!))
             return _inner.PublishAsync(notification, cancellationToken);
 
-        return PublishInstrumentedAsync<TNotification>(notification, tracingActive, metricsActive, cancellationToken);
+        return PublishInstrumentedAsync(notification, tracingActive, metricsActive, cancellationToken);
     }
 
-    private async ValueTask<TResponse> SendInstrumentedAsync<TRequest, TResponse>(
+    /// <inheritdoc/>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public ValueTask<TResponse> SendAsync<TRequest, TResponse>(
         IRequest<TRequest, TResponse> request,
-        bool tracingActive,
-        bool metricsActive,
-        CancellationToken ct)
+        CancellationToken cancellationToken = default)
         where TRequest : class, IRequest<TRequest, TResponse>
     {
         var inst = _instrumentation;
-        string typeName = TypeNameCache<TRequest>.Name;
+        bool tracingActive = _enableTracing && inst.ActivitySource.HasListeners();
+        bool metricsActive = _enableMetrics && (inst.SendCount.Enabled || inst.SendDuration.Enabled);
 
-        Activity? activity = tracingActive
-            ? inst.ActivitySource.StartActivity("Mediator.Send " + typeName, ActivityKind.Internal)
-            : null;
-        if (activity is not null)
-        {
-            activity.SetTag("snowberry.mediator.request.type", typeName);
-            activity.SetTag("snowberry.mediator.response.type", TypeNameCache<TResponse>.Name);
-            activity.SetTag("snowberry.mediator.operation", "send");
-            InvokeEnrichRequest(activity, request);
-        }
+        if (!tracingActive && !metricsActive)
+            return _inner.SendAsync(request, cancellationToken);
 
-        long start = metricsActive ? Stopwatch.GetTimestamp() : 0;
-        string status = "failure";
-        try
-        {
-            var result = await _inner.SendAsync<TRequest, TResponse>(request, ct).ConfigureAwait(false);
-            status = "success";
-            if (activity is not null)
-            {
-                activity.SetStatus(ActivityStatusCode.Ok);
-                InvokeEnrichResponse(activity, request, result!);
-            }
-            return result;
-        }
-        catch (Exception ex)
-        {
-            if (activity is not null)
-            {
-                activity.SetStatus(ActivityStatusCode.Error, ex.Message);
-                InvokeEnrichException(activity, request, ex);
-            }
-            throw;
-        }
-        finally
-        {
-            if (metricsActive)
-            {
-                var tags = new TagList
-                {
-                    { "type", typeName },
-                    { "status", status },
-                };
-                if (inst.SendCount.Enabled) inst.SendCount.Add(1, tags);
-                if (inst.SendDuration.Enabled) inst.SendDuration.Record(ElapsedMilliseconds(start), tags);
-            }
-            activity?.Dispose();
-        }
+        if (_options.Filter is { } filter && !filter(request))
+            return _inner.SendAsync(request, cancellationToken);
+
+        return SendInstrumentedAsync(request, tracingActive, metricsActive, cancellationToken);
     }
 
     private async IAsyncEnumerable<TResponse> CreateStreamInstrumentedAsync<TRequest, TResponse>(
@@ -191,7 +144,7 @@ public sealed class InstrumentedMediator : IMediator
         string status = "failure";
         try
         {
-            await foreach (var item in _inner.CreateStreamAsync<TRequest, TResponse>(request, ct).ConfigureAwait(false))
+            await foreach (var item in _inner.CreateStreamAsync(request, ct).ConfigureAwait(false))
                 yield return item;
             status = "success";
             activity?.SetStatus(ActivityStatusCode.Ok);
@@ -211,6 +164,38 @@ public sealed class InstrumentedMediator : IMediator
             }
             activity?.Dispose();
         }
+    }
+
+    private void InvokeEnrichException(Activity activity, object request, Exception exception)
+    {
+        var hook = _options.EnrichWithException;
+        if (hook is null) return;
+        try { hook(activity, request, exception); }
+        catch (Exception ex) { RecordHookFailure(activity, ex, "EnrichWithException"); }
+    }
+
+    private void InvokeEnrichNotification(Activity activity, object notification)
+    {
+        var hook = _options.EnrichWithNotification;
+        if (hook is null) return;
+        try { hook(activity, notification); }
+        catch (Exception ex) { RecordHookFailure(activity, ex, "EnrichWithNotification"); }
+    }
+
+    private void InvokeEnrichRequest(Activity activity, object request)
+    {
+        var hook = _options.EnrichWithRequest;
+        if (hook is null) return;
+        try { hook(activity, request); }
+        catch (Exception ex) { RecordHookFailure(activity, ex, "EnrichWithRequest"); }
+    }
+
+    private void InvokeEnrichResponse(Activity activity, object request, object response)
+    {
+        var hook = _options.EnrichWithResponse;
+        if (hook is null) return;
+        try { hook(activity, request, response); }
+        catch (Exception ex) { RecordHookFailure(activity, ex, "EnrichWithResponse"); }
     }
 
     private async ValueTask PublishInstrumentedAsync<TNotification>(
@@ -266,49 +251,64 @@ public sealed class InstrumentedMediator : IMediator
         }
     }
 
-    private void InvokeEnrichRequest(Activity activity, object request)
+    private async ValueTask<TResponse> SendInstrumentedAsync<TRequest, TResponse>(
+        IRequest<TRequest, TResponse> request,
+        bool tracingActive,
+        bool metricsActive,
+        CancellationToken ct)
+        where TRequest : class, IRequest<TRequest, TResponse>
     {
-        var hook = _options.EnrichWithRequest;
-        if (hook is null) return;
-        try { hook(activity, request); }
-        catch (Exception ex) { RecordHookFailure(activity, ex, "EnrichWithRequest"); }
-    }
+        var inst = _instrumentation;
+        string typeName = TypeNameCache<TRequest>.Name;
 
-    private void InvokeEnrichResponse(Activity activity, object request, object response)
-    {
-        var hook = _options.EnrichWithResponse;
-        if (hook is null) return;
-        try { hook(activity, request, response); }
-        catch (Exception ex) { RecordHookFailure(activity, ex, "EnrichWithResponse"); }
-    }
-
-    private void InvokeEnrichNotification(Activity activity, object notification)
-    {
-        var hook = _options.EnrichWithNotification;
-        if (hook is null) return;
-        try { hook(activity, notification); }
-        catch (Exception ex) { RecordHookFailure(activity, ex, "EnrichWithNotification"); }
-    }
-
-    private void InvokeEnrichException(Activity activity, object request, Exception exception)
-    {
-        var hook = _options.EnrichWithException;
-        if (hook is null) return;
-        try { hook(activity, request, exception); }
-        catch (Exception ex) { RecordHookFailure(activity, ex, "EnrichWithException"); }
-    }
-
-    private static void RecordHookFailure(Activity activity, Exception ex, string hookName)
-    {
-        var tags = new ActivityTagsCollection
+        Activity? activity = tracingActive
+            ? inst.ActivitySource.StartActivity("Mediator.Send " + typeName, ActivityKind.Internal)
+            : null;
+        if (activity is not null)
         {
-            { "exception.type", ex.GetType().FullName },
-            { "exception.message", ex.Message },
-            { "snowberry.mediator.hook.name", hookName },
-        };
-        activity.AddEvent(new ActivityEvent("snowberry.mediator.enrichment.failed", tags: tags));
+            activity.SetTag("snowberry.mediator.request.type", typeName);
+            activity.SetTag("snowberry.mediator.response.type", TypeNameCache<TResponse>.Name);
+            activity.SetTag("snowberry.mediator.operation", "send");
+            InvokeEnrichRequest(activity, request);
+        }
+
+        long start = metricsActive ? Stopwatch.GetTimestamp() : 0;
+        string status = "failure";
+        try
+        {
+            var result = await _inner.SendAsync(request, ct).ConfigureAwait(false);
+            status = "success";
+            if (activity is not null)
+            {
+                activity.SetStatus(ActivityStatusCode.Ok);
+                InvokeEnrichResponse(activity, request, result!);
+            }
+            return result;
+        }
+        catch (Exception ex)
+        {
+            if (activity is not null)
+            {
+                activity.SetStatus(ActivityStatusCode.Error, ex.Message);
+                InvokeEnrichException(activity, request, ex);
+            }
+            throw;
+        }
+        finally
+        {
+            if (metricsActive)
+            {
+                var tags = new TagList
+                {
+                    { "type", typeName },
+                    { "status", status },
+                };
+                if (inst.SendCount.Enabled) inst.SendCount.Add(1, tags);
+                if (inst.SendDuration.Enabled) inst.SendDuration.Record(ElapsedMilliseconds(start), tags);
+            }
+            activity?.Dispose();
+        }
     }
 
-    private static double ElapsedMilliseconds(long startTimestamp)
-        => (Stopwatch.GetTimestamp() - startTimestamp) * 1000.0 / Stopwatch.Frequency;
+    internal IMediator Inner => _inner;
 }

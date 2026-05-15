@@ -14,9 +14,20 @@ namespace Snowberry.Mediator.Tests.OpenTelemetry;
 public class Snowberry_OpenTelemetryDecorationTests
 {
     [Fact]
-    public void ResolvedMediator_IsInstrumentedMediator()
+    public void CalledAfterAddSnowberryMediator_ThrowsInvalidOperationException()
     {
         using var container = new ServiceContainer();
+        container.AddSnowberryMediator(opt => opt.RequestHandlerTypes = [typeof(CounterRequestHandler)], ServiceLifetime.Scoped);
+
+        var ex = Assert.Throws<InvalidOperationException>(() => container.AddSnowberryMediatorOpenTelemetry());
+        Assert.Contains("before AddSnowberryMediator", ex.Message);
+    }
+
+    [Fact]
+    public void CalledTwice_IsIdempotent()
+    {
+        using var container = new ServiceContainer();
+        container.AddSnowberryMediatorOpenTelemetry(lifetime: ServiceLifetime.Scoped);
         container.AddSnowberryMediatorOpenTelemetry(lifetime: ServiceLifetime.Scoped);
         container.AddSnowberryMediator(opt => opt.RequestHandlerTypes = [typeof(CounterRequestHandler)], ServiceLifetime.Scoped);
 
@@ -37,24 +48,13 @@ public class Snowberry_OpenTelemetryDecorationTests
     }
 
     [Fact]
-    public void CalledTwice_IsIdempotent()
+    public void ResolvedMediator_IsInstrumentedMediator()
     {
         using var container = new ServiceContainer();
-        container.AddSnowberryMediatorOpenTelemetry(lifetime: ServiceLifetime.Scoped);
         container.AddSnowberryMediatorOpenTelemetry(lifetime: ServiceLifetime.Scoped);
         container.AddSnowberryMediator(opt => opt.RequestHandlerTypes = [typeof(CounterRequestHandler)], ServiceLifetime.Scoped);
 
         var mediator = container.GetRequiredService<IMediator>();
         Assert.IsType<InstrumentedMediator>(mediator);
-    }
-
-    [Fact]
-    public void CalledAfterAddSnowberryMediator_ThrowsInvalidOperationException()
-    {
-        using var container = new ServiceContainer();
-        container.AddSnowberryMediator(opt => opt.RequestHandlerTypes = [typeof(CounterRequestHandler)], ServiceLifetime.Scoped);
-
-        var ex = Assert.Throws<InvalidOperationException>(() => container.AddSnowberryMediatorOpenTelemetry());
-        Assert.Contains("before AddSnowberryMediator", ex.Message);
     }
 }

@@ -84,11 +84,10 @@ public class FakeMediator : IMediator
 {
     public int SendInvocations;
 
-    public ValueTask<TResponse> SendAsync<TRequest, TResponse>(IRequest<TRequest, TResponse> request, CancellationToken cancellationToken = default)
-        where TRequest : class, IRequest<TRequest, TResponse>
+    private static async IAsyncEnumerable<T> Empty<T>()
     {
-        Interlocked.Increment(ref SendInvocations);
-        return new ValueTask<TResponse>(default(TResponse)!);
+        await Task.CompletedTask;
+        yield break;
     }
 
     public IAsyncEnumerable<TResponse> CreateStreamAsync<TRequest, TResponse>(IStreamRequest<TRequest, TResponse> request, CancellationToken cancellationToken = default)
@@ -98,9 +97,10 @@ public class FakeMediator : IMediator
     public ValueTask PublishAsync<TNotification>(TNotification notification, CancellationToken cancellationToken = default)
         where TNotification : INotification => default;
 
-    private static async IAsyncEnumerable<T> Empty<T>()
+    public ValueTask<TResponse> SendAsync<TRequest, TResponse>(IRequest<TRequest, TResponse> request, CancellationToken cancellationToken = default)
+        where TRequest : class, IRequest<TRequest, TResponse>
     {
-        await Task.CompletedTask;
-        yield break;
+        Interlocked.Increment(ref SendInvocations);
+        return new ValueTask<TResponse>(default(TResponse)!);
     }
 }

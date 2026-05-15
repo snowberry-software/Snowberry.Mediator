@@ -26,22 +26,15 @@ public class OpenTelemetry_FastPathTests
     }
 
     [Fact]
-    public async Task NoListener_SendAsync_ReturnsSameResultAsUndecorated()
+    public async Task NoListener_CreateStreamAsync_EnumeratesAllItems()
     {
-        // No fixture → no listener subscribed.
-        var mediator = BuildMediatorWithOtel(opt => opt.RequestHandlerTypes = [typeof(CounterRequestHandler)]);
-        var result = await mediator.SendAsync(new CounterRequest());
-        Assert.Equal(5, result);
-        Assert.Null(System.Diagnostics.Activity.Current);
-    }
+        var mediator = BuildMediatorWithOtel(opt =>
+            opt.StreamRequestHandlerTypes = [typeof(NumberStreamRequestHandler)]);
 
-    [Fact]
-    public async Task NoListener_SendAsync_PropagatesException()
-    {
-        var mediator = BuildMediatorWithOtel(opt => opt.RequestHandlerTypes = [typeof(ThrowingRequestHandler)]);
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
-            await mediator.SendAsync(new ThrowingRequest()));
-        Assert.Equal("boom", ex.Message);
+        int count = 0;
+        await foreach (var _ in mediator.CreateStreamAsync(new NumberStreamRequest { Count = 4 }))
+            count++;
+        Assert.Equal(4, count);
     }
 
     [Fact]
@@ -56,14 +49,21 @@ public class OpenTelemetry_FastPathTests
     }
 
     [Fact]
-    public async Task NoListener_CreateStreamAsync_EnumeratesAllItems()
+    public async Task NoListener_SendAsync_PropagatesException()
     {
-        var mediator = BuildMediatorWithOtel(opt =>
-            opt.StreamRequestHandlerTypes = [typeof(NumberStreamRequestHandler)]);
+        var mediator = BuildMediatorWithOtel(opt => opt.RequestHandlerTypes = [typeof(ThrowingRequestHandler)]);
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            await mediator.SendAsync(new ThrowingRequest()));
+        Assert.Equal("boom", ex.Message);
+    }
 
-        int count = 0;
-        await foreach (var _ in mediator.CreateStreamAsync(new NumberStreamRequest { Count = 4 }))
-            count++;
-        Assert.Equal(4, count);
+    [Fact]
+    public async Task NoListener_SendAsync_ReturnsSameResultAsUndecorated()
+    {
+        // No fixture → no listener subscribed.
+        var mediator = BuildMediatorWithOtel(opt => opt.RequestHandlerTypes = [typeof(CounterRequestHandler)]);
+        var result = await mediator.SendAsync(new CounterRequest());
+        Assert.Equal(5, result);
+        Assert.Null(System.Diagnostics.Activity.Current);
     }
 }

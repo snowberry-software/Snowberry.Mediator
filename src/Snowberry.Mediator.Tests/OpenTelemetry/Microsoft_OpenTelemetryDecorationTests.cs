@@ -12,47 +12,11 @@ namespace Snowberry.Mediator.Tests.OpenTelemetry;
 public class Microsoft_OpenTelemetryDecorationTests
 {
     [Fact]
-    public void ResolvedMediator_IsInstrumentedMediator()
+    public void CalledBeforeAddSnowberryMediator_ThrowsInvalidOperationException()
     {
         var services = new ServiceCollection();
-        services.AddSnowberryMediator(opt => opt.RequestHandlerTypes = [typeof(CounterRequestHandler)], ServiceLifetime.Singleton);
-        services.AddSnowberryMediatorOpenTelemetry();
-
-        var sp = services.BuildServiceProvider();
-        var mediator = sp.GetRequiredService<IMediator>();
-
-        Assert.IsType<InstrumentedMediator>(mediator);
-        Assert.IsType<Mediator>(((InstrumentedMediator)mediator).Inner);
-    }
-
-    [Theory]
-    [InlineData(ServiceLifetime.Singleton)]
-    [InlineData(ServiceLifetime.Scoped)]
-    [InlineData(ServiceLifetime.Transient)]
-    public void Decorator_PreservesOriginalLifetime(ServiceLifetime lifetime)
-    {
-        var services = new ServiceCollection();
-        services.AddSnowberryMediator(opt => opt.RequestHandlerTypes = [typeof(CounterRequestHandler)], lifetime);
-        services.AddSnowberryMediatorOpenTelemetry();
-
-        var sp = services.BuildServiceProvider();
-
-        if (lifetime == ServiceLifetime.Singleton)
-        {
-            Assert.Same(sp.GetRequiredService<IMediator>(), sp.GetRequiredService<IMediator>());
-        }
-        else if (lifetime == ServiceLifetime.Scoped)
-        {
-            using var s1 = sp.CreateScope();
-            using var s2 = sp.CreateScope();
-            Assert.Same(s1.ServiceProvider.GetRequiredService<IMediator>(), s1.ServiceProvider.GetRequiredService<IMediator>());
-            Assert.NotSame(s1.ServiceProvider.GetRequiredService<IMediator>(), s2.ServiceProvider.GetRequiredService<IMediator>());
-        }
-        else
-        {
-            using var scope = sp.CreateScope();
-            Assert.NotSame(scope.ServiceProvider.GetRequiredService<IMediator>(), scope.ServiceProvider.GetRequiredService<IMediator>());
-        }
+        var ex = Assert.Throws<InvalidOperationException>(() => services.AddSnowberryMediatorOpenTelemetry());
+        Assert.Contains("AddSnowberryMediator", ex.Message);
     }
 
     [Fact]
@@ -67,14 +31,6 @@ public class Microsoft_OpenTelemetryDecorationTests
         var mediator = (InstrumentedMediator)sp.GetRequiredService<IMediator>();
 
         Assert.IsNotType<InstrumentedMediator>(mediator.Inner);
-    }
-
-    [Fact]
-    public void CalledBeforeAddSnowberryMediator_ThrowsInvalidOperationException()
-    {
-        var services = new ServiceCollection();
-        var ex = Assert.Throws<InvalidOperationException>(() => services.AddSnowberryMediatorOpenTelemetry());
-        Assert.Contains("AddSnowberryMediator", ex.Message);
     }
 
     [Fact]
@@ -119,5 +75,49 @@ public class Microsoft_OpenTelemetryDecorationTests
 
         await mediator.SendAsync(new CounterRequest());
         Assert.Equal(1, fake.SendInvocations);
+    }
+
+    [Theory]
+    [InlineData(ServiceLifetime.Singleton)]
+    [InlineData(ServiceLifetime.Scoped)]
+    [InlineData(ServiceLifetime.Transient)]
+    public void Decorator_PreservesOriginalLifetime(ServiceLifetime lifetime)
+    {
+        var services = new ServiceCollection();
+        services.AddSnowberryMediator(opt => opt.RequestHandlerTypes = [typeof(CounterRequestHandler)], lifetime);
+        services.AddSnowberryMediatorOpenTelemetry();
+
+        var sp = services.BuildServiceProvider();
+
+        if (lifetime == ServiceLifetime.Singleton)
+        {
+            Assert.Same(sp.GetRequiredService<IMediator>(), sp.GetRequiredService<IMediator>());
+        }
+        else if (lifetime == ServiceLifetime.Scoped)
+        {
+            using var s1 = sp.CreateScope();
+            using var s2 = sp.CreateScope();
+            Assert.Same(s1.ServiceProvider.GetRequiredService<IMediator>(), s1.ServiceProvider.GetRequiredService<IMediator>());
+            Assert.NotSame(s1.ServiceProvider.GetRequiredService<IMediator>(), s2.ServiceProvider.GetRequiredService<IMediator>());
+        }
+        else
+        {
+            using var scope = sp.CreateScope();
+            Assert.NotSame(scope.ServiceProvider.GetRequiredService<IMediator>(), scope.ServiceProvider.GetRequiredService<IMediator>());
+        }
+    }
+
+    [Fact]
+    public void ResolvedMediator_IsInstrumentedMediator()
+    {
+        var services = new ServiceCollection();
+        services.AddSnowberryMediator(opt => opt.RequestHandlerTypes = [typeof(CounterRequestHandler)], ServiceLifetime.Singleton);
+        services.AddSnowberryMediatorOpenTelemetry();
+
+        var sp = services.BuildServiceProvider();
+        var mediator = sp.GetRequiredService<IMediator>();
+
+        Assert.IsType<InstrumentedMediator>(mediator);
+        Assert.IsType<Mediator>(((InstrumentedMediator)mediator).Inner);
     }
 }

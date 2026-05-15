@@ -6,11 +6,11 @@ public class OpenTelemetry_MediatorDiagnosticsTests
     public OpenTelemetry_MediatorDiagnosticsTests() => MediatorDiagnostics.ResetForTests();
 
     [Fact]
-    public void ResetForTests_LeavesBothFlagsFalse()
+    public void EnableNotificationSpans_FlipsFlag()
     {
-        MediatorDiagnostics.ResetForTests();
+        MediatorDiagnostics.EnableNotificationSpans();
+        Assert.True(MediatorDiagnostics.IsNotificationEnabled);
         Assert.False(MediatorDiagnostics.IsPipelineEnabled);
-        Assert.False(MediatorDiagnostics.IsNotificationEnabled);
     }
 
     [Fact]
@@ -22,19 +22,19 @@ public class OpenTelemetry_MediatorDiagnosticsTests
     }
 
     [Fact]
-    public void EnableNotificationSpans_FlipsFlag()
-    {
-        MediatorDiagnostics.EnableNotificationSpans();
-        Assert.True(MediatorDiagnostics.IsNotificationEnabled);
-        Assert.False(MediatorDiagnostics.IsPipelineEnabled);
-    }
-
-    [Fact]
     public void Enable_CalledTwice_IsIdempotent()
     {
         MediatorDiagnostics.EnablePipelineSpans();
         MediatorDiagnostics.EnablePipelineSpans();
         Assert.True(MediatorDiagnostics.IsPipelineEnabled);
+    }
+
+    [Fact]
+    public void ResetForTests_LeavesBothFlagsFalse()
+    {
+        MediatorDiagnostics.ResetForTests();
+        Assert.False(MediatorDiagnostics.IsPipelineEnabled);
+        Assert.False(MediatorDiagnostics.IsNotificationEnabled);
     }
 
     [Fact]

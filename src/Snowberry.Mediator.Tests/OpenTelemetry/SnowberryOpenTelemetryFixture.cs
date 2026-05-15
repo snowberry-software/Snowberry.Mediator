@@ -10,18 +10,17 @@ namespace Snowberry.Mediator.Tests.OpenTelemetry;
 
 internal sealed class SnowberryOpenTelemetryFixture : IDisposable
 {
-    private readonly ServiceContainer _container;
     private readonly OpenTelemetryListenerCapture _capture;
-    public string SourceName { get; }
+    private readonly ServiceContainer _container;
 
     public SnowberryOpenTelemetryFixture(
         Action<MediatorOptions> configureMediator,
-        Action<global::Snowberry.Mediator.OpenTelemetry.MediatorTelemetryOptions>? configureTelemetry = null,
+        Action<MediatorTelemetryOptions>? configureTelemetry = null,
         ServiceLifetime lifetime = ServiceLifetime.Scoped)
     {
-        global::Snowberry.Mediator.MediatorDiagnostics.ResetForTests();
+        MediatorDiagnostics.ResetForTests();
 
-        var capturedOptions = new global::Snowberry.Mediator.OpenTelemetry.MediatorTelemetryOptions();
+        var capturedOptions = new MediatorTelemetryOptions();
         configureTelemetry?.Invoke(capturedOptions);
         SourceName = capturedOptions.SourceName;
         _capture = new OpenTelemetryListenerCapture(SourceName);
@@ -46,18 +45,19 @@ internal sealed class SnowberryOpenTelemetryFixture : IDisposable
         Mediator = _container.GetRequiredService<IMediator>();
     }
 
-    public IMediator Mediator { get; }
-
-    public ServiceContainer Container => _container;
-
-    public IReadOnlyList<System.Diagnostics.Activity> StoppedActivities => _capture.StoppedActivities;
-
-    public IReadOnlyList<MetricMeasurement> Measurements => _capture.Measurements;
-
     public void Dispose()
     {
         _capture.Dispose();
         _container.Dispose();
-        global::Snowberry.Mediator.MediatorDiagnostics.ResetForTests();
+        MediatorDiagnostics.ResetForTests();
     }
+
+    public ServiceContainer Container => _container;
+
+    public IReadOnlyList<MetricMeasurement> Measurements => _capture.Measurements;
+
+    public IMediator Mediator { get; }
+    public string SourceName { get; }
+
+    public IReadOnlyList<System.Diagnostics.Activity> StoppedActivities => _capture.StoppedActivities;
 }

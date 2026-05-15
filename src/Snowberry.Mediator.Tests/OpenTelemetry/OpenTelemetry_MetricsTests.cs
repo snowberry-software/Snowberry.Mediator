@@ -9,56 +9,6 @@ namespace Snowberry.Mediator.Tests.OpenTelemetry;
 public class OpenTelemetry_MetricsTests
 {
     [Fact]
-    public async Task SendAsync_Success_RecordsCountAndDurationWithSuccessStatus()
-    {
-        using var fx = new MicrosoftOpenTelemetryFixture(opt =>
-        {
-            opt.RequestHandlerTypes = [typeof(CounterRequestHandler)];
-        });
-
-        await fx.Mediator.SendAsync(new CounterRequest());
-
-        var count = Assert.Single(fx.Measurements, m => m.InstrumentName == "snowberry.mediator.send.count");
-        Assert.Equal(1d, count.Value);
-        Assert.Equal("CounterRequest", count.Tag("type"));
-        Assert.Equal("success", count.Tag("status"));
-
-        var duration = Assert.Single(fx.Measurements, m => m.InstrumentName == "snowberry.mediator.send.duration");
-        Assert.InRange(duration.Value, 0d, 60_000d);
-        Assert.Equal("success", duration.Tag("status"));
-    }
-
-    [Fact]
-    public async Task SendAsync_HandlerThrows_RecordsFailureStatus()
-    {
-        using var fx = new MicrosoftOpenTelemetryFixture(opt =>
-        {
-            opt.RequestHandlerTypes = [typeof(ThrowingRequestHandler)];
-        });
-
-        await Assert.ThrowsAsync<InvalidOperationException>(async () =>
-            await fx.Mediator.SendAsync(new ThrowingRequest()));
-
-        var count = Assert.Single(fx.Measurements, m => m.InstrumentName == "snowberry.mediator.send.count");
-        Assert.Equal("failure", count.Tag("status"));
-    }
-
-    [Fact]
-    public async Task PublishAsync_RecordsPublishCounter()
-    {
-        using var fx = new MicrosoftOpenTelemetryFixture(opt =>
-        {
-            opt.NotificationHandlerTypes = [typeof(SimpleNotificationHandler)];
-        });
-
-        await fx.Mediator.PublishAsync(new SimpleNotification());
-
-        var count = Assert.Single(fx.Measurements, m => m.InstrumentName == "snowberry.mediator.publish.count");
-        Assert.Equal("SimpleNotification", count.Tag("type"));
-        Assert.Equal("success", count.Tag("status"));
-    }
-
-    [Fact]
     public async Task CreateStreamAsync_RecordsStreamCounter_WithSuccessOnFullEnumeration()
     {
         using var fx = new MicrosoftOpenTelemetryFixture(opt =>
@@ -86,5 +36,55 @@ public class OpenTelemetry_MetricsTests
 
         Assert.Empty(fx.Measurements);
         Assert.NotEmpty(fx.StoppedActivities);
+    }
+
+    [Fact]
+    public async Task PublishAsync_RecordsPublishCounter()
+    {
+        using var fx = new MicrosoftOpenTelemetryFixture(opt =>
+        {
+            opt.NotificationHandlerTypes = [typeof(SimpleNotificationHandler)];
+        });
+
+        await fx.Mediator.PublishAsync(new SimpleNotification());
+
+        var count = Assert.Single(fx.Measurements, m => m.InstrumentName == "snowberry.mediator.publish.count");
+        Assert.Equal("SimpleNotification", count.Tag("type"));
+        Assert.Equal("success", count.Tag("status"));
+    }
+
+    [Fact]
+    public async Task SendAsync_HandlerThrows_RecordsFailureStatus()
+    {
+        using var fx = new MicrosoftOpenTelemetryFixture(opt =>
+        {
+            opt.RequestHandlerTypes = [typeof(ThrowingRequestHandler)];
+        });
+
+        await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            await fx.Mediator.SendAsync(new ThrowingRequest()));
+
+        var count = Assert.Single(fx.Measurements, m => m.InstrumentName == "snowberry.mediator.send.count");
+        Assert.Equal("failure", count.Tag("status"));
+    }
+
+    [Fact]
+    public async Task SendAsync_Success_RecordsCountAndDurationWithSuccessStatus()
+    {
+        using var fx = new MicrosoftOpenTelemetryFixture(opt =>
+        {
+            opt.RequestHandlerTypes = [typeof(CounterRequestHandler)];
+        });
+
+        await fx.Mediator.SendAsync(new CounterRequest());
+
+        var count = Assert.Single(fx.Measurements, m => m.InstrumentName == "snowberry.mediator.send.count");
+        Assert.Equal(1d, count.Value);
+        Assert.Equal("CounterRequest", count.Tag("type"));
+        Assert.Equal("success", count.Tag("status"));
+
+        var duration = Assert.Single(fx.Measurements, m => m.InstrumentName == "snowberry.mediator.send.duration");
+        Assert.InRange(duration.Value, 0d, 60_000d);
+        Assert.Equal("success", duration.Tag("status"));
     }
 }

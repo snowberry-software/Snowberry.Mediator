@@ -289,6 +289,11 @@ dotnet_naming_style.begins_with_i.required_suffix =
 dotnet_naming_style.begins_with_i.word_separator = 
 dotnet_naming_style.begins_with_i.capitalization = pascal_case
 
+# IDE
+# Simplify name
+dotnet_diagnostic.IDE0001.severity = warning
+# Simplify member access
+dotnet_diagnostic.IDE0002.severity = warning
 
 # Compiler XML documentation validation
 dotnet_diagnostic.CS1570.severity = error # Malformed XML documentation

@@ -9,6 +9,35 @@ namespace Snowberry.Mediator.Tests.OpenTelemetry;
 public class OpenTelemetry_EnrichmentAndFilterTests
 {
     [Fact]
+    public async Task EnrichWithException_IsInvoked_OnFailure()
+    {
+        Exception? capturedException = null;
+
+        using var fx = new MicrosoftOpenTelemetryFixture(
+            opt => opt.RequestHandlerTypes = [typeof(ThrowingRequestHandler)],
+            tel => tel.EnrichWithException = (_, _, ex) => capturedException = ex);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            await fx.Mediator.SendAsync(new ThrowingRequest()));
+
+        Assert.IsType<InvalidOperationException>(capturedException);
+    }
+
+    [Fact]
+    public async Task EnrichWithNotification_IsInvoked()
+    {
+        object? captured = null;
+
+        using var fx = new MicrosoftOpenTelemetryFixture(
+            opt => opt.NotificationHandlerTypes = [typeof(SimpleNotificationHandler)],
+            tel => tel.EnrichWithNotification = (_, n) => captured = n);
+
+        await fx.Mediator.PublishAsync(new SimpleNotification { Message = "hi" });
+
+        Assert.IsType<SimpleNotification>(captured);
+    }
+
+    [Fact]
     public async Task EnrichWithRequest_IsInvoked_WithActivityAndRequest()
     {
         object? capturedRequest = null;
@@ -37,35 +66,6 @@ public class OpenTelemetry_EnrichmentAndFilterTests
         await fx.Mediator.SendAsync(new CounterRequest());
 
         Assert.Equal(5, capturedResponse);
-    }
-
-    [Fact]
-    public async Task EnrichWithException_IsInvoked_OnFailure()
-    {
-        Exception? capturedException = null;
-
-        using var fx = new MicrosoftOpenTelemetryFixture(
-            opt => opt.RequestHandlerTypes = [typeof(ThrowingRequestHandler)],
-            tel => tel.EnrichWithException = (_, _, ex) => capturedException = ex);
-
-        await Assert.ThrowsAsync<InvalidOperationException>(async () =>
-            await fx.Mediator.SendAsync(new ThrowingRequest()));
-
-        Assert.IsType<InvalidOperationException>(capturedException);
-    }
-
-    [Fact]
-    public async Task EnrichWithNotification_IsInvoked()
-    {
-        object? captured = null;
-
-        using var fx = new MicrosoftOpenTelemetryFixture(
-            opt => opt.NotificationHandlerTypes = [typeof(SimpleNotificationHandler)],
-            tel => tel.EnrichWithNotification = (_, n) => captured = n);
-
-        await fx.Mediator.PublishAsync(new SimpleNotification { Message = "hi" });
-
-        Assert.IsType<SimpleNotification>(captured);
     }
 
     [Fact]

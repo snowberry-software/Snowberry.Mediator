@@ -34,23 +34,6 @@ internal readonly struct PipelineWalker<TRequest, TResponse> : IPipelineContinua
         _index = index;
     }
 
-    [SuppressMessage("Trimming", "IL2026", Justification = "Pipeline behavior types are explicitly registered.")]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ValueTask<TResponse> InvokeAsync(TRequest request, CancellationToken cancellationToken)
-    {
-        if (_index >= _types.Length)
-            return _terminal.HandleAsync(request, cancellationToken);
-
-        var behaviorType = _types[_index];
-        var behavior = Unsafe.As<IPipelineBehavior<TRequest, TResponse>>(_sp.GetService(behaviorType))!;
-        var next = new PipelineWalker<TRequest, TResponse>(_sp, _terminal, _types, _index + 1);
-
-        if (!MediatorDiagnostics.IsPipelineEnabled)
-            return behavior.HandleAsync(request, next, cancellationToken);
-
-        return InvokeInstrumentedAsync(behavior, behaviorType, request, next, cancellationToken);
-    }
-
     private static async ValueTask<TResponse> InvokeInstrumentedAsync(
         IPipelineBehavior<TRequest, TResponse> behavior,
         Type behaviorType,
@@ -76,5 +59,22 @@ internal readonly struct PipelineWalker<TRequest, TResponse> : IPipelineContinua
             activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
             throw;
         }
+    }
+
+    [SuppressMessage("Trimming", "IL2026", Justification = "Pipeline behavior types are explicitly registered.")]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public ValueTask<TResponse> InvokeAsync(TRequest request, CancellationToken cancellationToken)
+    {
+        if (_index >= _types.Length)
+            return _terminal.HandleAsync(request, cancellationToken);
+
+        var behaviorType = _types[_index];
+        var behavior = Unsafe.As<IPipelineBehavior<TRequest, TResponse>>(_sp.GetService(behaviorType))!;
+        var next = new PipelineWalker<TRequest, TResponse>(_sp, _terminal, _types, _index + 1);
+
+        if (!MediatorDiagnostics.IsPipelineEnabled)
+            return behavior.HandleAsync(request, next, cancellationToken);
+
+        return InvokeInstrumentedAsync(behavior, behaviorType, request, next, cancellationToken);
     }
 }
