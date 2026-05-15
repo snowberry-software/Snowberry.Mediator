@@ -20,6 +20,8 @@
 	<ItemGroup>
 		<ProjectReference Include="..\Snowberry.Mediator\Snowberry.Mediator.csproj" />
 		<ProjectReference Include="..\Snowberry.Mediator.Extensions.DependencyInjection\Snowberry.Mediator.Extensions.DependencyInjection.csproj" />
+		<ProjectReference Include="..\Snowberry.Mediator.OpenTelemetry.Shared\Snowberry.Mediator.OpenTelemetry.Shared.csproj" />
+		<ProjectReference Include="..\Snowberry.Mediator.Extensions.OpenTelemetry\Snowberry.Mediator.Extensions.OpenTelemetry.csproj" />
 	</ItemGroup>
 
 </Project>

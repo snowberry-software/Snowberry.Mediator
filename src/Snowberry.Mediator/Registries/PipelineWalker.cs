@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using Snowberry.Mediator.Abstractions.Handler;
@@ -40,10 +41,40 @@ internal readonly struct PipelineWalker<TRequest, TResponse> : IPipelineContinua
         if (_index >= _types.Length)
             return _terminal.HandleAsync(request, cancellationToken);
 
-        var behavior = Unsafe.As<IPipelineBehavior<TRequest, TResponse>>(_sp.GetService(_types[_index]))!;
-        return behavior.HandleAsync(
-            request,
-            new PipelineWalker<TRequest, TResponse>(_sp, _terminal, _types, _index + 1),
-            cancellationToken);
+        var behaviorType = _types[_index];
+        var behavior = Unsafe.As<IPipelineBehavior<TRequest, TResponse>>(_sp.GetService(behaviorType))!;
+        var next = new PipelineWalker<TRequest, TResponse>(_sp, _terminal, _types, _index + 1);
+
+        if (!MediatorDiagnostics.IsPipelineEnabled)
+            return behavior.HandleAsync(request, next, cancellationToken);
+
+        return InvokeInstrumentedAsync(behavior, behaviorType, request, next, cancellationToken);
+    }
+
+    private static async ValueTask<TResponse> InvokeInstrumentedAsync(
+        IPipelineBehavior<TRequest, TResponse> behavior,
+        Type behaviorType,
+        TRequest request,
+        PipelineWalker<TRequest, TResponse> next,
+        CancellationToken ct)
+    {
+        using var activity = MediatorDiagnostics.PipelineSource.StartActivity(
+            "Mediator.Behavior " + behaviorType.Name, ActivityKind.Internal);
+        if (activity is not null)
+        {
+            activity.SetTag("snowberry.mediator.behavior.type", behaviorType.Name);
+            activity.SetTag("snowberry.mediator.request.type", typeof(TRequest).Name);
+        }
+        try
+        {
+            var result = await behavior.HandleAsync(request, next, ct).ConfigureAwait(false);
+            activity?.SetStatus(ActivityStatusCode.Ok);
+            return result;
+        }
+        catch (Exception ex)
+        {
+            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            throw;
+        }
     }
 }

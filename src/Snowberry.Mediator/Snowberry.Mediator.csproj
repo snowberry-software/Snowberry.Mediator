@@ -27,8 +27,20 @@
 		<PackageReference Include="ZLinq" Version="1.5.6" />
 	</ItemGroup>
 
+	<!-- ActivitySource ships in-box on .NET 6+; on netstandard2.0 it requires the standalone package. -->
+	<ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+		<PackageReference Include="System.Diagnostics.DiagnosticSource" Version="10.0.6" />
+	</ItemGroup>
+
 	<ItemGroup>
 		<ProjectReference Include="..\Snowberry.Mediator.Abstractions\Snowberry.Mediator.Abstractions.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<!-- PublicKey extracted from src/Snowberry.Mediator.snk via `sn -p ... key` then `sn -tp key`.
+		     All projects under src/ are strong-signed via Directory.Build.props using the same key. -->
+		<InternalsVisibleTo Include="Snowberry.Mediator.Tests, PublicKey=002400000480000094000000060200000024000052534131000400000100010081c08a132b0a868e9e8c40463e5cc9c19ffa93d12d0894624690e1558afc0935b8e2c8f1cb528827a00d4d12bb4705ebea5f080e4661e4f0ce5a2cc12a9f23782b3a41b72daf50ed29344d3f1dc1423236e49e6f6c14890b027cb5254f5aa81498d479cea9a6d5f3d50f203f90bf6eb6577ca30cf55b200f444b8c144dc045aa" />
+		<InternalsVisibleTo Include="Snowberry.Mediator.Benchmarks, PublicKey=002400000480000094000000060200000024000052534131000400000100010081c08a132b0a868e9e8c40463e5cc9c19ffa93d12d0894624690e1558afc0935b8e2c8f1cb528827a00d4d12bb4705ebea5f080e4661e4f0ce5a2cc12a9f23782b3a41b72daf50ed29344d3f1dc1423236e49e6f6c14890b027cb5254f5aa81498d479cea9a6d5f3d50f203f90bf6eb6577ca30cf55b200f444b8c144dc045aa" />
 	</ItemGroup>
 
 	<Import Project="../NuGetPackage.props" />

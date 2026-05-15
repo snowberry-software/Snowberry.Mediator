@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using Snowberry.Mediator.Abstractions.Handler;
@@ -41,10 +42,41 @@ internal readonly struct StreamPipelineWalker<TRequest, TResponse> : IStreamPipe
         if (_index >= _types.Length)
             return _terminal.HandleAsync(request, cancellationToken);
 
-        var behavior = Unsafe.As<IStreamPipelineBehavior<TRequest, TResponse>>(_sp.GetService(_types[_index]))!;
-        return behavior.HandleAsync(
-            request,
-            new StreamPipelineWalker<TRequest, TResponse>(_sp, _terminal, _types, _index + 1),
-            cancellationToken);
+        var behaviorType = _types[_index];
+        var behavior = Unsafe.As<IStreamPipelineBehavior<TRequest, TResponse>>(_sp.GetService(behaviorType))!;
+        var next = new StreamPipelineWalker<TRequest, TResponse>(_sp, _terminal, _types, _index + 1);
+
+        if (!MediatorDiagnostics.IsPipelineEnabled)
+            return behavior.HandleAsync(request, next, cancellationToken);
+
+        return InvokeInstrumentedAsync(behavior, behaviorType, request, next, cancellationToken);
+    }
+
+    private static async IAsyncEnumerable<TResponse> InvokeInstrumentedAsync(
+        IStreamPipelineBehavior<TRequest, TResponse> behavior,
+        Type behaviorType,
+        TRequest request,
+        StreamPipelineWalker<TRequest, TResponse> next,
+        [EnumeratorCancellation] CancellationToken ct)
+    {
+        using var activity = MediatorDiagnostics.PipelineSource.StartActivity(
+            "Mediator.Behavior " + behaviorType.Name, ActivityKind.Internal);
+        if (activity is not null)
+        {
+            activity.SetTag("snowberry.mediator.behavior.type", behaviorType.Name);
+            activity.SetTag("snowberry.mediator.request.type", typeof(TRequest).Name);
+        }
+        string status = "failure";
+        try
+        {
+            await foreach (var item in behavior.HandleAsync(request, next, ct).ConfigureAwait(false))
+                yield return item;
+            status = "success";
+            activity?.SetStatus(ActivityStatusCode.Ok);
+        }
+        finally
+        {
+            if (status != "success") activity?.SetStatus(ActivityStatusCode.Error);
+        }
     }
 }

@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 #if NET8_0_OR_GREATER
 using System.Collections.Frozen;
 #endif
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using Snowberry.Mediator.Abstractions.Exceptions;
@@ -80,9 +81,16 @@ public sealed class GlobalNotificationHandlerRegistry : IGlobalNotificationHandl
                     ?? throw new NotificationHandlerNotResolvedException(info.HandlerType);
 
                 hadHandler = true;
-                var valueTask = current.HandleAsync(notification, cancellationToken);
-                if (!valueTask.IsCompletedSuccessfully)
-                    await valueTask;
+                if (!MediatorDiagnostics.IsNotificationEnabled)
+                {
+                    var valueTask = current.HandleAsync(notification, cancellationToken);
+                    if (!valueTask.IsCompletedSuccessfully)
+                        await valueTask;
+                }
+                else
+                {
+                    await InvokeHandlerInstrumentedAsync(current, notification, info.HandlerType, cancellationToken).ConfigureAwait(false);
+                }
             }
         }
 
@@ -95,9 +103,16 @@ public sealed class GlobalNotificationHandlerRegistry : IGlobalNotificationHandl
                     ?? throw new NotificationHandlerNotResolvedException(info.HandlerType));
 
                 hadHandler = true;
-                var valueTask = current.HandleAsync(notification, cancellationToken);
-                if (!valueTask.IsCompletedSuccessfully)
-                    await valueTask;
+                if (!MediatorDiagnostics.IsNotificationEnabled)
+                {
+                    var valueTask = current.HandleAsync(notification, cancellationToken);
+                    if (!valueTask.IsCompletedSuccessfully)
+                        await valueTask;
+                }
+                else
+                {
+                    await InvokeHandlerInstrumentedAsync(current, notification, info.HandlerType, cancellationToken).ConfigureAwait(false);
+                }
             }
         }
 
@@ -159,4 +174,30 @@ public sealed class GlobalNotificationHandlerRegistry : IGlobalNotificationHandl
 
     /// <inheritdoc/>
     public bool IsEmpty => _isEmpty;
+
+    private static async ValueTask InvokeHandlerInstrumentedAsync<TNotification>(
+        INotificationHandler<TNotification> handler,
+        TNotification notification,
+        Type handlerType,
+        CancellationToken ct)
+        where TNotification : INotification
+    {
+        using var activity = MediatorDiagnostics.NotificationSource.StartActivity(
+            "Mediator.Handler " + handlerType.Name, ActivityKind.Internal);
+        if (activity is not null)
+        {
+            activity.SetTag("snowberry.mediator.handler.type", handlerType.Name);
+            activity.SetTag("snowberry.mediator.notification.type", typeof(TNotification).Name);
+        }
+        try
+        {
+            await handler.HandleAsync(notification, ct).ConfigureAwait(false);
+            activity?.SetStatus(ActivityStatusCode.Ok);
+        }
+        catch (Exception ex)
+        {
+            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            throw;
+        }
+    }
 }

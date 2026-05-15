@@ -2,6 +2,7 @@ using BenchmarkDotNet.Attributes;
 using Microsoft.Extensions.DependencyInjection;
 using Snowberry.Mediator.Abstractions;
 using Snowberry.Mediator.Extensions.DependencyInjection;
+using Snowberry.Mediator.Extensions.OpenTelemetry;
 
 namespace Snowberry.Mediator.Benchmarks;
 
@@ -44,10 +45,24 @@ public class MediatorBenchmarks
     private IMediator _mediatorStreamSpecific10 = null!;
     private IMediator _mediatorStreamSpecific3 = null!;
 
+    // OTel-decorated mediators (no listener attached → fast path).
+    private IMediator _mediatorNoPipelineOtel = null!;
+    private IMediator _mediatorStreamNoPipelineOtel = null!;
+    private IMediator _mediatorPublishSpecific3Otel = null!;
+
     private static IMediator BuildMediator(Action<MediatorOptions> configure)
     {
         var services = new ServiceCollection();
         services.AddSnowberryMediator(configure, ServiceLifetime.Singleton);
+        var provider = services.BuildServiceProvider();
+        return provider.GetRequiredService<IMediator>();
+    }
+
+    private static IMediator BuildMediatorWithOtel(Action<MediatorOptions> configure)
+    {
+        var services = new ServiceCollection();
+        services.AddSnowberryMediator(configure, ServiceLifetime.Singleton);
+        services.AddSnowberryMediatorOpenTelemetry();
         var provider = services.BuildServiceProvider();
         return provider.GetRequiredService<IMediator>();
     }
@@ -272,7 +287,51 @@ public class MediatorBenchmarks
             opt.RequestHandlerTypes = [typeof(OpenGeneric1AsyncRequestHandler)];
             opt.PipelineBehaviorTypes = [typeof(OpenAsyncBehavior1<,>)];
         });
+
+        // OTel-decorated mediators with no listener attached. These measure the dispatch decorator's
+        // fast-path overhead vs the un-decorated baselines (`Send_NoPipeline`, `Stream_NoPipeline_Enumerate10`,
+        // `Publish_Specific3`). Expected: +1–3 ns / 0 B.
+        _mediatorNoPipelineOtel = BuildMediatorWithOtel(opt =>
+        {
+            opt.RequestHandlerTypes = [typeof(NoPipelineRequestHandler)];
+        });
+
+        _mediatorStreamNoPipelineOtel = BuildMediatorWithOtel(opt =>
+        {
+            opt.StreamRequestHandlerTypes = [typeof(StreamNoPipelineRequestHandler)];
+        });
+
+        _mediatorPublishSpecific3Otel = BuildMediatorWithOtel(opt =>
+        {
+            opt.NotificationHandlerTypes =
+            [
+                typeof(SpecificNotification3Handler1),
+                typeof(SpecificNotification3Handler2),
+                typeof(SpecificNotification3Handler3),
+            ];
+        });
     }
+
+    // ---------- OTel decorator (no listener) — fast-path regression guard ----------
+
+    [Benchmark]
+    public ValueTask<int> Send_NoPipeline_OtelDecoratedNoListener()
+        => _mediatorNoPipelineOtel.SendAsync(_noPipelineRequest);
+
+    [Benchmark]
+    public async ValueTask<int> Stream_NoPipeline_OtelDecoratedNoListener_Enumerate10()
+    {
+        int sum = 0;
+        await foreach (var i in _mediatorStreamNoPipelineOtel.CreateStreamAsync(_streamNoPipelineRequest))
+        {
+            sum += i;
+        }
+        return sum;
+    }
+
+    [Benchmark]
+    public ValueTask Publish_Specific3_OtelDecoratedNoListener()
+        => _mediatorPublishSpecific3Otel.PublishAsync(_specificNotification3);
 
     // ---------- Stream ----------
 
