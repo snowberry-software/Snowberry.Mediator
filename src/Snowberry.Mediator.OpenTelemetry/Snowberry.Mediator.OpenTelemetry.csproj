@@ -8,7 +8,15 @@
 
 		<!-- Package -->
 		<Description>Snowberry.DependencyInjection integration for Snowberry.Mediator OpenTelemetry.</Description>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
 	</PropertyGroup>
+
+	<ItemGroup>
+		<None Include="README.md">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+	</ItemGroup>
 
 	<PropertyGroup Condition="$(TargetFramework) != 'netstandard2.0'">
 		<IsAotCompatible>true</IsAotCompatible>

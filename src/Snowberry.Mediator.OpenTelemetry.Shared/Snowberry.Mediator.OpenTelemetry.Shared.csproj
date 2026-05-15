@@ -9,7 +9,15 @@
 
 		<!-- Package -->
 		<Description>Core OpenTelemetry tracing and metrics decorator for Snowberry.Mediator (container-agnostic).</Description>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
 	</PropertyGroup>
+
+	<ItemGroup>
+		<None Include="README.md">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+	</ItemGroup>
 
 	<PropertyGroup Condition="$(TargetFramework) != 'netstandard2.0'">
 		<IsAotCompatible>true</IsAotCompatible>
