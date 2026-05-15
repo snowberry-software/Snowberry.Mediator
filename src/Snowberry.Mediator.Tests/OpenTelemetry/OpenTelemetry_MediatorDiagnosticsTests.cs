@@ -40,7 +40,7 @@ public class OpenTelemetry_MediatorDiagnosticsTests
     [Fact]
     public void Sources_HaveCorrectNames()
     {
-        Assert.Equal("Snowberry.Mediator.Pipeline", MediatorDiagnostics.PipelineSource.Name);
-        Assert.Equal("Snowberry.Mediator.Notification", MediatorDiagnostics.NotificationSource.Name);
+        Assert.Equal("Snowberry.Mediator.Pipeline", MediatorDiagnostics.s_PipelineSource.Name);
+        Assert.Equal("Snowberry.Mediator.Notification", MediatorDiagnostics.s_NotificationSource.Name);
     }
 }

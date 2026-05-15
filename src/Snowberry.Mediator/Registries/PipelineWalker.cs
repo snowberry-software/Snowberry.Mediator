@@ -41,7 +41,7 @@ internal readonly struct PipelineWalker<TRequest, TResponse> : IPipelineContinua
         PipelineWalker<TRequest, TResponse> next,
         CancellationToken ct)
     {
-        using var activity = MediatorDiagnostics.PipelineSource.StartActivity(
+        using var activity = MediatorDiagnostics.s_PipelineSource.StartActivity(
             "Mediator.Behavior " + behaviorType.Name, ActivityKind.Internal);
         if (activity is not null)
         {

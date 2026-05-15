@@ -127,7 +127,7 @@ public sealed class InstrumentedMediator : IMediator
         where TRequest : class, IStreamRequest<TRequest, TResponse>
     {
         var inst = _instrumentation;
-        string typeName = TypeNameCache<TRequest>.Name;
+        string typeName = TypeNameCache<TRequest>.s_Name;
 
         Activity? activity = tracingActive
             ? inst.ActivitySource.StartActivity("Mediator.Stream " + typeName, ActivityKind.Internal)
@@ -135,7 +135,7 @@ public sealed class InstrumentedMediator : IMediator
         if (activity is not null)
         {
             activity.SetTag("snowberry.mediator.request.type", typeName);
-            activity.SetTag("snowberry.mediator.response.type", TypeNameCache<TResponse>.Name);
+            activity.SetTag("snowberry.mediator.response.type", TypeNameCache<TResponse>.s_Name);
             activity.SetTag("snowberry.mediator.operation", "stream");
             InvokeEnrichRequest(activity, request);
         }
@@ -206,7 +206,7 @@ public sealed class InstrumentedMediator : IMediator
         where TNotification : INotification
     {
         var inst = _instrumentation;
-        string typeName = TypeNameCache<TNotification>.Name;
+        string typeName = TypeNameCache<TNotification>.s_Name;
 
         Activity? activity = tracingActive
             ? inst.ActivitySource.StartActivity("Mediator.Publish " + typeName, ActivityKind.Internal)
@@ -259,7 +259,7 @@ public sealed class InstrumentedMediator : IMediator
         where TRequest : class, IRequest<TRequest, TResponse>
     {
         var inst = _instrumentation;
-        string typeName = TypeNameCache<TRequest>.Name;
+        string typeName = TypeNameCache<TRequest>.s_Name;
 
         Activity? activity = tracingActive
             ? inst.ActivitySource.StartActivity("Mediator.Send " + typeName, ActivityKind.Internal)
@@ -267,7 +267,7 @@ public sealed class InstrumentedMediator : IMediator
         if (activity is not null)
         {
             activity.SetTag("snowberry.mediator.request.type", typeName);
-            activity.SetTag("snowberry.mediator.response.type", TypeNameCache<TResponse>.Name);
+            activity.SetTag("snowberry.mediator.response.type", TypeNameCache<TResponse>.s_Name);
             activity.SetTag("snowberry.mediator.operation", "send");
             InvokeEnrichRequest(activity, request);
         }

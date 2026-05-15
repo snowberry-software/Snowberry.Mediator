@@ -182,7 +182,7 @@ public sealed class GlobalNotificationHandlerRegistry : IGlobalNotificationHandl
         CancellationToken ct)
         where TNotification : INotification
     {
-        using var activity = MediatorDiagnostics.NotificationSource.StartActivity(
+        using var activity = MediatorDiagnostics.s_NotificationSource.StartActivity(
             "Mediator.Handler " + handlerType.Name, ActivityKind.Internal);
         if (activity is not null)
         {

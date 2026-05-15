@@ -42,7 +42,7 @@ internal readonly struct StreamPipelineWalker<TRequest, TResponse> : IStreamPipe
         StreamPipelineWalker<TRequest, TResponse> next,
         [EnumeratorCancellation] CancellationToken ct)
     {
-        using var activity = MediatorDiagnostics.PipelineSource.StartActivity(
+        using var activity = MediatorDiagnostics.s_PipelineSource.StartActivity(
             "Mediator.Behavior " + behaviorType.Name, ActivityKind.Internal);
         if (activity is not null)
         {
