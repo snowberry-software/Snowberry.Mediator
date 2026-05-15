@@ -5,7 +5,7 @@
 /// </summary>
 public readonly struct Empty
 {
-    private static readonly Empty _value = new();
+    private static readonly Empty s_Value = new();
 
     /// <summary>
     /// Implicitly converts an <see cref="Empty"/> instance to a <see cref="ValueTask{TResult}"/> of <see cref="Empty"/>.
@@ -13,16 +13,16 @@ public readonly struct Empty
     /// <param name="_">The <see cref="Empty"/> instance (ignored).</param>
     public static implicit operator ValueTask<Empty>(Empty _)
     {
-        return new(_value);
+        return new(s_Value);
     }
 
     /// <summary>
     /// The singleton instance of <see cref="Empty"/>.
     /// </summary>
-    public static ref readonly Empty Value => ref _value;
+    public static ref readonly Empty Value => ref s_Value;
 
     /// <summary>
     /// The singleton <see cref="ValueTask{TResult}"/> instance of <see cref="Empty"/>.
     /// </summary>
-    public static ValueTask<Empty> ValueTask => new(_value);
+    public static ValueTask<Empty> ValueTask => new(s_Value);
 }

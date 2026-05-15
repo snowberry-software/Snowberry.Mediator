@@ -11,17 +11,6 @@ namespace Snowberry.Mediator.Tests.Common.NotificationHandlers;
 public class GenericLoggingHandler<TNotification> : INotificationHandler<TNotification>
     where TNotification : INotification
 {
-    // Use test-isolated state instead of shared static state
-    public static ConcurrentBag<object> LoggedNotifications =>
-        TestIsolationContext.GetOrCreateBag<object>($"GenericLoggingHandler<{typeof(TNotification).Name}>.LoggedNotifications");
-
-    public ValueTask HandleAsync(TNotification notification, CancellationToken cancellationToken = default)
-    {
-        NotificationHandlerExecutionTracker.RecordExecution($"GenericLoggingHandler<{typeof(TNotification).Name}>");
-        LoggedNotifications.Add(notification);
-        return default;
-    }
-
     public static void ClearLoggedNotifications()
     {
         // Clear by draining the bag
@@ -30,6 +19,17 @@ public class GenericLoggingHandler<TNotification> : INotificationHandler<TNotifi
         {
         }
     }
+
+    public ValueTask HandleAsync(TNotification notification, CancellationToken cancellationToken = default)
+    {
+        NotificationHandlerExecutionTracker.RecordExecution($"GenericLoggingHandler<{typeof(TNotification).Name}>");
+        LoggedNotifications.Add(notification);
+        return default;
+    }
+
+    // Use test-isolated state instead of shared static state
+    public static ConcurrentBag<object> LoggedNotifications =>
+        TestIsolationContext.GetOrCreateBag<object>($"GenericLoggingHandler<{typeof(TNotification).Name}>.LoggedNotifications");
 }
 
 /// <summary>
@@ -38,11 +38,11 @@ public class GenericLoggingHandler<TNotification> : INotificationHandler<TNotifi
 public class GenericAuditingHandler<TNotification> : INotificationHandler<TNotification>
     where TNotification : INotification
 {
-    private static string AuditLogKey => $"GenericAuditingHandler<{typeof(TNotification).Name}>.AuditLog";
-
-    // Use test-isolated state instead of shared static state
-    public static ConcurrentDictionary<string, ConcurrentBag<object>> AuditLog =>
-        TestIsolationContext.GetOrCreateValue(AuditLogKey, () => new ConcurrentDictionary<string, ConcurrentBag<object>>());
+    public static void ClearAuditLog()
+    {
+        var auditLog = AuditLog;
+        auditLog.Clear();
+    }
 
     public async ValueTask HandleAsync(TNotification notification, CancellationToken cancellationToken = default)
     {
@@ -56,11 +56,11 @@ public class GenericAuditingHandler<TNotification> : INotificationHandler<TNotif
         auditBag.Add(notification);
     }
 
-    public static void ClearAuditLog()
-    {
-        var auditLog = AuditLog;
-        auditLog.Clear();
-    }
+    // Use test-isolated state instead of shared static state
+    public static ConcurrentDictionary<string, ConcurrentBag<object>> AuditLog =>
+        TestIsolationContext.GetOrCreateValue(AuditLogKey, () => new ConcurrentDictionary<string, ConcurrentBag<object>>());
+
+    private static string AuditLogKey => $"GenericAuditingHandler<{typeof(TNotification).Name}>.AuditLog";
 }
 
 /// <summary>
@@ -69,15 +69,11 @@ public class GenericAuditingHandler<TNotification> : INotificationHandler<TNotif
 public class GenericMetricsHandler<TNotification> : INotificationHandler<TNotification>
     where TNotification : INotification
 {
-    private static string NotificationCountsKey => $"GenericMetricsHandler<{typeof(TNotification).Name}>.NotificationCounts";
-    private static string LastProcessedTimesKey => $"GenericMetricsHandler<{typeof(TNotification).Name}>.LastProcessedTimes";
-
-    // Use test-isolated state instead of shared static state
-    public static ConcurrentDictionary<string, int> NotificationCounts =>
-        TestIsolationContext.GetOrCreateValue(NotificationCountsKey, () => new ConcurrentDictionary<string, int>());
-
-    public static ConcurrentDictionary<string, DateTime> LastProcessedTimes =>
-        TestIsolationContext.GetOrCreateValue(LastProcessedTimesKey, () => new ConcurrentDictionary<string, DateTime>());
+    public static void ClearMetrics()
+    {
+        NotificationCounts.Clear();
+        LastProcessedTimes.Clear();
+    }
 
     public ValueTask HandleAsync(TNotification notification, CancellationToken cancellationToken = default)
     {
@@ -92,11 +88,15 @@ public class GenericMetricsHandler<TNotification> : INotificationHandler<TNotifi
         return default;
     }
 
-    public static void ClearMetrics()
-    {
-        NotificationCounts.Clear();
-        LastProcessedTimes.Clear();
-    }
+    public static ConcurrentDictionary<string, DateTime> LastProcessedTimes =>
+        TestIsolationContext.GetOrCreateValue(LastProcessedTimesKey, () => new ConcurrentDictionary<string, DateTime>());
+
+    // Use test-isolated state instead of shared static state
+    public static ConcurrentDictionary<string, int> NotificationCounts =>
+        TestIsolationContext.GetOrCreateValue(NotificationCountsKey, () => new ConcurrentDictionary<string, int>());
+
+    private static string LastProcessedTimesKey => $"GenericMetricsHandler<{typeof(TNotification).Name}>.LastProcessedTimes";
+    private static string NotificationCountsKey => $"GenericMetricsHandler<{typeof(TNotification).Name}>.NotificationCounts";
 }
 
 /// <summary>
@@ -105,17 +105,15 @@ public class GenericMetricsHandler<TNotification> : INotificationHandler<TNotifi
 public class GenericValidationHandler<TNotification> : INotificationHandler<TNotification>
     where TNotification : INotification
 {
-    private static string ValidationResultsKey => $"GenericValidationHandler<{typeof(TNotification).Name}>.ValidationResults";
-    private static string ShouldThrowExceptionKey => $"GenericValidationHandler<{typeof(TNotification).Name}>.ShouldThrowException";
-
-    // Use test-isolated state instead of shared static state
-    public static ConcurrentBag<string> ValidationResults =>
-        TestIsolationContext.GetOrCreateBag<string>(ValidationResultsKey);
-
-    public static bool ShouldThrowException
+    public static void ClearValidationResults()
     {
-        get => TestIsolationContext.GetValue(ShouldThrowExceptionKey, false);
-        set => TestIsolationContext.GetOrSetValue(ShouldThrowExceptionKey, value);
+        // Clear by draining the bag
+        var bag = ValidationResults;
+        while (bag.TryTake(out _))
+        {
+        }
+
+        ShouldThrowException = false;
     }
 
     public ValueTask HandleAsync(TNotification notification, CancellationToken cancellationToken = default)
@@ -131,16 +129,18 @@ public class GenericValidationHandler<TNotification> : INotificationHandler<TNot
         return default;
     }
 
-    public static void ClearValidationResults()
+    public static bool ShouldThrowException
     {
-        // Clear by draining the bag
-        var bag = ValidationResults;
-        while (bag.TryTake(out _))
-        {
-        }
-
-        ShouldThrowException = false;
+        get => TestIsolationContext.GetValue(ShouldThrowExceptionKey, false);
+        set => TestIsolationContext.GetOrSetValue(ShouldThrowExceptionKey, value);
     }
+
+    // Use test-isolated state instead of shared static state
+    public static ConcurrentBag<string> ValidationResults =>
+        TestIsolationContext.GetOrCreateBag<string>(ValidationResultsKey);
+
+    private static string ShouldThrowExceptionKey => $"GenericValidationHandler<{typeof(TNotification).Name}>.ShouldThrowException";
+    private static string ValidationResultsKey => $"GenericValidationHandler<{typeof(TNotification).Name}>.ValidationResults";
 }
 
 /// <summary>
@@ -151,17 +151,14 @@ public class TestSpecificValidationHandler<TNotification> : INotificationHandler
     where TNotification : INotification
 {
     // Use AsyncLocal to isolate state per test execution context
-    private static readonly AsyncLocal<bool> _shouldThrowException = new();
-    private static readonly AsyncLocal<List<string>> _validationResults = new();
+    private static readonly AsyncLocal<bool> s_ShouldThrowException = new();
+    private static readonly AsyncLocal<List<string>> s_ValidationResults = new();
 
-    public static bool ShouldThrowException
+    public static void ClearValidationResults()
     {
-        get => _shouldThrowException.Value;
-        set => _shouldThrowException.Value = value;
+        s_ValidationResults.Value = [];
+        s_ShouldThrowException.Value = false;
     }
-
-    public static List<string> ValidationResults =>
-        _validationResults.Value ??= [];
 
     public ValueTask HandleAsync(TNotification notification, CancellationToken cancellationToken = default)
     {
@@ -176,9 +173,12 @@ public class TestSpecificValidationHandler<TNotification> : INotificationHandler
         return default;
     }
 
-    public static void ClearValidationResults()
+    public static bool ShouldThrowException
     {
-        _validationResults.Value = [];
-        _shouldThrowException.Value = false;
+        get => s_ShouldThrowException.Value;
+        set => s_ShouldThrowException.Value = value;
     }
+
+    public static List<string> ValidationResults =>
+        s_ValidationResults.Value ??= [];
 }

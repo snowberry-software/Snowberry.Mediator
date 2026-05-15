@@ -16,119 +16,6 @@ namespace Snowberry.Mediator.Tests;
 public class Snowberry_EdgeCasesAndErrorTests : MediatorTestBase
 {
     [Fact]
-    public async Task Test_Request_WithNullValues()
-    {
-        using var serviceContainer = new ServiceContainer();
-
-        serviceContainer.AddSnowberryMediator(options =>
-        {
-            options.Assemblies = [typeof(NullableRequest).Assembly];
-        }, serviceLifetime: ServiceLifetime.Scoped);
-
-        var mediator = serviceContainer.GetRequiredService<IMediator>();
-
-        var request = new NullableRequest { NullableString = null, RequiredString = "Required" };
-        string response = await mediator.SendAsync(request, CancellationToken.None);
-
-        Assert.Contains("null", response, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("Required", response);
-    }
-
-    [Fact]
-    public async Task Test_Handler_ThrowsCustomException()
-    {
-        using var serviceContainer = new ServiceContainer();
-
-        serviceContainer.AddSnowberryMediator(options =>
-        {
-            options.Assemblies = [typeof(ExceptionThrowingRequest).Assembly];
-        }, serviceLifetime: ServiceLifetime.Scoped);
-
-        var mediator = serviceContainer.GetRequiredService<IMediator>();
-
-        var request = new ExceptionThrowingRequest { ShouldThrow = true, Message = "Test exception" };
-
-        var exception = await Assert.ThrowsAsync<CustomBusinessException>(async () =>
-        {
-            await mediator.SendAsync(request, CancellationToken.None);
-        });
-
-        Assert.Equal("Test exception", exception.Message);
-    }
-
-    [Fact]
-    public async Task Test_PipelineBehavior_ExceptionHandling()
-    {
-        using var serviceContainer = new ServiceContainer();
-
-        serviceContainer.AddSnowberryMediator(options =>
-        {
-            options.Assemblies = [typeof(ExceptionHandlingBehavior).Assembly];
-            options.PipelineBehaviorTypes = [typeof(ExceptionHandlingBehavior)];
-        }, serviceLifetime: ServiceLifetime.Scoped);
-
-        var mediator = serviceContainer.GetRequiredService<IMediator>();
-
-        var request = new ExceptionThrowingRequest { ShouldThrow = true, Message = "Pipeline test" };
-
-        string response = await mediator.SendAsync(request, CancellationToken.None);
-        Assert.Equal("Exception caught: Pipeline test", response);
-
-        var executionOrder = PipelineExecutionTracker.GetExecutionOrder();
-        Assert.Single(executionOrder);
-        Assert.Equal(nameof(ExceptionHandlingBehavior), executionOrder[0]);
-    }
-
-    [Fact]
-    public async Task Test_StreamRequest_HandlerThrowsException()
-    {
-        using var serviceContainer = new ServiceContainer();
-
-        serviceContainer.AddSnowberryMediator(options =>
-        {
-            options.Assemblies = [typeof(ExceptionThrowingStreamRequest).Assembly];
-        }, serviceLifetime: ServiceLifetime.Scoped);
-
-        var mediator = serviceContainer.GetRequiredService<IMediator>();
-
-        var request = new ExceptionThrowingStreamRequest { ThrowAfterCount = 2, ExceptionMessage = "Stream error" };
-        var results = new List<int>();
-
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
-        {
-            await foreach (int item in mediator.CreateStreamAsync(request, CancellationToken.None))
-            {
-                results.Add(item);
-            }
-        });
-
-        Assert.Equal("Stream error", exception.Message);
-        Assert.Equal(2, results.Count);
-        Assert.Equal([1, 2], results);
-    }
-
-    [Fact]
-    public async Task Test_LargeDataRequest()
-    {
-        using var serviceContainer = new ServiceContainer();
-
-        serviceContainer.AddSnowberryMediator(options =>
-        {
-            options.Assemblies = [typeof(LargeDataRequest).Assembly];
-        }, serviceLifetime: ServiceLifetime.Scoped);
-
-        var mediator = serviceContainer.GetRequiredService<IMediator>();
-
-        byte[] largeData = new byte[1024 * 1024];
-        new Random().NextBytes(largeData);
-
-        var request = new LargeDataRequest { Data = largeData };
-        int response = await mediator.SendAsync(request, CancellationToken.None);
-
-        Assert.Equal(largeData.Length, response);
-    }
-
-    [Fact]
     public async Task Test_ConcurrentRequests_SameType()
     {
         using var serviceContainer = new ServiceContainer();
@@ -158,34 +45,6 @@ public class Snowberry_EdgeCasesAndErrorTests : MediatorTestBase
     }
 
     [Fact]
-    public async Task Test_StreamRequest_Empty_WithPipeline()
-    {
-        using var serviceContainer = new ServiceContainer();
-
-        serviceContainer.AddSnowberryMediator(options =>
-        {
-            options.Assemblies = [typeof(LoggingStreamBehavior).Assembly];
-            options.StreamPipelineBehaviorTypes = [typeof(LoggingStreamBehavior)];
-        }, serviceLifetime: ServiceLifetime.Scoped);
-
-        var mediator = serviceContainer.GetRequiredService<IMediator>();
-
-        var request = new NumberStreamRequest { Count = 0, StartValue = 1 };
-        var results = new List<int>();
-
-        await foreach (int item in mediator.CreateStreamAsync(request, CancellationToken.None))
-        {
-            results.Add(item);
-        }
-
-        Assert.Empty(results);
-
-        var executionOrder = StreamPipelineExecutionTracker.GetExecutionOrder();
-        Assert.Single(executionOrder);
-        Assert.Equal(nameof(LoggingStreamBehavior), executionOrder[0]);
-    }
-
-    [Fact]
     public async Task Test_DefaultValueRequests()
     {
         using var serviceContainer = new ServiceContainer();
@@ -203,6 +62,49 @@ public class Snowberry_EdgeCasesAndErrorTests : MediatorTestBase
         Assert.Contains("Default", response);
         Assert.Contains("0", response);
         Assert.Contains("False", response, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task Test_Handler_ThrowsCustomException()
+    {
+        using var serviceContainer = new ServiceContainer();
+
+        serviceContainer.AddSnowberryMediator(options =>
+        {
+            options.Assemblies = [typeof(ExceptionThrowingRequest).Assembly];
+        }, serviceLifetime: ServiceLifetime.Scoped);
+
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
+
+        var request = new ExceptionThrowingRequest { ShouldThrow = true, Message = "Test exception" };
+
+        var exception = await Assert.ThrowsAsync<CustomBusinessException>(async () =>
+        {
+            await mediator.SendAsync(request, CancellationToken.None);
+        });
+
+        Assert.Equal("Test exception", exception.Message);
+    }
+
+    [Fact]
+    public async Task Test_LargeDataRequest()
+    {
+        using var serviceContainer = new ServiceContainer();
+
+        serviceContainer.AddSnowberryMediator(options =>
+        {
+            options.Assemblies = [typeof(LargeDataRequest).Assembly];
+        }, serviceLifetime: ServiceLifetime.Scoped);
+
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
+
+        byte[] largeData = new byte[1024 * 1024];
+        new Random().NextBytes(largeData);
+
+        var request = new LargeDataRequest { Data = largeData };
+        int response = await mediator.SendAsync(request, CancellationToken.None);
+
+        Assert.Equal(largeData.Length, response);
     }
 
     [Fact]
@@ -239,22 +141,26 @@ public class Snowberry_EdgeCasesAndErrorTests : MediatorTestBase
     }
 
     [Fact]
-    public async Task Test_Unicode_And_SpecialCharacters()
+    public async Task Test_PipelineBehavior_ExceptionHandling()
     {
         using var serviceContainer = new ServiceContainer();
 
         serviceContainer.AddSnowberryMediator(options =>
         {
-            options.Assemblies = [typeof(UnicodeRequest).Assembly];
+            options.Assemblies = [typeof(ExceptionHandlingBehavior).Assembly];
+            options.PipelineBehaviorTypes = [typeof(ExceptionHandlingBehavior)];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
         var mediator = serviceContainer.GetRequiredService<IMediator>();
 
-        string specialChars = "?? Hello ??! ?o?l ?? \t\n\r \"'\\";
-        var request = new UnicodeRequest { Text = specialChars };
-        string response = await mediator.SendAsync(request, CancellationToken.None);
+        var request = new ExceptionThrowingRequest { ShouldThrow = true, Message = "Pipeline test" };
 
-        Assert.Contains(specialChars, response);
+        string response = await mediator.SendAsync(request, CancellationToken.None);
+        Assert.Equal("Exception caught: Pipeline test", response);
+
+        var executionOrder = PipelineExecutionTracker.GetExecutionOrder();
+        Assert.Single(executionOrder);
+        Assert.Equal(nameof(ExceptionHandlingBehavior), executionOrder[0]);
     }
 
     [Fact]
@@ -279,5 +185,99 @@ public class Snowberry_EdgeCasesAndErrorTests : MediatorTestBase
         var executionOrder = PipelineExecutionTracker.GetExecutionOrder();
         Assert.Single(executionOrder);
         Assert.Equal(nameof(RequestModifyingBehavior), executionOrder[0]);
+    }
+
+    [Fact]
+    public async Task Test_Request_WithNullValues()
+    {
+        using var serviceContainer = new ServiceContainer();
+
+        serviceContainer.AddSnowberryMediator(options =>
+        {
+            options.Assemblies = [typeof(NullableRequest).Assembly];
+        }, serviceLifetime: ServiceLifetime.Scoped);
+
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
+
+        var request = new NullableRequest { NullableString = null, RequiredString = "Required" };
+        string response = await mediator.SendAsync(request, CancellationToken.None);
+
+        Assert.Contains("null", response, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Required", response);
+    }
+
+    [Fact]
+    public async Task Test_StreamRequest_Empty_WithPipeline()
+    {
+        using var serviceContainer = new ServiceContainer();
+
+        serviceContainer.AddSnowberryMediator(options =>
+        {
+            options.Assemblies = [typeof(LoggingStreamBehavior).Assembly];
+            options.StreamPipelineBehaviorTypes = [typeof(LoggingStreamBehavior)];
+        }, serviceLifetime: ServiceLifetime.Scoped);
+
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
+
+        var request = new NumberStreamRequest { Count = 0, StartValue = 1 };
+        var results = new List<int>();
+
+        await foreach (int item in mediator.CreateStreamAsync(request, CancellationToken.None))
+        {
+            results.Add(item);
+        }
+
+        Assert.Empty(results);
+
+        var executionOrder = StreamPipelineExecutionTracker.GetExecutionOrder();
+        Assert.Single(executionOrder);
+        Assert.Equal(nameof(LoggingStreamBehavior), executionOrder[0]);
+    }
+
+    [Fact]
+    public async Task Test_StreamRequest_HandlerThrowsException()
+    {
+        using var serviceContainer = new ServiceContainer();
+
+        serviceContainer.AddSnowberryMediator(options =>
+        {
+            options.Assemblies = [typeof(ExceptionThrowingStreamRequest).Assembly];
+        }, serviceLifetime: ServiceLifetime.Scoped);
+
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
+
+        var request = new ExceptionThrowingStreamRequest { ThrowAfterCount = 2, ExceptionMessage = "Stream error" };
+        var results = new List<int>();
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+        {
+            await foreach (int item in mediator.CreateStreamAsync(request, CancellationToken.None))
+            {
+                results.Add(item);
+            }
+        });
+
+        Assert.Equal("Stream error", exception.Message);
+        Assert.Equal(2, results.Count);
+        Assert.Equal([1, 2], results);
+    }
+
+    [Fact]
+    public async Task Test_Unicode_And_SpecialCharacters()
+    {
+        using var serviceContainer = new ServiceContainer();
+
+        serviceContainer.AddSnowberryMediator(options =>
+        {
+            options.Assemblies = [typeof(UnicodeRequest).Assembly];
+        }, serviceLifetime: ServiceLifetime.Scoped);
+
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
+
+        string specialChars = "?? Hello ??! ?o?l ?? \t\n\r \"'\\";
+        var request = new UnicodeRequest { Text = specialChars };
+        string response = await mediator.SendAsync(request, CancellationToken.None);
+
+        Assert.Contains(specialChars, response);
     }
 }

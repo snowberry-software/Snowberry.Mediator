@@ -11,10 +11,10 @@ public interface IGlobalNotificationHandlerRegistry<TNotificationHandlerInfo>
     where TNotificationHandlerInfo : NotificationHandlerInfo
 {
     /// <summary>
-    /// Registers a notification handler.
+    /// Builds the read-optimized snapshot of registered handlers. Called once after all registrations
+    /// are complete. Subsequent registrations are picked up by the next <see cref="Build"/> call.
     /// </summary>
-    /// <param name="handlerInfo">The notification handler info.</param>
-    void Register(TNotificationHandlerInfo handlerInfo);
+    void Build();
 
     /// <summary>
     /// Publishes the notification to all registered handlers.
@@ -25,6 +25,12 @@ public interface IGlobalNotificationHandlerRegistry<TNotificationHandlerInfo>
     /// <returns>A task representing the asynchronous operation.</returns>
     ValueTask PublishAsync<TNotification>(IServiceProvider serviceProvider, TNotification notification, CancellationToken cancellationToken)
         where TNotification : INotification;
+
+    /// <summary>
+    /// Registers a notification handler.
+    /// </summary>
+    /// <param name="handlerInfo">The notification handler info.</param>
+    void Register(TNotificationHandlerInfo handlerInfo);
 
     /// <summary>
     /// Gets whether the registry is empty.

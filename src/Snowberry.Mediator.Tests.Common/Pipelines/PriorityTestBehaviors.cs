@@ -1,4 +1,3 @@
-using Snowberry.Mediator.Abstractions;
 using Snowberry.Mediator.Abstractions.Attributes;
 using Snowberry.Mediator.Abstractions.Pipeline;
 using Snowberry.Mediator.Tests.Common.Helper;
@@ -18,75 +17,69 @@ public class DynamicPriorityBehavior : IPipelineBehavior<PriorityTestRequest, st
         _priority = priority;
     }
 
-    public async ValueTask<string> HandleAsync(PriorityTestRequest request, CancellationToken cancellationToken = default)
+    public async ValueTask<string> HandleAsync<TNext>(PriorityTestRequest request, TNext next, CancellationToken cancellationToken = default)
+        where TNext : struct, IPipelineContinuation<PriorityTestRequest, string>
     {
         PipelineExecutionTracker.RecordExecution(_name);
-        return await NextPipeline(request, cancellationToken);
+        return await next.InvokeAsync(request, cancellationToken);
     }
-
-    public PipelineHandlerDelegate<PriorityTestRequest, string> NextPipeline { get; set; } = null!;
 }
 
 // Same priority behaviors
 [PipelineOverwritePriority(Priority = 100)]
 public class SamePriorityBehaviorA : IPipelineBehavior<MultiBehaviorRequest, int>
 {
-    public async ValueTask<int> HandleAsync(MultiBehaviorRequest request, CancellationToken cancellationToken = default)
+    public async ValueTask<int> HandleAsync<TNext>(MultiBehaviorRequest request, TNext next, CancellationToken cancellationToken = default)
+        where TNext : struct, IPipelineContinuation<MultiBehaviorRequest, int>
     {
         PipelineExecutionTracker.RecordExecution(nameof(SamePriorityBehaviorA));
-        int result = await NextPipeline(request, cancellationToken);
+        int result = await next.InvokeAsync(request, cancellationToken);
         return result + 1;
     }
-
-    public PipelineHandlerDelegate<MultiBehaviorRequest, int> NextPipeline { get; set; } = null!;
 }
 
 [PipelineOverwritePriority(Priority = 100)]
 public class SamePriorityBehaviorB : IPipelineBehavior<MultiBehaviorRequest, int>
 {
-    public async ValueTask<int> HandleAsync(MultiBehaviorRequest request, CancellationToken cancellationToken = default)
+    public async ValueTask<int> HandleAsync<TNext>(MultiBehaviorRequest request, TNext next, CancellationToken cancellationToken = default)
+        where TNext : struct, IPipelineContinuation<MultiBehaviorRequest, int>
     {
         PipelineExecutionTracker.RecordExecution(nameof(SamePriorityBehaviorB));
-        int result = await NextPipeline(request, cancellationToken);
+        int result = await next.InvokeAsync(request, cancellationToken);
         return result + 1;
     }
-
-    public PipelineHandlerDelegate<MultiBehaviorRequest, int> NextPipeline { get; set; } = null!;
 }
 
 [PipelineOverwritePriority(Priority = 100)]
 public class SamePriorityBehaviorC : IPipelineBehavior<MultiBehaviorRequest, int>
 {
-    public async ValueTask<int> HandleAsync(MultiBehaviorRequest request, CancellationToken cancellationToken = default)
+    public async ValueTask<int> HandleAsync<TNext>(MultiBehaviorRequest request, TNext next, CancellationToken cancellationToken = default)
+        where TNext : struct, IPipelineContinuation<MultiBehaviorRequest, int>
     {
         PipelineExecutionTracker.RecordExecution(nameof(SamePriorityBehaviorC));
-        int result = await NextPipeline(request, cancellationToken);
+        int result = await next.InvokeAsync(request, cancellationToken);
         return result + 1;
     }
-
-    public PipelineHandlerDelegate<MultiBehaviorRequest, int> NextPipeline { get; set; } = null!;
 }
 
 public class NoPriorityBehaviorA : IPipelineBehavior<MultiBehaviorRequest, int>
 {
-    public async ValueTask<int> HandleAsync(MultiBehaviorRequest request, CancellationToken cancellationToken = default)
+    public async ValueTask<int> HandleAsync<TNext>(MultiBehaviorRequest request, TNext next, CancellationToken cancellationToken = default)
+        where TNext : struct, IPipelineContinuation<MultiBehaviorRequest, int>
     {
         PipelineExecutionTracker.RecordExecution(nameof(NoPriorityBehaviorA));
-        int result = await NextPipeline(request, cancellationToken);
+        int result = await next.InvokeAsync(request, cancellationToken);
         return result + 1;
     }
-
-    public PipelineHandlerDelegate<MultiBehaviorRequest, int> NextPipeline { get; set; } = null!;
 }
 
 public class NoPriorityBehaviorB : IPipelineBehavior<MultiBehaviorRequest, int>
 {
-    public async ValueTask<int> HandleAsync(MultiBehaviorRequest request, CancellationToken cancellationToken = default)
+    public async ValueTask<int> HandleAsync<TNext>(MultiBehaviorRequest request, TNext next, CancellationToken cancellationToken = default)
+        where TNext : struct, IPipelineContinuation<MultiBehaviorRequest, int>
     {
         PipelineExecutionTracker.RecordExecution(nameof(NoPriorityBehaviorB));
-        int result = await NextPipeline(request, cancellationToken);
+        int result = await next.InvokeAsync(request, cancellationToken);
         return result + 1;
     }
-
-    public PipelineHandlerDelegate<MultiBehaviorRequest, int> NextPipeline { get; set; } = null!;
 }

@@ -1,21 +1,25 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using System.Runtime.CompilerServices;
-using Snowberry.Mediator.Abstractions;
-using Snowberry.Mediator.Abstractions.Exceptions;
+using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using Snowberry.Mediator.Abstractions.Handler;
 using Snowberry.Mediator.Abstractions.Messages;
-using Snowberry.Mediator.Abstractions.Pipeline;
 using Snowberry.Mediator.Models;
 using Snowberry.Mediator.Registries.Contracts;
-using ZLinq;
 
 namespace Snowberry.Mediator.Registries;
 
 /// <summary>
-/// The global stream pipeline registry implementation.
+/// Default <see cref="IGlobalStreamPipelineRegistry"/> implementation. Tracks
+/// <see cref="Abstractions.Pipeline.IStreamPipelineBehavior{TRequest, TResponse}"/> registrations and
+/// dispatches stream requests through them in priority order, resolving each behavior from the supplied
+/// <see cref="IServiceProvider"/> on every call.
 /// </summary>
-public class GlobalStreamPipelineRegistry : BaseGlobalPipelineRegistry<StreamPipelineBehaviorHandlerInfo>, IGlobalStreamPipelineRegistry
+public sealed class GlobalStreamPipelineRegistry : BaseGlobalPipelineRegistry<StreamPipelineBehaviorHandlerInfo>, IGlobalStreamPipelineRegistry
 {
+    // Per-(TRequest,TResponse) cache of closed behavior types in execution order (index 0 = highest priority).
+    // Per-instance so different registries — common in test suites — cannot conflict on shared request types.
+    // Lookups are lock-free; misses build then TryAdd race-tolerantly.
+    private readonly ConcurrentDictionary<(Type Request, Type Response), Type[]> _typeCache = new();
+
     /// <inheritdoc/>
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Stream pipeline behaviors are explicitly registered, not discovered through reflection.")]
     [UnconditionalSuppressMessage("Trimming", "IL2055", Justification = "Stream pipeline behaviors are explicitly registered, not discovered through reflection.")]
@@ -26,132 +30,150 @@ public class GlobalStreamPipelineRegistry : BaseGlobalPipelineRegistry<StreamPip
         if (IsEmpty)
             return handler.HandleAsync(request, cancellationToken);
 
+        // Fast path - single static-generic acquire-fence read of the cached entry.
+        var entry = Volatile.Read(ref StreamPipelineFastCache<TRequest, TResponse>.s_Current);
+        if (entry is not null
+            && ReferenceEquals(entry.Owner, this)
+            && entry.Generation == Generation)
+        {
+            var types = entry.Types;
+            if (types.Length == 0)
+                return handler.HandleAsync(request, cancellationToken);
+            return new StreamPipelineWalker<TRequest, TResponse>(serviceProvider, handler, types, 0)
+                .InvokeAsync(request, cancellationToken);
+        }
+
+        return ExecuteSlow(serviceProvider, handler, request, cancellationToken);
+    }
+
+    /// <inheritdoc/>
+    protected override void OnBuilt()
+    {
+        // Frozen state changed - invalidate the per-pair closed-type cache so the next dispatch rebuilds it.
+        _typeCache.Clear();
+    }
+
+    [UnconditionalSuppressMessage("Trimming", "IL2055", Justification = "Stream pipeline behaviors are explicitly registered, not discovered through reflection.")]
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "Stream pipeline behaviors are explicitly registered, not discovered through reflection.")]
+    private Type[] BuildBehaviorTypesFor<TRequest, TResponse>()
+        where TRequest : class, IStreamRequest<TRequest, TResponse>
+    {
         var requestType = typeof(TRequest);
+        var responseType = typeof(TResponse);
 
-        // Get specific handlers for this request type
-        _pipelineBehaviors.TryGetValue(requestType, out var behaviorValues);
+        bool hasSpecific = TryGetFrozenSpecific(requestType, out var specific);
+        var openGeneric = FrozenOpenGenericHandlers;
 
-        // If we only have specific handlers, use the fast path
-        if (_openGenericHandlers.Count == 0 && behaviorValues != null)
+        int specificLen = hasSpecific ? specific.Length : 0;
+        int totalLen = specificLen + openGeneric.Length;
+        if (totalLen == 0)
+            return [];
+
+        var result = new Type[totalLen];
+
+        // Frozen arrays are sorted DESCENDING by SortIndex (lowest priority at index 0). The walker iterates
+        // forward, so the OUTPUT must be ASCENDING by SortIndex (= HIGHEST priority first). Iterate both
+        // inputs back-to-front, picking the lower SortIndex (= higher priority) at each step. Tie-break:
+        // pick SPECIFIC so it lands at a lower output index (outer in the walker chain, runs first within
+        // that priority level) - matches the previous "specifics processed before open-generics at each
+        // priority level" ordering.
+        int i = specificLen - 1;
+        int j = openGeneric.Length - 1;
+        int k = 0;
+        while (i >= 0 || j >= 0)
         {
-            StreamPipelineHandlerDelegate<TRequest, TResponse> next = handler.HandleAsync;
+            bool pickSpecific;
+            if (i < 0) pickSpecific = false;
+            else if (j < 0) pickSpecific = true;
+            else pickSpecific = specific[i].SortIndex <= openGeneric[j].SortIndex;
 
-            var sortedHandlers = behaviorValues
-                .AsValueEnumerable()
-                .OrderByDescending(x => x.SortIndex);
-
-            foreach (var pipelineBehavior in sortedHandlers)
+            if (pickSpecific)
             {
-                var current = Unsafe.As<IStreamPipelineBehavior<TRequest, TResponse>>(
-                    serviceProvider.GetService(pipelineBehavior.HandlerInfo.HandlerType)
-                    ?? throw new PipelineBehaviorNotFoundException(typeof(TRequest), isStream: true));
-
-                current.NextPipeline = next;
-                next = current.HandleAsync;
+                result[k++] = specific[i].HandlerInfo.HandlerType;
+                i--;
             }
-
-            return next(request, cancellationToken);
-        }
-
-        // If we only have open generic handlers, process them directly
-        if (behaviorValues == null || behaviorValues.Count == 0)
-        {
-            StreamPipelineHandlerDelegate<TRequest, TResponse> next = handler.HandleAsync;
-
-            // Process open generic handlers in reverse order (by SortIndex)
-            var sortedHandlers = _openGenericHandlers
-                .AsValueEnumerable()
-                .OrderByDescending(x => x.SortIndex);
-
-            var responseType = typeof(TResponse);
-
-            foreach (var openGenericHandler in sortedHandlers)
+            else
             {
-                var handlerType = openGenericHandler.HandlerInfo.HandlerType;
-                var current = Unsafe.As<IStreamPipelineBehavior<TRequest, TResponse>>(serviceProvider.GetService(handlerType.MakeGenericType(requestType, responseType)))!;
-                current.NextPipeline = next;
-                next = current.HandleAsync;
-            }
-
-            return next(request, cancellationToken);
-        }
-
-        // Mixed case: we have both specific and open generic handlers
-        // Process them by priority without creating any temporary collections
-        StreamPipelineHandlerDelegate<TRequest, TResponse> finalNext = handler.HandleAsync;
-
-        // Find the highest priority first, then work backwards
-        // This avoids any allocations by processing handlers multiple times
-        int maxPriority = int.MinValue;
-        int minPriority = int.MaxValue;
-
-        // First pass: find priority range from specific handlers
-        if (behaviorValues != null)
-        {
-            for (int i = 0; i < behaviorValues.Count; i++)
-            {
-                var specificHandler = behaviorValues[i];
-                int priority = specificHandler.SortIndex;
-
-                if (priority > maxPriority)
-                    maxPriority = priority;
-                if (priority < minPriority)
-                    minPriority = priority;
+                result[k++] = openGeneric[j].HandlerInfo.HandlerType.MakeGenericType(requestType, responseType);
+                j--;
             }
         }
 
-        // First pass: find priority range from open generic handlers  
-        for (int i = 0; i < _openGenericHandlers.Count; i++)
-        {
-            var openGenericHandler = _openGenericHandlers[i];
-            int priority = openGenericHandler.SortIndex;
+        return result;
+    }
 
-            if (priority > maxPriority)
-                maxPriority = priority;
-            if (priority < minPriority)
-                minPriority = priority;
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Stream pipeline behaviors are explicitly registered, not discovered through reflection.")]
+    [UnconditionalSuppressMessage("Trimming", "IL2055", Justification = "Stream pipeline behaviors are explicitly registered, not discovered through reflection.")]
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "Stream pipeline behaviors are explicitly registered, not discovered through reflection.")]
+    private IAsyncEnumerable<TResponse> ExecuteSlow<TRequest, TResponse>(IServiceProvider serviceProvider, IStreamRequestHandler<TRequest, TResponse> handler, TRequest request, CancellationToken cancellationToken)
+        where TRequest : class, IStreamRequest<TRequest, TResponse>
+    {
+        EnsureBuilt();
+
+        var key = (typeof(TRequest), typeof(TResponse));
+        if (!_typeCache.TryGetValue(key, out var types))
+        {
+            types = BuildBehaviorTypesFor<TRequest, TResponse>();
+            _typeCache.TryAdd(key, types);
         }
 
-        // Process handlers from highest to lowest priority (reverse order for pipeline building)
-        for (int currentPriority = maxPriority; currentPriority >= minPriority; currentPriority--)
-        {
-            // Process specific handlers at this priority level
-            if (behaviorValues != null)
-            {
-                for (int i = 0; i < behaviorValues.Count; i++)
-                {
-                    var specificHandler = behaviorValues[i];
+        // One allocation per slow-path miss. Release-fence via Volatile.Write makes the prior readonly-field
+        // writes inside the constructor visible to any future Volatile.Read on the fast path.
+        Volatile.Write(
+            ref StreamPipelineFastCache<TRequest, TResponse>.s_Current,
+            new StreamFastCacheEntry(this, Generation, types));
 
-                    if (specificHandler.SortIndex != currentPriority)
-                        continue;
+        if (types.Length == 0)
+            return handler.HandleAsync(request, cancellationToken);
 
-                    var current = Unsafe.As<IStreamPipelineBehavior<TRequest, TResponse>>(
-                        serviceProvider.GetService(specificHandler.HandlerInfo.HandlerType)
-                        ?? throw new PipelineBehaviorNotFoundException(typeof(TRequest), isStream: true));
+        return new StreamPipelineWalker<TRequest, TResponse>(serviceProvider, handler, types, 0)
+            .InvokeAsync(request, cancellationToken);
+    }
+}
 
-                    current.NextPipeline = finalNext;
-                    finalNext = current.HandleAsync;
-                }
-            }
+/// <summary>
+/// Per-<c>(TRequest, TResponse)</c> static cache holding the closed stream-behavior-type array for that pair.
+/// The single <see cref="s_Current"/> field is published via <see cref="Volatile.Write"/> and acquired via
+/// <see cref="Volatile.Read"/>; readers reconcile against the registry's
+/// <see cref="BaseGlobalPipelineRegistry{T}.Generation"/> to detect rebuilds.
+/// </summary>
+/// <typeparam name="TRequest">The stream request type.</typeparam>
+/// <typeparam name="TResponse">The response element type produced by the stream.</typeparam>
+internal static class StreamPipelineFastCache<TRequest, TResponse>
+    where TRequest : class, IStreamRequest<TRequest, TResponse>
+{
+    /// <summary>
+    /// The most recently published cache entry, or <see langword="null"/> if no entry exists yet for
+    /// this <c>(TRequest, TResponse)</c> pair.
+    /// </summary>
+    internal static StreamFastCacheEntry? s_Current;
+}
 
-            var responseType = typeof(TResponse);
+/// <summary>
+/// Immutable carrier for a <see cref="StreamPipelineFastCache{TRequest, TResponse}"/> entry, tying a sorted
+/// behavior-type array to the registry instance and build generation that produced it.
+/// </summary>
+internal sealed class StreamFastCacheEntry
+{
+    /// <summary>The <see cref="BaseGlobalPipelineRegistry{T}.Generation"/> value at the time the entry was built.</summary>
+    public readonly int Generation;
 
-            for (int i = 0; i < _openGenericHandlers.Count; i++)
-            {
-                var openGenericHandler = _openGenericHandlers[i];
+    /// <summary>The registry instance that produced this entry.</summary>
+    public readonly GlobalStreamPipelineRegistry Owner;
 
-                if (openGenericHandler.SortIndex != currentPriority)
-                    continue;
+    /// <summary>The closed behavior types in dispatch order (highest priority first).</summary>
+    public readonly Type[] Types;
 
-                var handlerType = openGenericHandler.HandlerInfo.HandlerType;
-
-                var current = Unsafe.As<IStreamPipelineBehavior<TRequest, TResponse>>(serviceProvider.GetService(handlerType.MakeGenericType(requestType, responseType)))!;
-
-                current.NextPipeline = finalNext;
-                finalNext = current.HandleAsync;
-            }
-        }
-
-        return finalNext(request, cancellationToken);
+    /// <summary>
+    /// Initializes a new <see cref="StreamFastCacheEntry"/>.
+    /// </summary>
+    /// <param name="owner">The registry instance that produced this entry.</param>
+    /// <param name="generation">The build generation when the entry was produced.</param>
+    /// <param name="types">The closed behavior types in dispatch order.</param>
+    public StreamFastCacheEntry(GlobalStreamPipelineRegistry owner, int generation, Type[] types)
+    {
+        Owner = owner;
+        Generation = generation;
+        Types = types;
     }
 }

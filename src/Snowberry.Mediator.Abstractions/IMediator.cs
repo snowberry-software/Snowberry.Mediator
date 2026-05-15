@@ -6,5 +6,4 @@ namespace Snowberry.Mediator.Abstractions;
 /// The mediator contract that combines both sending requests and publishing notifications.
 /// </summary>
 public interface IMediator : IMediatorSender, IMediatorPublisher
-{
-}
+{ }

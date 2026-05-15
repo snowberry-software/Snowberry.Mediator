@@ -1,27 +1,29 @@
-﻿using Snowberry.Mediator.Abstractions.Messages;
+using Snowberry.Mediator.Abstractions.Messages;
 
 namespace Snowberry.Mediator.Abstractions.Pipeline;
 
 /// <summary>
-/// Contract for a stream pipeline behavior in a linked delegate chain. Each behavior MUST have a non-null <see cref="NextPipeline"/> delegate.
-/// The final behavior's <see cref="NextPipeline"/> points to the terminal stream request handler.
+/// Contract for a stream pipeline behavior. Each behavior receives a struct continuation that, when
+/// invoked, advances to the next behavior in the chain (or to the terminal stream request handler).
 /// </summary>
-/// <typeparam name="TRequest">The request type.</typeparam>
-/// <typeparam name="TResponse">The response type.</typeparam>
+/// <typeparam name="TRequest">The stream request type.</typeparam>
+/// <typeparam name="TResponse">The response element type produced by the stream.</typeparam>
 public interface IStreamPipelineBehavior<TRequest, TResponse>
     where TRequest : class, IStreamRequest<TRequest, TResponse>
 {
     /// <summary>
-    /// The next delegate in the stream pipeline chain. Always non-null once execution begins.
+    /// Handles the request and forwards to <paramref name="next"/>, optionally adding behavior-specific
+    /// stream transformations.
     /// </summary>
-    StreamPipelineHandlerDelegate<TRequest, TResponse> NextPipeline { get; set; }
-
-    /// <summary>
-    /// Handles the request and forwards to <see cref="NextPipeline"/>.
-    /// </summary>
-    /// <param name="request">The request.</param>
+    /// <typeparam name="TNext">The struct continuation type — the JIT specializes the method per
+    /// continuation type so that <c>next.InvokeAsync(...)</c> is a direct call with no delegate or boxing.</typeparam>
+    /// <param name="request">The stream request.</param>
+    /// <param name="next">The continuation to the next step in the pipeline.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    IAsyncEnumerable<TResponse> HandleAsync(
+    /// <returns>An asynchronous stream of <typeparamref name="TResponse"/>.</returns>
+    IAsyncEnumerable<TResponse> HandleAsync<TNext>(
         TRequest request,
-        CancellationToken cancellationToken = default);
+        TNext next,
+        CancellationToken cancellationToken = default)
+        where TNext : struct, IStreamPipelineContinuation<TRequest, TResponse>;
 }

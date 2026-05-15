@@ -2,5 +2,5 @@
     <PropertyGroup>
         <SignAssembly>true</SignAssembly>
         <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)Snowberry.Mediator.snk</AssemblyOriginatorKeyFile>
-    </PropertyGroup>
+    </PropertyGroup>    
 </Project>

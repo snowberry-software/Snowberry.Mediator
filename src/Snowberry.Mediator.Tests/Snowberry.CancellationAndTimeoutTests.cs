@@ -12,92 +12,6 @@ namespace Snowberry.Mediator.Tests;
 public class Snowberry_CancellationAndTimeoutTests : Common.MediatorTestBase
 {
     [Fact]
-    public async Task Test_TaskCancelledException_ThrownFromHandler()
-    {
-        using var serviceContainer = new ServiceContainer();
-
-        serviceContainer.AddSnowberryMediator(options =>
-        {
-            options.Assemblies = [typeof(CancellationThrowingRequest).Assembly];
-        }, serviceLifetime: ServiceLifetime.Scoped);
-
-        var mediator = serviceContainer.GetRequiredService<IMediator>();
-
-        using var cts = new CancellationTokenSource();
-        cts.Cancel();
-
-        var request = new CancellationThrowingRequest();
-
-        var exception = await Assert.ThrowsAsync<OperationCanceledException>(async () =>
-        {
-            await mediator.SendAsync(request, cts.Token);
-        });
-
-        Assert.NotNull(exception);
-        Assert.True(cts.Token.IsCancellationRequested);
-    }
-
-    [Fact]
-    public async Task Test_StreamRequest_TaskCancelledException_MidStream()
-    {
-        using var serviceContainer = new ServiceContainer();
-
-        serviceContainer.AddSnowberryMediator(options =>
-        {
-            options.Assemblies = [typeof(CancellationThrowingStreamRequest).Assembly];
-        }, serviceLifetime: ServiceLifetime.Scoped);
-
-        var mediator = serviceContainer.GetRequiredService<IMediator>();
-
-        var request = new CancellationThrowingStreamRequest { ThrowAfterCount = 3 };
-        var results = new List<int>();
-
-        var exception = await Assert.ThrowsAsync<TaskCanceledException>(async () =>
-        {
-            await foreach (int item in mediator.CreateStreamAsync(request, CancellationToken.None))
-            {
-                results.Add(item);
-            }
-        });
-
-        Assert.Equal(3, results.Count);
-        Assert.Equal([1, 2, 3], results);
-    }
-
-    [Fact]
-    public async Task Test_PipelineBehavior_CancellationToken_Propagation()
-    {
-        using var serviceContainer = new ServiceContainer();
-
-        serviceContainer.AddSnowberryMediator(options =>
-        {
-            options.Assemblies = [typeof(CancellationCheckingPipelineBehavior).Assembly];
-            options.PipelineBehaviorTypes = [typeof(CancellationCheckingPipelineBehavior)];
-        }, serviceLifetime: ServiceLifetime.Scoped);
-
-        var mediator = serviceContainer.GetRequiredService<IMediator>();
-
-        using var cts = new CancellationTokenSource();
-        var request = new DelayedRequest { DelayMs = 50 };
-
-        var task = mediator.SendAsync(request, cts.Token);
-
-        await Task.Delay(10);
-        cts.Cancel();
-
-        // Accept both OperationCanceledException and TaskCanceledException
-        // TaskCanceledException is derived from OperationCanceledException
-        var exception = await Assert.ThrowsAnyAsync<OperationCanceledException>(task.AsTask);
-
-        // Verify the cancellation was properly propagated
-        Assert.True(cts.Token.IsCancellationRequested);
-        Assert.True(exception.CancellationToken.IsCancellationRequested);
-
-        var executionOrder = PipelineExecutionTracker.GetExecutionOrder();
-        Assert.Contains("CancellationCheckingPipelineBehavior", executionOrder);
-    }
-
-    [Fact]
     public async Task Test_MultipleRequests_ConcurrentCancellation()
     {
         using var serviceContainer = new ServiceContainer();
@@ -149,6 +63,74 @@ public class Snowberry_CancellationAndTimeoutTests : Common.MediatorTestBase
     }
 
     [Fact]
+    public async Task Test_NestedCancellationTokens()
+    {
+        using var serviceContainer = new ServiceContainer();
+
+        serviceContainer.AddSnowberryMediator(options =>
+        {
+            options.Assemblies = [typeof(DelayedRequest).Assembly];
+        }, serviceLifetime: ServiceLifetime.Scoped);
+
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
+
+        using var outerCts = new CancellationTokenSource();
+        using var innerCts = new CancellationTokenSource();
+
+        using var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(
+            outerCts.Token, innerCts.Token);
+
+        var request = new DelayedRequest { DelayMs = 200, Message = "NestedTest" };
+
+        var task = mediator.SendAsync(request, combinedCts.Token);
+
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(50);
+            innerCts.Cancel();
+        });
+
+        // Accept both OperationCanceledException and TaskCanceledException for robust testing
+        var exception = await Assert.ThrowsAnyAsync<OperationCanceledException>(task.AsTask);
+        Assert.True(combinedCts.Token.IsCancellationRequested);
+        Assert.True(innerCts.Token.IsCancellationRequested);
+        Assert.False(outerCts.Token.IsCancellationRequested);
+    }
+
+    [Fact]
+    public async Task Test_PipelineBehavior_CancellationToken_Propagation()
+    {
+        using var serviceContainer = new ServiceContainer();
+
+        serviceContainer.AddSnowberryMediator(options =>
+        {
+            options.Assemblies = [typeof(CancellationCheckingPipelineBehavior).Assembly];
+            options.PipelineBehaviorTypes = [typeof(CancellationCheckingPipelineBehavior)];
+        }, serviceLifetime: ServiceLifetime.Scoped);
+
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
+
+        using var cts = new CancellationTokenSource();
+        var request = new DelayedRequest { DelayMs = 50 };
+
+        var task = mediator.SendAsync(request, cts.Token);
+
+        await Task.Delay(10);
+        cts.Cancel();
+
+        // Accept both OperationCanceledException and TaskCanceledException
+        // TaskCanceledException is derived from OperationCanceledException
+        var exception = await Assert.ThrowsAnyAsync<OperationCanceledException>(task.AsTask);
+
+        // Verify the cancellation was properly propagated
+        Assert.True(cts.Token.IsCancellationRequested);
+        Assert.True(exception.CancellationToken.IsCancellationRequested);
+
+        var executionOrder = PipelineExecutionTracker.GetExecutionOrder();
+        Assert.Contains("CancellationCheckingPipelineBehavior", executionOrder);
+    }
+
+    [Fact]
     public async Task Test_StreamRequest_ComplexCancellationScenario()
     {
         using var serviceContainer = new ServiceContainer();
@@ -193,37 +175,55 @@ public class Snowberry_CancellationAndTimeoutTests : Common.MediatorTestBase
     }
 
     [Fact]
-    public async Task Test_NestedCancellationTokens()
+    public async Task Test_StreamRequest_TaskCancelledException_MidStream()
     {
         using var serviceContainer = new ServiceContainer();
 
         serviceContainer.AddSnowberryMediator(options =>
         {
-            options.Assemblies = [typeof(DelayedRequest).Assembly];
+            options.Assemblies = [typeof(CancellationThrowingStreamRequest).Assembly];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
         var mediator = serviceContainer.GetRequiredService<IMediator>();
 
-        using var outerCts = new CancellationTokenSource();
-        using var innerCts = new CancellationTokenSource();
+        var request = new CancellationThrowingStreamRequest { ThrowAfterCount = 3 };
+        var results = new List<int>();
 
-        using var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(
-            outerCts.Token, innerCts.Token);
-
-        var request = new DelayedRequest { DelayMs = 200, Message = "NestedTest" };
-
-        var task = mediator.SendAsync(request, combinedCts.Token);
-
-        _ = Task.Run(async () =>
+        var exception = await Assert.ThrowsAsync<TaskCanceledException>(async () =>
         {
-            await Task.Delay(50);
-            innerCts.Cancel();
+            await foreach (int item in mediator.CreateStreamAsync(request, CancellationToken.None))
+            {
+                results.Add(item);
+            }
         });
 
-        // Accept both OperationCanceledException and TaskCanceledException for robust testing
-        var exception = await Assert.ThrowsAnyAsync<OperationCanceledException>(task.AsTask);
-        Assert.True(combinedCts.Token.IsCancellationRequested);
-        Assert.True(innerCts.Token.IsCancellationRequested);
-        Assert.False(outerCts.Token.IsCancellationRequested);
+        Assert.Equal(3, results.Count);
+        Assert.Equal([1, 2, 3], results);
+    }
+
+    [Fact]
+    public async Task Test_TaskCancelledException_ThrownFromHandler()
+    {
+        using var serviceContainer = new ServiceContainer();
+
+        serviceContainer.AddSnowberryMediator(options =>
+        {
+            options.Assemblies = [typeof(CancellationThrowingRequest).Assembly];
+        }, serviceLifetime: ServiceLifetime.Scoped);
+
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
+
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        var request = new CancellationThrowingRequest();
+
+        var exception = await Assert.ThrowsAsync<OperationCanceledException>(async () =>
+        {
+            await mediator.SendAsync(request, cts.Token);
+        });
+
+        Assert.NotNull(exception);
+        Assert.True(cts.Token.IsCancellationRequested);
     }
 }

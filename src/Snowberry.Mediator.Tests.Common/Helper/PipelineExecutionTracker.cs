@@ -8,20 +8,7 @@ namespace Snowberry.Mediator.Tests.Common.Helper;
 /// </summary>
 public static class PipelineExecutionTracker
 {
-    private static readonly AsyncLocal<ConcurrentQueue<string>> _asyncLocalExecutionOrder = new();
-
-    private static ConcurrentQueue<string> ExecutionOrder =>
-        _asyncLocalExecutionOrder.Value ??= new ConcurrentQueue<string>();
-
-    public static void RecordExecution(string behaviorName)
-    {
-        ExecutionOrder.Enqueue(behaviorName);
-    }
-
-    public static List<string> GetExecutionOrder()
-    {
-        return ExecutionOrder.ToList();
-    }
+    private static readonly AsyncLocal<ConcurrentQueue<string>> s_AsyncLocalExecutionOrder = new();
 
     public static void Clear()
     {
@@ -31,12 +18,25 @@ public static class PipelineExecutionTracker
         }
     }
 
+    public static List<string> GetExecutionOrder()
+    {
+        return ExecutionOrder.ToList();
+    }
+
     /// <summary>
     /// Initialize a new tracking context for the current async flow.
     /// This is automatically called when needed, but can be called explicitly for clarity.
     /// </summary>
     public static void InitializeContext()
     {
-        _asyncLocalExecutionOrder.Value = new ConcurrentQueue<string>();
+        s_AsyncLocalExecutionOrder.Value = new ConcurrentQueue<string>();
     }
+
+    public static void RecordExecution(string behaviorName)
+    {
+        ExecutionOrder.Enqueue(behaviorName);
+    }
+
+    private static ConcurrentQueue<string> ExecutionOrder =>
+        s_AsyncLocalExecutionOrder.Value ??= new ConcurrentQueue<string>();
 }

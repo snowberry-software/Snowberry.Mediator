@@ -43,12 +43,6 @@ public class RequestHandlerInfo : IEquatable<RequestHandlerInfo>
     }
 
     /// <inheritdoc/>
-    public override string ToString()
-    {
-        return $"{HandlerType.FullName} : {RequestType.FullName} -> {ResponseType.FullName}";
-    }
-
-    /// <inheritdoc/>
     public override bool Equals(object? obj)
     {
         if (obj is RequestHandlerInfo handlerInfo)
@@ -85,6 +79,18 @@ public class RequestHandlerInfo : IEquatable<RequestHandlerInfo>
 #endif
     }
 
+    /// <inheritdoc/>
+    public override string ToString()
+    {
+        return $"{HandlerType.FullName} : {RequestType.FullName} -> {ResponseType.FullName}";
+    }
+
+    /// <summary>
+    /// The handler type.
+    /// </summary>
+    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)]
+    public Type HandlerType { get; init; } = null!;
+
     /// <summary>
     /// The request type.
     /// </summary>
@@ -94,10 +100,4 @@ public class RequestHandlerInfo : IEquatable<RequestHandlerInfo>
     /// The response type.
     /// </summary>
     public Type ResponseType { get; init; } = null!;
-
-    /// <summary>
-    /// The handler type.
-    /// </summary>
-    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)]
-    public Type HandlerType { get; init; } = null!;
 }
