@@ -80,5 +80,5 @@ public sealed class MediatorTelemetryOptions
     /// <see cref="Meter"/> created by <see cref="MediatorInstrumentation"/>. Defaults to
     /// <c>"Snowberry.Mediator"</c>.
     /// </summary>
-    public string SourceName { get; set; } = "Snowberry.Mediator";
+    public string SourceName { get; set; } = MediatorTelemetryConventions.c_DefaultSourceName;
 }

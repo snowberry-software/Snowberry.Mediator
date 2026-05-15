@@ -1,3 +1,4 @@
+using Snowberry.Mediator.OpenTelemetry;
 using Snowberry.Mediator.Tests.Common.NotificationHandlers;
 using Snowberry.Mediator.Tests.Common.Notifications;
 
@@ -17,7 +18,7 @@ public class OpenTelemetry_NotificationHandlerSpanTests
         await fx.Mediator.PublishAsync(new SimpleNotification());
 
         Assert.Single(fx.StoppedActivities);
-        Assert.StartsWith("Mediator.Publish", fx.StoppedActivities[0].OperationName);
+        Assert.StartsWith(MediatorTelemetryConventions.ActivityNames.c_PublishPrefix, fx.StoppedActivities[0].OperationName);
     }
 
     [Fact]
@@ -31,10 +32,10 @@ public class OpenTelemetry_NotificationHandlerSpanTests
         await fx.Mediator.PublishAsync(new SimpleNotification());
 
         Assert.Equal(2, fx.StoppedActivities.Count);
-        var publish = Assert.Single(fx.StoppedActivities, a => a.OperationName.StartsWith("Mediator.Publish"));
-        var handler = Assert.Single(fx.StoppedActivities, a => a.OperationName.StartsWith("Mediator.Handler"));
-        Assert.Equal("SimpleNotificationHandler", handler.GetTagItem("snowberry.mediator.handler.type"));
-        Assert.Equal("SimpleNotification", handler.GetTagItem("snowberry.mediator.notification.type"));
+        var publish = Assert.Single(fx.StoppedActivities, a => a.OperationName.StartsWith(MediatorTelemetryConventions.ActivityNames.c_PublishPrefix));
+        var handler = Assert.Single(fx.StoppedActivities, a => a.OperationName.StartsWith(MediatorTelemetryConventions.ActivityNames.c_HandlerPrefix));
+        Assert.Equal(nameof(SimpleNotificationHandler), handler.GetTagItem(MediatorTelemetryConventions.Tags.c_HandlerType));
+        Assert.Equal(nameof(SimpleNotification), handler.GetTagItem(MediatorTelemetryConventions.Tags.c_NotificationType));
         Assert.Equal(publish.Id, handler.ParentId);
         Assert.Equal(publish.TraceId, handler.TraceId);
     }

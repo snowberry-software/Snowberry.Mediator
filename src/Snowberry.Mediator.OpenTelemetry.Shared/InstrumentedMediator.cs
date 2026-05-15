@@ -52,11 +52,11 @@ public sealed class InstrumentedMediator : IMediator
     {
         var tags = new ActivityTagsCollection
         {
-            { "exception.type", ex.GetType().FullName },
-            { "exception.message", ex.Message },
-            { "snowberry.mediator.hook.name", hookName },
+            { MediatorTelemetryConventions.Tags.c_ExceptionType, ex.GetType().FullName },
+            { MediatorTelemetryConventions.Tags.c_ExceptionMessage, ex.Message },
+            { MediatorTelemetryConventions.Tags.c_HookName, hookName },
         };
-        activity.AddEvent(new ActivityEvent("snowberry.mediator.enrichment.failed", tags: tags));
+        activity.AddEvent(new ActivityEvent(MediatorTelemetryConventions.ActivityNames.c_EnrichmentFailedEvent, tags: tags));
     }
 
     /// <inheritdoc/>
@@ -130,34 +130,34 @@ public sealed class InstrumentedMediator : IMediator
         string typeName = TypeNameCache<TRequest>.s_Name;
 
         Activity? activity = tracingActive
-            ? inst.ActivitySource.StartActivity("Mediator.Stream " + typeName, ActivityKind.Internal)
+            ? inst.ActivitySource.StartActivity(MediatorTelemetryConventions.ActivityNames.c_StreamPrefix + typeName, ActivityKind.Internal)
             : null;
         if (activity is not null)
         {
-            activity.SetTag("snowberry.mediator.request.type", typeName);
-            activity.SetTag("snowberry.mediator.response.type", TypeNameCache<TResponse>.s_Name);
-            activity.SetTag("snowberry.mediator.operation", "stream");
+            activity.SetTag(MediatorTelemetryConventions.Tags.c_RequestType, typeName);
+            activity.SetTag(MediatorTelemetryConventions.Tags.c_ResponseType, TypeNameCache<TResponse>.s_Name);
+            activity.SetTag(MediatorTelemetryConventions.Tags.c_Operation, MediatorTelemetryConventions.Operations.c_Stream);
             InvokeEnrichRequest(activity, request);
         }
 
         long start = metricsActive ? Stopwatch.GetTimestamp() : 0;
-        string status = "failure";
+        string status = MediatorTelemetryConventions.Status.c_Failure;
         try
         {
             await foreach (var item in _inner.CreateStreamAsync(request, ct).ConfigureAwait(false))
                 yield return item;
-            status = "success";
+            status = MediatorTelemetryConventions.Status.c_Success;
             activity?.SetStatus(ActivityStatusCode.Ok);
         }
         finally
         {
-            if (status != "success") activity?.SetStatus(ActivityStatusCode.Error);
+            if (status != MediatorTelemetryConventions.Status.c_Success) activity?.SetStatus(ActivityStatusCode.Error);
             if (metricsActive)
             {
                 var tags = new TagList
                 {
-                    { "type", typeName },
-                    { "status", status },
+                    { MediatorTelemetryConventions.Tags.c_MetricType, typeName },
+                    { MediatorTelemetryConventions.Tags.c_MetricStatus, status },
                 };
                 if (inst.StreamCount.Enabled) inst.StreamCount.Add(1, tags);
                 if (inst.StreamDuration.Enabled) inst.StreamDuration.Record(ElapsedMilliseconds(start), tags);
@@ -171,7 +171,7 @@ public sealed class InstrumentedMediator : IMediator
         var hook = _options.EnrichWithException;
         if (hook is null) return;
         try { hook(activity, request, exception); }
-        catch (Exception ex) { RecordHookFailure(activity, ex, "EnrichWithException"); }
+        catch (Exception ex) { RecordHookFailure(activity, ex, MediatorTelemetryConventions.HookNames.c_EnrichWithException); }
     }
 
     private void InvokeEnrichNotification(Activity activity, object notification)
@@ -179,7 +179,7 @@ public sealed class InstrumentedMediator : IMediator
         var hook = _options.EnrichWithNotification;
         if (hook is null) return;
         try { hook(activity, notification); }
-        catch (Exception ex) { RecordHookFailure(activity, ex, "EnrichWithNotification"); }
+        catch (Exception ex) { RecordHookFailure(activity, ex, MediatorTelemetryConventions.HookNames.c_EnrichWithNotification); }
     }
 
     private void InvokeEnrichRequest(Activity activity, object request)
@@ -187,7 +187,7 @@ public sealed class InstrumentedMediator : IMediator
         var hook = _options.EnrichWithRequest;
         if (hook is null) return;
         try { hook(activity, request); }
-        catch (Exception ex) { RecordHookFailure(activity, ex, "EnrichWithRequest"); }
+        catch (Exception ex) { RecordHookFailure(activity, ex, MediatorTelemetryConventions.HookNames.c_EnrichWithRequest); }
     }
 
     private void InvokeEnrichResponse(Activity activity, object request, object response)
@@ -195,7 +195,7 @@ public sealed class InstrumentedMediator : IMediator
         var hook = _options.EnrichWithResponse;
         if (hook is null) return;
         try { hook(activity, request, response); }
-        catch (Exception ex) { RecordHookFailure(activity, ex, "EnrichWithResponse"); }
+        catch (Exception ex) { RecordHookFailure(activity, ex, MediatorTelemetryConventions.HookNames.c_EnrichWithResponse); }
     }
 
     private async ValueTask PublishInstrumentedAsync<TNotification>(
@@ -209,21 +209,21 @@ public sealed class InstrumentedMediator : IMediator
         string typeName = TypeNameCache<TNotification>.s_Name;
 
         Activity? activity = tracingActive
-            ? inst.ActivitySource.StartActivity("Mediator.Publish " + typeName, ActivityKind.Internal)
+            ? inst.ActivitySource.StartActivity(MediatorTelemetryConventions.ActivityNames.c_PublishPrefix + typeName, ActivityKind.Internal)
             : null;
         if (activity is not null)
         {
-            activity.SetTag("snowberry.mediator.notification.type", typeName);
-            activity.SetTag("snowberry.mediator.operation", "publish");
+            activity.SetTag(MediatorTelemetryConventions.Tags.c_NotificationType, typeName);
+            activity.SetTag(MediatorTelemetryConventions.Tags.c_Operation, MediatorTelemetryConventions.Operations.c_Publish);
             InvokeEnrichNotification(activity, notification!);
         }
 
         long start = metricsActive ? Stopwatch.GetTimestamp() : 0;
-        string status = "failure";
+        string status = MediatorTelemetryConventions.Status.c_Failure;
         try
         {
             await _inner.PublishAsync(notification, ct).ConfigureAwait(false);
-            status = "success";
+            status = MediatorTelemetryConventions.Status.c_Success;
             activity?.SetStatus(ActivityStatusCode.Ok);
         }
         catch (Exception ex)
@@ -241,8 +241,8 @@ public sealed class InstrumentedMediator : IMediator
             {
                 var tags = new TagList
                 {
-                    { "type", typeName },
-                    { "status", status },
+                    { MediatorTelemetryConventions.Tags.c_MetricType, typeName },
+                    { MediatorTelemetryConventions.Tags.c_MetricStatus, status },
                 };
                 if (inst.PublishCount.Enabled) inst.PublishCount.Add(1, tags);
                 if (inst.PublishDuration.Enabled) inst.PublishDuration.Record(ElapsedMilliseconds(start), tags);
@@ -262,22 +262,22 @@ public sealed class InstrumentedMediator : IMediator
         string typeName = TypeNameCache<TRequest>.s_Name;
 
         Activity? activity = tracingActive
-            ? inst.ActivitySource.StartActivity("Mediator.Send " + typeName, ActivityKind.Internal)
+            ? inst.ActivitySource.StartActivity(MediatorTelemetryConventions.ActivityNames.c_SendPrefix + typeName, ActivityKind.Internal)
             : null;
         if (activity is not null)
         {
-            activity.SetTag("snowberry.mediator.request.type", typeName);
-            activity.SetTag("snowberry.mediator.response.type", TypeNameCache<TResponse>.s_Name);
-            activity.SetTag("snowberry.mediator.operation", "send");
+            activity.SetTag(MediatorTelemetryConventions.Tags.c_RequestType, typeName);
+            activity.SetTag(MediatorTelemetryConventions.Tags.c_ResponseType, TypeNameCache<TResponse>.s_Name);
+            activity.SetTag(MediatorTelemetryConventions.Tags.c_Operation, MediatorTelemetryConventions.Operations.c_Send);
             InvokeEnrichRequest(activity, request);
         }
 
         long start = metricsActive ? Stopwatch.GetTimestamp() : 0;
-        string status = "failure";
+        string status = MediatorTelemetryConventions.Status.c_Failure;
         try
         {
             var result = await _inner.SendAsync(request, ct).ConfigureAwait(false);
-            status = "success";
+            status = MediatorTelemetryConventions.Status.c_Success;
             if (activity is not null)
             {
                 activity.SetStatus(ActivityStatusCode.Ok);
@@ -300,8 +300,8 @@ public sealed class InstrumentedMediator : IMediator
             {
                 var tags = new TagList
                 {
-                    { "type", typeName },
-                    { "status", status },
+                    { MediatorTelemetryConventions.Tags.c_MetricType, typeName },
+                    { MediatorTelemetryConventions.Tags.c_MetricStatus, status },
                 };
                 if (inst.SendCount.Enabled) inst.SendCount.Add(1, tags);
                 if (inst.SendDuration.Enabled) inst.SendDuration.Record(ElapsedMilliseconds(start), tags);

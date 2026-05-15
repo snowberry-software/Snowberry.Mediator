@@ -42,11 +42,11 @@ internal readonly struct PipelineWalker<TRequest, TResponse> : IPipelineContinua
         CancellationToken ct)
     {
         using var activity = MediatorDiagnostics.s_PipelineSource.StartActivity(
-            "Mediator.Behavior " + behaviorType.Name, ActivityKind.Internal);
+            MediatorDiagnostics.c_BehaviorActivityNamePrefix + behaviorType.Name, ActivityKind.Internal);
         if (activity is not null)
         {
-            activity.SetTag("snowberry.mediator.behavior.type", behaviorType.Name);
-            activity.SetTag("snowberry.mediator.request.type", typeof(TRequest).Name);
+            activity.SetTag(MediatorDiagnostics.c_BehaviorTypeTag, behaviorType.Name);
+            activity.SetTag(MediatorDiagnostics.c_RequestTypeTag, typeof(TRequest).Name);
         }
         try
         {

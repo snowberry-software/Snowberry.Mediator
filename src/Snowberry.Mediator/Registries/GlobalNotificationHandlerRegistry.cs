@@ -183,11 +183,11 @@ public sealed class GlobalNotificationHandlerRegistry : IGlobalNotificationHandl
         where TNotification : INotification
     {
         using var activity = MediatorDiagnostics.s_NotificationSource.StartActivity(
-            "Mediator.Handler " + handlerType.Name, ActivityKind.Internal);
+            MediatorDiagnostics.c_HandlerActivityNamePrefix + handlerType.Name, ActivityKind.Internal);
         if (activity is not null)
         {
-            activity.SetTag("snowberry.mediator.handler.type", handlerType.Name);
-            activity.SetTag("snowberry.mediator.notification.type", typeof(TNotification).Name);
+            activity.SetTag(MediatorDiagnostics.c_HandlerTypeTag, handlerType.Name);
+            activity.SetTag(MediatorDiagnostics.c_NotificationTypeTag, typeof(TNotification).Name);
         }
         try
         {

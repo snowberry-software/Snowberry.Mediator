@@ -3,23 +3,47 @@ using System.Diagnostics;
 namespace Snowberry.Mediator;
 
 /// <summary>
-/// Provides the <see cref="ActivitySource"/> instances used for per-step mediator instrumentation
-/// and process-wide opt-in flags that control whether per-step <see cref="Activity"/> objects are
-/// created during dispatch.
+/// Provides the <see cref="ActivitySource"/> instances used for per-step mediator instrumentation,
+/// the names of the activities and tags those sources emit, and process-wide opt-in flags that
+/// control whether per-step <see cref="Activity"/> objects are created during dispatch.
 /// </summary>
 public static class MediatorDiagnostics
 {
-    /// <summary>
-    /// The <see cref="ActivitySource"/> used when emitting an <see cref="Activity"/> for each
-    /// notification handler invocation. The source name is <c>"Snowberry.Mediator.Notification"</c>.
-    /// </summary>
-    public static readonly ActivitySource s_NotificationSource = new("Snowberry.Mediator.Notification");
+    /// <summary>The name of the <see cref="ActivitySource"/> used for per-pipeline-behavior spans.</summary>
+    public const string c_PipelineSourceName = "Snowberry.Mediator.Pipeline";
+
+    /// <summary>The name of the <see cref="ActivitySource"/> used for per-notification-handler spans.</summary>
+    public const string c_NotificationSourceName = "Snowberry.Mediator.Notification";
+
+    /// <summary>Prefix of the activity name emitted for each pipeline behavior invocation; appended with the behavior type name.</summary>
+    public const string c_BehaviorActivityNamePrefix = "Mediator.Behavior ";
+
+    /// <summary>Prefix of the activity name emitted for each notification handler invocation; appended with the handler type name.</summary>
+    public const string c_HandlerActivityNamePrefix = "Mediator.Handler ";
+
+    /// <summary>The request CLR type name tag applied to per-behavior activities.</summary>
+    public const string c_RequestTypeTag = "snowberry.mediator.request.type";
+
+    /// <summary>The notification CLR type name tag applied to per-handler activities.</summary>
+    public const string c_NotificationTypeTag = "snowberry.mediator.notification.type";
+
+    /// <summary>The pipeline behavior CLR type name tag applied to per-behavior activities.</summary>
+    public const string c_BehaviorTypeTag = "snowberry.mediator.behavior.type";
+
+    /// <summary>The notification handler CLR type name tag applied to per-handler activities.</summary>
+    public const string c_HandlerTypeTag = "snowberry.mediator.handler.type";
 
     /// <summary>
     /// The <see cref="ActivitySource"/> used when emitting an <see cref="Activity"/> for each
-    /// pipeline behavior invocation. The source name is <c>"Snowberry.Mediator.Pipeline"</c>.
+    /// notification handler invocation. The source name is <see cref="c_NotificationSourceName"/>.
     /// </summary>
-    public static readonly ActivitySource s_PipelineSource = new("Snowberry.Mediator.Pipeline");
+    public static readonly ActivitySource s_NotificationSource = new(c_NotificationSourceName);
+
+    /// <summary>
+    /// The <see cref="ActivitySource"/> used when emitting an <see cref="Activity"/> for each
+    /// pipeline behavior invocation. The source name is <see cref="c_PipelineSourceName"/>.
+    /// </summary>
+    public static readonly ActivitySource s_PipelineSource = new(c_PipelineSourceName);
 
     private static int s_NotificationEnabled;
 

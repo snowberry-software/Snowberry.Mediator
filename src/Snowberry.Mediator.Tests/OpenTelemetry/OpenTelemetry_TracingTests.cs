@@ -1,3 +1,4 @@
+using Snowberry.Mediator.OpenTelemetry;
 using Snowberry.Mediator.Tests.Common.Handler;
 using Snowberry.Mediator.Tests.Common.NotificationHandlers;
 using Snowberry.Mediator.Tests.Common.Notifications;
@@ -29,8 +30,8 @@ public class OpenTelemetry_TracingTests
         Assert.Equal(5, count);
         Assert.Equal(0, activitiesBeforeFinish); // not stopped during enumeration
         var activity = Assert.Single(fx.StoppedActivities);
-        Assert.Equal("Mediator.Stream NumberStreamRequest", activity.OperationName);
-        Assert.Equal("stream", activity.GetTagItem("snowberry.mediator.operation"));
+        Assert.Equal(MediatorTelemetryConventions.ActivityNames.c_StreamPrefix + nameof(NumberStreamRequest), activity.OperationName);
+        Assert.Equal(MediatorTelemetryConventions.Operations.c_Stream, activity.GetTagItem(MediatorTelemetryConventions.Tags.c_Operation));
         Assert.Equal(System.Diagnostics.ActivityStatusCode.Ok, activity.Status);
     }
 
@@ -59,8 +60,8 @@ public class OpenTelemetry_TracingTests
         await fx.Mediator.SendAsync(new NestingRequest());
 
         Assert.Equal(2, fx.StoppedActivities.Count);
-        var inner = fx.StoppedActivities.Single(a => a.OperationName == "Mediator.Send CounterRequest");
-        var outer = fx.StoppedActivities.Single(a => a.OperationName == "Mediator.Send NestingRequest");
+        var inner = fx.StoppedActivities.Single(a => a.OperationName == MediatorTelemetryConventions.ActivityNames.c_SendPrefix + nameof(CounterRequest));
+        var outer = fx.StoppedActivities.Single(a => a.OperationName == MediatorTelemetryConventions.ActivityNames.c_SendPrefix + nameof(NestingRequest));
         Assert.Equal(outer.Id, inner.ParentId);
         Assert.Equal(outer.TraceId, inner.TraceId);
     }
@@ -76,9 +77,9 @@ public class OpenTelemetry_TracingTests
         await fx.Mediator.PublishAsync(new SimpleNotification { Message = "hi" });
 
         var activity = Assert.Single(fx.StoppedActivities);
-        Assert.Equal("Mediator.Publish SimpleNotification", activity.OperationName);
-        Assert.Equal("SimpleNotification", activity.GetTagItem("snowberry.mediator.notification.type"));
-        Assert.Equal("publish", activity.GetTagItem("snowberry.mediator.operation"));
+        Assert.Equal(MediatorTelemetryConventions.ActivityNames.c_PublishPrefix + nameof(SimpleNotification), activity.OperationName);
+        Assert.Equal(nameof(SimpleNotification), activity.GetTagItem(MediatorTelemetryConventions.Tags.c_NotificationType));
+        Assert.Equal(MediatorTelemetryConventions.Operations.c_Publish, activity.GetTagItem(MediatorTelemetryConventions.Tags.c_Operation));
     }
 
     [Fact]
@@ -109,11 +110,11 @@ public class OpenTelemetry_TracingTests
 
         Assert.Equal(5, result);
         var activity = Assert.Single(fx.StoppedActivities);
-        Assert.Equal("Mediator.Send CounterRequest", activity.OperationName);
+        Assert.Equal(MediatorTelemetryConventions.ActivityNames.c_SendPrefix + nameof(CounterRequest), activity.OperationName);
         Assert.Equal(System.Diagnostics.ActivityKind.Internal, activity.Kind);
-        Assert.Equal("CounterRequest", activity.GetTagItem("snowberry.mediator.request.type"));
-        Assert.Equal("Int32", activity.GetTagItem("snowberry.mediator.response.type"));
-        Assert.Equal("send", activity.GetTagItem("snowberry.mediator.operation"));
+        Assert.Equal(nameof(CounterRequest), activity.GetTagItem(MediatorTelemetryConventions.Tags.c_RequestType));
+        Assert.Equal(nameof(Int32), activity.GetTagItem(MediatorTelemetryConventions.Tags.c_ResponseType));
+        Assert.Equal(MediatorTelemetryConventions.Operations.c_Send, activity.GetTagItem(MediatorTelemetryConventions.Tags.c_Operation));
         Assert.Equal(System.Diagnostics.ActivityStatusCode.Ok, activity.Status);
     }
 }

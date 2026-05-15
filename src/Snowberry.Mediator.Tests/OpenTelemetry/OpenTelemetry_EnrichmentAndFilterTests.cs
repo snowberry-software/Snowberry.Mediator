@@ -1,3 +1,4 @@
+using Snowberry.Mediator.OpenTelemetry;
 using Snowberry.Mediator.Tests.Common.Handler;
 using Snowberry.Mediator.Tests.Common.NotificationHandlers;
 using Snowberry.Mediator.Tests.Common.Notifications;
@@ -79,7 +80,7 @@ public class OpenTelemetry_EnrichmentAndFilterTests
 
         Assert.Equal(5, result);
         var activity = Assert.Single(fx.StoppedActivities);
-        Assert.Contains(activity.Events, e => e.Name == "snowberry.mediator.enrichment.failed");
+        Assert.Contains(activity.Events, e => e.Name == MediatorTelemetryConventions.ActivityNames.c_EnrichmentFailedEvent);
     }
 
     [Fact]

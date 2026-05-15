@@ -16,7 +16,7 @@ public static class MeterProviderBuilderExtensions
     /// <returns>The supplied <paramref name="builder"/> for chaining.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="builder"/> is <see langword="null"/>.</exception>
     public static MeterProviderBuilder AddSnowberryMediatorInstrumentation(this MeterProviderBuilder builder)
-        => AddSnowberryMediatorInstrumentation(builder, "Snowberry.Mediator");
+        => AddSnowberryMediatorInstrumentation(builder, MediatorTelemetryConventions.c_DefaultSourceName);
 
     /// <summary>
     /// Adds the Snowberry.Mediator meter to <paramref name="builder"/>, using

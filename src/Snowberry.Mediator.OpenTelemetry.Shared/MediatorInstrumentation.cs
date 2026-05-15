@@ -26,14 +26,14 @@ public sealed class MediatorInstrumentation : IDisposable
         ActivitySource = new ActivitySource(options.SourceName);
         Meter = new Meter(options.SourceName);
 
-        SendCount = Meter.CreateCounter<long>("snowberry.mediator.send.count");
-        SendDuration = Meter.CreateHistogram<double>("snowberry.mediator.send.duration", unit: "ms");
+        SendCount = Meter.CreateCounter<long>(MediatorTelemetryConventions.Instruments.c_SendCount);
+        SendDuration = Meter.CreateHistogram<double>(MediatorTelemetryConventions.Instruments.c_SendDuration, unit: MediatorTelemetryConventions.Instruments.c_DurationUnit);
 
-        StreamCount = Meter.CreateCounter<long>("snowberry.mediator.stream.count");
-        StreamDuration = Meter.CreateHistogram<double>("snowberry.mediator.stream.duration", unit: "ms");
+        StreamCount = Meter.CreateCounter<long>(MediatorTelemetryConventions.Instruments.c_StreamCount);
+        StreamDuration = Meter.CreateHistogram<double>(MediatorTelemetryConventions.Instruments.c_StreamDuration, unit: MediatorTelemetryConventions.Instruments.c_DurationUnit);
 
-        PublishCount = Meter.CreateCounter<long>("snowberry.mediator.publish.count");
-        PublishDuration = Meter.CreateHistogram<double>("snowberry.mediator.publish.duration", unit: "ms");
+        PublishCount = Meter.CreateCounter<long>(MediatorTelemetryConventions.Instruments.c_PublishCount);
+        PublishDuration = Meter.CreateHistogram<double>(MediatorTelemetryConventions.Instruments.c_PublishDuration, unit: MediatorTelemetryConventions.Instruments.c_DurationUnit);
     }
 
     /// <summary>

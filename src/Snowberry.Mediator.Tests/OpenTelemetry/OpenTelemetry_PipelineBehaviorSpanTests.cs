@@ -1,3 +1,4 @@
+using Snowberry.Mediator.OpenTelemetry;
 using Snowberry.Mediator.Tests.Common.Handler;
 using Snowberry.Mediator.Tests.Common.Requests;
 
@@ -19,7 +20,7 @@ public class OpenTelemetry_PipelineBehaviorSpanTests
 
         // Only the top-level dispatch activity.
         Assert.Single(fx.StoppedActivities);
-        Assert.Equal("Mediator.Send CounterRequest", fx.StoppedActivities[0].OperationName);
+        Assert.Equal(MediatorTelemetryConventions.ActivityNames.c_SendPrefix + nameof(CounterRequest), fx.StoppedActivities[0].OperationName);
     }
 
     [Fact]
@@ -38,15 +39,15 @@ public class OpenTelemetry_PipelineBehaviorSpanTests
         // 1 dispatch + 3 per-behavior spans = 4.
         Assert.Equal(4, fx.StoppedActivities.Count);
 
-        var dispatch = Assert.Single(fx.StoppedActivities, a => a.OperationName.StartsWith("Mediator.Send"));
-        var behaviors = fx.StoppedActivities.Where(a => a.OperationName.StartsWith("Mediator.Behavior")).ToList();
+        var dispatch = Assert.Single(fx.StoppedActivities, a => a.OperationName.StartsWith(MediatorTelemetryConventions.ActivityNames.c_SendPrefix));
+        var behaviors = fx.StoppedActivities.Where(a => a.OperationName.StartsWith(MediatorTelemetryConventions.ActivityNames.c_BehaviorPrefix)).ToList();
         Assert.Equal(3, behaviors.Count);
 
         foreach (var b in behaviors)
         {
             Assert.Equal(System.Diagnostics.ActivityKind.Internal, b.Kind);
-            Assert.NotNull(b.GetTagItem("snowberry.mediator.behavior.type"));
-            Assert.Equal("CounterRequest", b.GetTagItem("snowberry.mediator.request.type"));
+            Assert.NotNull(b.GetTagItem(MediatorTelemetryConventions.Tags.c_BehaviorType));
+            Assert.Equal(nameof(CounterRequest), b.GetTagItem(MediatorTelemetryConventions.Tags.c_RequestType));
             Assert.Equal(dispatch.TraceId, b.TraceId);
         }
 

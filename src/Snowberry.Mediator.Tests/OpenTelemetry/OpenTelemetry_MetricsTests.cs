@@ -1,3 +1,4 @@
+using Snowberry.Mediator.OpenTelemetry;
 using Snowberry.Mediator.Tests.Common.Handler;
 using Snowberry.Mediator.Tests.Common.NotificationHandlers;
 using Snowberry.Mediator.Tests.Common.Notifications;
@@ -21,8 +22,8 @@ public class OpenTelemetry_MetricsTests
             sum += i;
 
         Assert.Equal(6, sum);
-        var count = Assert.Single(fx.Measurements, m => m.InstrumentName == "snowberry.mediator.stream.count");
-        Assert.Equal("success", count.Tag("status"));
+        var count = Assert.Single(fx.Measurements, m => m.InstrumentName == MediatorTelemetryConventions.Instruments.c_StreamCount);
+        Assert.Equal(MediatorTelemetryConventions.Status.c_Success, count.Tag(MediatorTelemetryConventions.Tags.c_MetricStatus));
     }
 
     [Fact]
@@ -48,9 +49,9 @@ public class OpenTelemetry_MetricsTests
 
         await fx.Mediator.PublishAsync(new SimpleNotification());
 
-        var count = Assert.Single(fx.Measurements, m => m.InstrumentName == "snowberry.mediator.publish.count");
-        Assert.Equal("SimpleNotification", count.Tag("type"));
-        Assert.Equal("success", count.Tag("status"));
+        var count = Assert.Single(fx.Measurements, m => m.InstrumentName == MediatorTelemetryConventions.Instruments.c_PublishCount);
+        Assert.Equal(nameof(SimpleNotification), count.Tag(MediatorTelemetryConventions.Tags.c_MetricType));
+        Assert.Equal(MediatorTelemetryConventions.Status.c_Success, count.Tag(MediatorTelemetryConventions.Tags.c_MetricStatus));
     }
 
     [Fact]
@@ -64,8 +65,8 @@ public class OpenTelemetry_MetricsTests
         await Assert.ThrowsAsync<InvalidOperationException>(async () =>
             await fx.Mediator.SendAsync(new ThrowingRequest()));
 
-        var count = Assert.Single(fx.Measurements, m => m.InstrumentName == "snowberry.mediator.send.count");
-        Assert.Equal("failure", count.Tag("status"));
+        var count = Assert.Single(fx.Measurements, m => m.InstrumentName == MediatorTelemetryConventions.Instruments.c_SendCount);
+        Assert.Equal(MediatorTelemetryConventions.Status.c_Failure, count.Tag(MediatorTelemetryConventions.Tags.c_MetricStatus));
     }
 
     [Fact]
@@ -78,13 +79,13 @@ public class OpenTelemetry_MetricsTests
 
         await fx.Mediator.SendAsync(new CounterRequest());
 
-        var count = Assert.Single(fx.Measurements, m => m.InstrumentName == "snowberry.mediator.send.count");
+        var count = Assert.Single(fx.Measurements, m => m.InstrumentName == MediatorTelemetryConventions.Instruments.c_SendCount);
         Assert.Equal(1d, count.Value);
-        Assert.Equal("CounterRequest", count.Tag("type"));
-        Assert.Equal("success", count.Tag("status"));
+        Assert.Equal(nameof(CounterRequest), count.Tag(MediatorTelemetryConventions.Tags.c_MetricType));
+        Assert.Equal(MediatorTelemetryConventions.Status.c_Success, count.Tag(MediatorTelemetryConventions.Tags.c_MetricStatus));
 
-        var duration = Assert.Single(fx.Measurements, m => m.InstrumentName == "snowberry.mediator.send.duration");
+        var duration = Assert.Single(fx.Measurements, m => m.InstrumentName == MediatorTelemetryConventions.Instruments.c_SendDuration);
         Assert.InRange(duration.Value, 0d, 60_000d);
-        Assert.Equal("success", duration.Tag("status"));
+        Assert.Equal(MediatorTelemetryConventions.Status.c_Success, duration.Tag(MediatorTelemetryConventions.Tags.c_MetricStatus));
     }
 }

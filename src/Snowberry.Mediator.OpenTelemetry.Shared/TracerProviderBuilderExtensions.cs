@@ -17,7 +17,7 @@ public static class TracerProviderBuilderExtensions
     /// <returns>The supplied <paramref name="builder"/> for chaining.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="builder"/> is <see langword="null"/>.</exception>
     public static TracerProviderBuilder AddSnowberryMediatorInstrumentation(this TracerProviderBuilder builder)
-        => AddSnowberryMediatorInstrumentation(builder, "Snowberry.Mediator");
+        => AddSnowberryMediatorInstrumentation(builder, MediatorTelemetryConventions.c_DefaultSourceName);
 
     /// <summary>
     /// Adds the Snowberry.Mediator activity sources to <paramref name="builder"/>, using
@@ -37,8 +37,8 @@ public static class TracerProviderBuilderExtensions
         _ = sourceName ?? throw new ArgumentNullException(nameof(sourceName));
 
         builder.AddSource(sourceName);
-        builder.AddSource("Snowberry.Mediator.Pipeline");
-        builder.AddSource("Snowberry.Mediator.Notification");
+        builder.AddSource(MediatorTelemetryConventions.c_PipelineSourceName);
+        builder.AddSource(MediatorTelemetryConventions.c_NotificationSourceName);
         return builder;
     }
 }

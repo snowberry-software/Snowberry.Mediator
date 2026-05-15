@@ -43,23 +43,23 @@ internal readonly struct StreamPipelineWalker<TRequest, TResponse> : IStreamPipe
         [EnumeratorCancellation] CancellationToken ct)
     {
         using var activity = MediatorDiagnostics.s_PipelineSource.StartActivity(
-            "Mediator.Behavior " + behaviorType.Name, ActivityKind.Internal);
+            MediatorDiagnostics.c_BehaviorActivityNamePrefix + behaviorType.Name, ActivityKind.Internal);
         if (activity is not null)
         {
-            activity.SetTag("snowberry.mediator.behavior.type", behaviorType.Name);
-            activity.SetTag("snowberry.mediator.request.type", typeof(TRequest).Name);
+            activity.SetTag(MediatorDiagnostics.c_BehaviorTypeTag, behaviorType.Name);
+            activity.SetTag(MediatorDiagnostics.c_RequestTypeTag, typeof(TRequest).Name);
         }
-        string status = "failure";
+        bool success = false;
         try
         {
             await foreach (var item in behavior.HandleAsync(request, next, ct).ConfigureAwait(false))
                 yield return item;
-            status = "success";
+            success = true;
             activity?.SetStatus(ActivityStatusCode.Ok);
         }
         finally
         {
-            if (status != "success") activity?.SetStatus(ActivityStatusCode.Error);
+            if (!success) activity?.SetStatus(ActivityStatusCode.Error);
         }
     }
 
