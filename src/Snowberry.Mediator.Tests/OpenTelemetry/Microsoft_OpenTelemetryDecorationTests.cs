@@ -107,6 +107,28 @@ public class Microsoft_OpenTelemetryDecorationTests
         }
     }
 
+    [Theory]
+    [InlineData(ServiceLifetime.Singleton)]
+    [InlineData(ServiceLifetime.Scoped)]
+    [InlineData(ServiceLifetime.Transient)]
+    public async Task Decorator_DispatchesCorrectly_UnderEveryLifetime(ServiceLifetime lifetime)
+    {
+        var services = new ServiceCollection();
+        services.AddSnowberryMediator(opt => opt.RequestHandlerTypes = [typeof(CounterRequestHandler)], lifetime);
+        services.AddSnowberryMediatorOpenTelemetry();
+
+        var sp = services.BuildServiceProvider();
+
+        IMediator mediator;
+        if (lifetime == ServiceLifetime.Singleton)
+            mediator = sp.GetRequiredService<IMediator>();
+        else
+            mediator = sp.CreateScope().ServiceProvider.GetRequiredService<IMediator>();
+
+        Assert.IsType<InstrumentedMediator>(mediator);
+        Assert.Equal(5, await mediator.SendAsync(new CounterRequest()));
+    }
+
     [Fact]
     public void ResolvedMediator_IsInstrumentedMediator()
     {

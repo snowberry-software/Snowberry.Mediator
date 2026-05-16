@@ -1,3 +1,4 @@
+using Snowberry.Mediator.Abstractions.Exceptions;
 using Snowberry.Mediator.OpenTelemetry;
 using Snowberry.Mediator.Tests.Common.Handler;
 using Snowberry.Mediator.Tests.Common.NotificationHandlers;
@@ -67,6 +68,28 @@ public class OpenTelemetry_MetricsTests
 
         var count = Assert.Single(fx.Measurements, m => m.InstrumentName == MediatorTelemetryConventions.Instruments.c_SendCount);
         Assert.Equal(MediatorTelemetryConventions.Status.c_Failure, count.Tag(MediatorTelemetryConventions.Tags.c_MetricStatus));
+    }
+
+    [Fact]
+    public async Task PublishAsync_NoHandlersRegistered_SurfacesExceptionAndRecordsFailure()
+    {
+        using var fx = new MicrosoftOpenTelemetryFixture(opt =>
+        {
+            // A request handler is required for the registration extension to do anything, but
+            // we deliberately register no notification handlers so the mediator has no notification
+            // registry to dispatch through.
+            opt.RequestHandlerTypes = [typeof(CounterRequestHandler)];
+        });
+
+        await Assert.ThrowsAsync<NotificationHandlerNotFoundException>(async () =>
+            await fx.Mediator.PublishAsync(new SimpleNotification()));
+
+        var activity = Assert.Single(fx.StoppedActivities);
+        Assert.Equal(System.Diagnostics.ActivityStatusCode.Error, activity.Status);
+        Assert.Equal(MediatorTelemetryConventions.ActivityNames.c_PublishPrefix + nameof(SimpleNotification), activity.OperationName);
+
+        var countMeasurement = Assert.Single(fx.Measurements, m => m.InstrumentName == MediatorTelemetryConventions.Instruments.c_PublishCount);
+        Assert.Equal(MediatorTelemetryConventions.Status.c_Failure, countMeasurement.Tag(MediatorTelemetryConventions.Tags.c_MetricStatus));
     }
 
     [Fact]

@@ -4,12 +4,12 @@ Core, container-agnostic OpenTelemetry instrumentation for `Snowberry.Mediator`.
 
 This package contains:
 
-- `InstrumentedMediator` — an `IMediator` decorator that emits an `Activity` and metric measurements for every `SendAsync`, `CreateStreamAsync`, and `PublishAsync` dispatch.
-- `MediatorInstrumentation` — owns the `ActivitySource`, `Meter`, and the six per-operation `Counter<long>` / `Histogram<double>` instruments.
-- `MediatorTelemetryOptions` — configures the instrumentation (source name, tracing/metrics toggles, per-step span opt-ins, enrichment callbacks, filter).
-- `TracerProviderBuilderExtensions.AddSnowberryMediatorInstrumentation` and `MeterProviderBuilderExtensions.AddSnowberryMediatorInstrumentation` — subscribe the OpenTelemetry SDK to the activity sources and the meter.
+- `InstrumentedMediator`: an `IMediator` decorator that emits an `Activity` and metric measurements for every `SendAsync`, `CreateStreamAsync`, and `PublishAsync` dispatch.
+- `MediatorInstrumentation`: owns the `ActivitySource`, `Meter`, and the six per-operation `Counter<long>` / `Histogram<double>` instruments.
+- `MediatorTelemetryOptions`: configures the instrumentation (source name, tracing/metrics toggles, per-step span opt-ins, enrichment callbacks, filter).
+- `TracerProviderBuilderExtensions.AddSnowberryMediatorInstrumentation` and `MeterProviderBuilderExtensions.AddSnowberryMediatorInstrumentation`: subscribe the OpenTelemetry SDK to the activity sources and the meter.
 
-Consumers normally do not reference this package directly — pick the DI integration package matching the container in use:
+Consumers normally do not reference this package directly. Pick the DI integration package matching the container in use:
 
 | Container | Package |
 | --- | --- |
@@ -36,11 +36,11 @@ Meter name: `Snowberry.Mediator` (configurable via `MediatorTelemetryOptions.Sou
 
 | Instrument | Type | Unit | Tags |
 | --- | --- | --- | --- |
-| `snowberry.mediator.send.count` | `Counter<long>` | — | `type`, `status` |
+| `snowberry.mediator.send.count` | `Counter<long>` | | `type`, `status` |
 | `snowberry.mediator.send.duration` | `Histogram<double>` | `ms` | `type`, `status` |
-| `snowberry.mediator.stream.count` | `Counter<long>` | — | `type`, `status` |
+| `snowberry.mediator.stream.count` | `Counter<long>` | | `type`, `status` |
 | `snowberry.mediator.stream.duration` | `Histogram<double>` | `ms` | `type`, `status` |
-| `snowberry.mediator.publish.count` | `Counter<long>` | — | `type`, `status` |
+| `snowberry.mediator.publish.count` | `Counter<long>` | | `type`, `status` |
 | `snowberry.mediator.publish.duration` | `Histogram<double>` | `ms` | `type`, `status` |
 
 `status` is `"success"` or `"failure"`.
