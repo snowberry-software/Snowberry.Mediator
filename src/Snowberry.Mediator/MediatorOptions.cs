@@ -63,7 +63,7 @@ public sealed class MediatorOptions
     /// <summary>
     /// Used to automatically scan pipeline behaviors from assemblies.
     /// </summary>
-    /// <remarks/The order can be defined using the <see cref="PipelineOverwritePriorityAttribute"/> attribute.</remarks>
+    /// <remarks>The order can be defined using the <see cref="PipelineOverwritePriorityAttribute"/> attribute.</remarks>
     public bool ScanPipelineBehaviors { get; set; } = false;
 
     /// <summary>

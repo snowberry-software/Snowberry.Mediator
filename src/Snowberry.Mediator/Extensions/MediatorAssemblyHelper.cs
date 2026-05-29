@@ -24,7 +24,8 @@ public static class MediatorAssemblyHelper
     /// <summary>
     /// Parses handler info for request and stream request handlers.
     /// </summary>
-    /// <param name="handlerInterfaceType">The handler interface type (e.g., IRequestHandler<,> or IStreamRequestHandler<,>).</param>
+    /// <typeparam name="THandlerInfo">The handler-info type produced for each parsed handler.</typeparam>
+    /// <param name="handlerInterfaceType">The handler interface type (for example, <c>IRequestHandler&lt;,&gt;</c> or <c>IStreamRequestHandler&lt;,&gt;</c>).</param>
     /// <param name="collection">The collection of handler types to parse.</param>
     /// <param name="target">The target collection to add parsed handlers to.</param>
     [UnconditionalSuppressMessage("Trimming", "IL2072", Justification = "Handler types are explicitly registered by the user, not discovered through reflection.")]

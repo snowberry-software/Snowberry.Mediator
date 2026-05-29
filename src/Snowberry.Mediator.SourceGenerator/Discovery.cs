@@ -1,0 +1,114 @@
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Threading;
+using Microsoft.CodeAnalysis;
+
+namespace Snowberry.Mediator.SourceGenerator;
+
+/// <summary>
+/// Compile-time discovery of mediator handlers/behaviors/notification handlers across the current
+/// compilation and referenced assemblies. Produces a value-equatable <see cref="DiscoveryModel"/> so the
+/// downstream emit step is only re-run when the discovered set actually changes.
+/// </summary>
+internal static class Discovery
+{
+    /// <summary>Discovers all mediator handlers, behaviors and notification handlers for the compilation.</summary>
+    /// <param name="compilation">The compilation to scan, including referenced assemblies.</param>
+    /// <param name="ct">A token used to cancel discovery.</param>
+    /// <returns>
+    /// The discovery model, or <see langword="null"/> when the abstractions are not referenced or no
+    /// <c>[assembly: SnowberryMediator]</c> attribute is present.
+    /// </returns>
+    public static DiscoveryModel? Discover(Compilation compilation, CancellationToken ct)
+    {
+        var markers = Markers.Resolve(compilation);
+        if (markers is null)
+            return null; // Snowberry.Mediator.Abstractions not referenced.
+
+        var diagnostics = new List<DiagnosticInfo>();
+        if (!TryReadConfig(compilation, markers, diagnostics, out var config))
+            return null; // No [assembly: SnowberryMediator] -> the generator stays silent.
+
+        bool hasMicrosoftDI = compilation.GetTypeByMetadataName(WellKnown.MicrosoftServiceCollection) is not null;
+        bool hasSnowberryDI = compilation.GetTypeByMetadataName(WellKnown.SnowberryServiceRegistry) is not null;
+
+        var collector = new Collector(compilation, markers, config, diagnostics);
+
+        foreach (var type in compilation.Assembly.GlobalNamespace.EnumerateAllTypes(ct))
+            collector.Process(type);
+
+        foreach (var reference in compilation.References)
+        {
+            ct.ThrowIfCancellationRequested();
+
+            if (compilation.GetAssemblyOrModuleSymbol(reference) is not IAssemblySymbol assembly)
+                continue;
+
+            if (!assembly.ReferencesAbstractions())
+                continue;
+
+            foreach (var type in assembly.GlobalNamespace.EnumerateAllTypes(ct))
+                collector.Process(type);
+        }
+
+        return collector.Build(hasMicrosoftDI, hasSnowberryDI);
+    }
+
+    private static bool TryReadConfig(Compilation compilation, Markers markers, List<DiagnosticInfo> diagnostics, out MediatorConfig config)
+    {
+        config = MediatorConfig.Default;
+
+        AttributeData? triggerAttribute = null;
+        int count = 0;
+        foreach (var attribute in compilation.Assembly.GetAttributes())
+        {
+            if (!SymbolEqualityComparer.Default.Equals(attribute.AttributeClass, markers.TriggerAttribute))
+                continue;
+
+            count++;
+            if (triggerAttribute is null)
+            {
+                triggerAttribute = attribute;
+            }
+            else
+            {
+                LocationInfo? location = null;
+                if (attribute.ApplicationSyntaxReference is { } syntaxRef)
+                    location = LocationInfo.From(syntaxRef.GetSyntax().GetLocation());
+
+                diagnostics.Add(new DiagnosticInfo(
+                    Diagnostics.MultipleTriggerAttributes.Id,
+                    EquatableArray<string>.Empty,
+                    location));
+            }
+        }
+
+        if (count == 0)
+            return false;
+
+        config = ReadConfig(triggerAttribute!);
+        return true;
+    }
+
+    private static MediatorConfig ReadConfig(AttributeData attribute)
+    {
+        bool requests = true, streamRequests = true, notifications = true, behaviors = true, streamBehaviors = true;
+
+        foreach (var named in attribute.NamedArguments)
+        {
+            if (named.Value.Value is not bool value)
+                continue;
+
+            switch (named.Key)
+            {
+                case "RegisterRequestHandlers": requests = value; break;
+                case "RegisterStreamRequestHandlers": streamRequests = value; break;
+                case "RegisterNotificationHandlers": notifications = value; break;
+                case "RegisterPipelineBehaviors": behaviors = value; break;
+                case "RegisterStreamPipelineBehaviors": streamBehaviors = value; break;
+            }
+        }
+
+        return new MediatorConfig(requests, streamRequests, notifications, behaviors, streamBehaviors);
+    }
+}

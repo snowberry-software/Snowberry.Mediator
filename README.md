@@ -79,6 +79,32 @@ services.AddSnowberryMediator(opts =>
 });
 ```
 
+### Source generator (zero-reflection, NativeAOT-friendly)
+
+The `Snowberry.Mediator.SourceGenerator` package discovers handlers, behaviors and notification handlers **at compile time** — across your project and its referenced assemblies — and emits the registration with literal closed generics, eliminating all runtime reflection (`Assembly.GetTypes()`, `Type.GetInterfaces()`, `MakeGenericType`). It is the recommended setup for trimmed / NativeAOT apps.
+
+1. Reference `Snowberry.Mediator.SourceGenerator` alongside `Snowberry.Mediator` and a DI integration package.
+2. Add the opt-in attribute to your composition-root project:
+
+   ```csharp
+   [assembly: Snowberry.Mediator.SnowberryMediator]
+   ```
+
+3. Call the generated registration — no `options.Assemblies`, no hand-listed handler types:
+
+   ```csharp
+   using Microsoft.Extensions.DependencyInjection;
+
+   var services = new ServiceCollection();
+   services.AddSnowberryMediator();                         // default Scoped lifetime
+   // services.AddSnowberryMediator(ServiceLifetime.Singleton);
+
+   var mediator = services.BuildServiceProvider()
+       .GetRequiredService<Snowberry.Mediator.Abstractions.IMediator>();
+   ```
+
+Handlers in referenced assemblies are discovered as long as the composition-root project can access the type (public, or `internal` exposed via `[InternalsVisibleTo]`). `[PipelineOverwritePriority]` ordering, open-generic behaviors and open-generic notification handlers are fully supported, with byte-identical dispatch semantics to the reflection path — only the *startup* registration changes, so the dispatch numbers below are unaffected. The generated path executes no dynamic code, so it is clean under `PublishAot`/trimming. See the package README for the diagnostics table and the runnable AOT sample under `samples/`.
+
 ## Writing a pipeline behavior
 
 A pipeline behavior implements `IPipelineBehavior<TRequest, TResponse>`. Its `HandleAsync` method receives a struct continuation that you invoke to call the next behavior in the chain (or, at the end of the chain, the terminal request handler):

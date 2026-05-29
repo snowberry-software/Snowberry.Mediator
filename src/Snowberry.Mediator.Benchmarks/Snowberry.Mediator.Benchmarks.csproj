@@ -22,6 +22,9 @@
 		<ProjectReference Include="..\Snowberry.Mediator.Extensions.DependencyInjection\Snowberry.Mediator.Extensions.DependencyInjection.csproj" />
 		<ProjectReference Include="..\Snowberry.Mediator.OpenTelemetry.Shared\Snowberry.Mediator.OpenTelemetry.Shared.csproj" />
 		<ProjectReference Include="..\Snowberry.Mediator.Extensions.OpenTelemetry\Snowberry.Mediator.Extensions.OpenTelemetry.csproj" />
+		<ProjectReference Include="..\Snowberry.Mediator.SourceGenerator\Snowberry.Mediator.SourceGenerator.csproj"
+		                  OutputItemType="Analyzer"
+		                  ReferenceOutputAssembly="false" />
 	</ItemGroup>
 
 </Project>

@@ -1,7 +1,7 @@
 ﻿namespace Snowberry.Mediator.Abstractions;
 
 /// <summary>
-/// Empty <see langword="struct"> to be used when no data is required or to represent a void type.
+/// Empty <see langword="struct"/> to be used when no data is required or to represent a void type.
 /// </summary>
 public readonly struct Empty
 {

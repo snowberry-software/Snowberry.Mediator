@@ -20,6 +20,17 @@ public sealed class GlobalStreamPipelineRegistry : BaseGlobalPipelineRegistry<St
     // Lookups are lock-free; misses build then TryAdd race-tolerantly.
     private readonly ConcurrentDictionary<(Type Request, Type Response), Type[]> _typeCache = new();
 
+    /// <summary>Initializes a registry that closes open-generic behaviors via reflection.</summary>
+    public GlobalStreamPipelineRegistry()
+    {
+    }
+
+    /// <summary>Initializes a registry that closes open-generic behaviors via a generated resolver.</summary>
+    /// <param name="closedTypeResolver">Maps <c>(openHandlerType, requestType, responseType)</c> to the closed handler type.</param>
+    public GlobalStreamPipelineRegistry(Func<Type, Type, Type, Type>? closedTypeResolver) : base(closedTypeResolver)
+    {
+    }
+
     /// <inheritdoc/>
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Stream pipeline behaviors are explicitly registered, not discovered through reflection.")]
     [UnconditionalSuppressMessage("Trimming", "IL2055", Justification = "Stream pipeline behaviors are explicitly registered, not discovered through reflection.")]
@@ -94,7 +105,7 @@ public sealed class GlobalStreamPipelineRegistry : BaseGlobalPipelineRegistry<St
             }
             else
             {
-                result[k++] = openGeneric[j].HandlerInfo.HandlerType.MakeGenericType(requestType, responseType);
+                result[k++] = CloseGeneric(openGeneric[j].HandlerInfo.HandlerType, requestType, responseType);
                 j--;
             }
         }

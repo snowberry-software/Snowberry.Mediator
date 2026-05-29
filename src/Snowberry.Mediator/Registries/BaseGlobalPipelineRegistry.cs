@@ -1,6 +1,7 @@
 #if NET8_0_OR_GREATER
 using System.Collections.Frozen;
 #endif
+using System.Diagnostics.CodeAnalysis;
 using Snowberry.Mediator.Models;
 using Snowberry.Mediator.Registries.Contracts;
 
@@ -53,6 +54,37 @@ public class BaseGlobalPipelineRegistry<T> : IBaseGlobalPipelineRegistry<T>
     /// frozen snapshot changes.
     /// </summary>
     internal int Generation => Volatile.Read(ref _generation);
+
+    // Optional compile-time-generated closed-type resolver. When set, it closes open-generic behaviors at
+    // dispatch instead of Type.MakeGenericType, keeping the dispatch path NativeAOT-clean.
+    private readonly Func<Type, Type, Type, Type>? _closedTypeResolver;
+
+    /// <summary>Initializes a registry that closes open-generic behaviors via reflection.</summary>
+    protected BaseGlobalPipelineRegistry()
+    {
+    }
+
+    /// <summary>Initializes a registry that closes open-generic behaviors via a generated resolver.</summary>
+    /// <param name="closedTypeResolver">Maps <c>(openHandlerType, requestType, responseType)</c> to the closed handler type.</param>
+    protected BaseGlobalPipelineRegistry(Func<Type, Type, Type, Type>? closedTypeResolver)
+    {
+        _closedTypeResolver = closedTypeResolver;
+    }
+
+    /// <summary>
+    /// Closes an open-generic behavior handler type for a given request/response pair. Uses the supplied
+    /// closed-type resolver when present; otherwise falls back to <see cref="Type.MakeGenericType(System.Type[])"/>.
+    /// </summary>
+    /// <param name="openHandlerType">The open-generic behavior handler type definition.</param>
+    /// <param name="requestType">The closed request type.</param>
+    /// <param name="responseType">The closed response type.</param>
+    /// <returns>The closed behavior handler type.</returns>
+    [UnconditionalSuppressMessage("Trimming", "IL2055", Justification = "A generated resolver supplies closed types in AOT scenarios; reflection is only used when no resolver is set.")]
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "A generated resolver supplies closed types in AOT scenarios; reflection is only used when no resolver is set.")]
+    protected Type CloseGeneric(Type openHandlerType, Type requestType, Type responseType)
+        => _closedTypeResolver is { } resolver
+            ? resolver(openHandlerType, requestType, responseType)
+            : openHandlerType.MakeGenericType(requestType, responseType);
 
     /// <inheritdoc/>
     public void Register(T pipelineBehaviorHandlerInfo)

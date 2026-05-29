@@ -11,18 +11,28 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      # Keep Verify deterministic in CI (do not launch a diff tool on snapshot mismatch).
+      DiffEngine_Disabled: "true"
     steps:
       - uses: actions/checkout@v3
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: | 
+          dotnet-version: |
             9.x
             10.x
       - name: Build
         run: ./build.sh Compile
       - name: Test
         run: ./build.sh Test
+      # Native AOT smoke test: proves the source-generated registration path runs with no dynamic code.
+      - name: Install Native AOT prerequisites
+        run: sudo apt-get update && sudo apt-get install -y clang zlib1g-dev
+      - name: Publish AOT sample
+        run: dotnet publish samples/Snowberry.Mediator.SourceGenerator.Sample/Snowberry.Mediator.SourceGenerator.Sample.csproj -c Release -r linux-x64
+      - name: Run AOT sample
+        run: ./samples/Snowberry.Mediator.SourceGenerator.Sample/bin/Release/net10.0/linux-x64/publish/Snowberry.Mediator.SourceGenerator.Sample
 
   deploy:
     runs-on: ubuntu-latest

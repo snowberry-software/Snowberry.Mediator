@@ -10,6 +10,7 @@ public interface IMediatorSender
     /// <summary>
     /// Creates an asynchronous stream of responses of type <typeparamref name="TResponse"/> from a stream request.
     /// </summary>
+    /// <typeparam name="TRequest">The stream request type.</typeparam>
     /// <typeparam name="TResponse">The response type.</typeparam>
     /// <param name="request">The request.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
