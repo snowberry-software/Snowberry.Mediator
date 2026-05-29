@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using System.Runtime.CompilerServices;
 using Snowberry.Mediator.Abstractions;
+using Snowberry.Mediator.Abstractions.Mediator;
 using Snowberry.Mediator.Abstractions.Messages;
 using Snowberry.Mediator.OpenTelemetry.Internals;
 

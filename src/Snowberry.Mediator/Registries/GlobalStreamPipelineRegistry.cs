@@ -144,8 +144,8 @@ public sealed class GlobalStreamPipelineRegistry : BaseGlobalPipelineRegistry<St
 
 /// <summary>
 /// Per-<c>(TRequest, TResponse)</c> static cache holding the closed stream-behavior-type array for that pair.
-/// The single <see cref="s_Current"/> field is published via <see cref="Volatile.Write"/> and acquired via
-/// <see cref="Volatile.Read"/>; readers reconcile against the registry's
+/// The single <see cref="s_Current"/> field is published via <c>Volatile.Write</c> and acquired via
+/// <c>Volatile.Read</c>; readers reconcile against the registry's
 /// <see cref="BaseGlobalPipelineRegistry{T}.Generation"/> to detect rebuilds.
 /// </summary>
 /// <typeparam name="TRequest">The stream request type.</typeparam>

@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using Snowberry.Mediator.Abstractions;
+using Snowberry.Mediator.Abstractions.Mediator;
 using Snowberry.Mediator.Abstractions.Messages;
 
 namespace Snowberry.Mediator.OpenTelemetry;
