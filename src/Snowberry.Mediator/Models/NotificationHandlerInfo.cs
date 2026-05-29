@@ -8,6 +8,12 @@ namespace Snowberry.Mediator.Models;
 /// </summary>
 public class NotificationHandlerInfo : IEquatable<NotificationHandlerInfo>
 {
+    /// <summary>
+    /// Parses a handler type into one <see cref="NotificationHandlerInfo"/> per
+    /// <see cref="INotificationHandler{TNotification}"/> implementation it declares.
+    /// </summary>
+    /// <param name="type">The handler type to inspect.</param>
+    /// <returns>The parsed handler-info entries, or <see langword="null"/> if <paramref name="type"/> is abstract or an interface.</returns>
     public static IList<NotificationHandlerInfo>? TryParse([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces | DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)] Type type)
     {
         if (type.IsAbstract || type.IsInterface)

@@ -7,14 +7,24 @@ using Snowberry.Mediator.Models;
 
 namespace Snowberry.Mediator.Extensions;
 
+/// <summary>
+/// Reflection helpers for discovering mediator contracts in an assembly and constructing the closed handler
+/// interface types used for registration.
+/// </summary>
 public static class MediatorAssemblyHelper
 {
+    /// <summary>Constructs the closed <see cref="IRequestHandler{TRequest, TResponse}"/> interface type for a handler.</summary>
+    /// <param name="requestHandlerInfo">The request handler info providing the request and response types.</param>
+    /// <returns>The closed <see cref="IRequestHandler{TRequest, TResponse}"/> type.</returns>
     [RequiresDynamicCode("Creating generic types at runtime requires dynamic code. Use explicit handler registration for AOT compatibility.")]
     public static Type CreateRequestHandlerInterfaceType(this RequestHandlerInfo requestHandlerInfo)
     {
         return typeof(IRequestHandler<,>).MakeGenericType(requestHandlerInfo.RequestType, requestHandlerInfo.ResponseType);
     }
 
+    /// <summary>Constructs the closed <see cref="IStreamRequestHandler{TRequest, TResponse}"/> interface type for a handler.</summary>
+    /// <param name="streamRequestHandlerInfo">The stream request handler info providing the request and response types.</param>
+    /// <returns>The closed <see cref="IStreamRequestHandler{TRequest, TResponse}"/> type.</returns>
     [RequiresDynamicCode("Creating generic types at runtime requires dynamic code. Use explicit handler registration for AOT compatibility.")]
     public static Type CreateStreamRequestHandlerInterfaceType(this StreamRequestHandlerInfo streamRequestHandlerInfo)
     {

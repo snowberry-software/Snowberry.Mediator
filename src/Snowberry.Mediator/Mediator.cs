@@ -16,6 +16,8 @@ public sealed class Mediator : IMediator
     private readonly IServiceProvider _serviceProvider;
     private readonly IGlobalStreamPipelineRegistry? _streamPipelineRegistry;
 
+    /// <summary>Initializes a new <see cref="Mediator"/> and resolves the optional global registries once.</summary>
+    /// <param name="serviceProvider">The service provider used to resolve handlers, behaviors and registries.</param>
     public Mediator(IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;

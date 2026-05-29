@@ -15,6 +15,7 @@
 
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <IncludeBuildOutput>true</IncludeBuildOutput>
+
         <Copyright>Copyright © $([System.DateTime]::Now.Year) Snowberry Software</Copyright>
         <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
         <PackageProjectUrl>https://github.com/snowberry-software/Snowberry.Mediator</PackageProjectUrl>
@@ -23,6 +24,8 @@
         <RepositoryUrl>https://github.com/snowberry-software/Snowberry.Mediator.git</RepositoryUrl>
 
         <NukeMarkPackable>true</NukeMarkPackable>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -48,6 +51,7 @@
     <!-- SourceLink -->
     <ItemGroup>
         <!-- For GitHub -->
-        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.202" PrivateAssets="All" />
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.202"
+            PrivateAssets="All" />
     </ItemGroup>
 </Project>

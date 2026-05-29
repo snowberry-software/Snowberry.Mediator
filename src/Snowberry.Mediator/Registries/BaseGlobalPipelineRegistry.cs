@@ -17,14 +17,20 @@ namespace Snowberry.Mediator.Registries;
 public class BaseGlobalPipelineRegistry<T> : IBaseGlobalPipelineRegistry<T>
     where T : PipelineBehaviorHandlerInfo
 {
+    /// <summary>The lock guarding the mutable registration state.</summary>
 #if NET9_0_OR_GREATER
     protected readonly Lock _lock = new();
 #else
     protected readonly object _lock = new();
 #endif
-    // Mutable registration state (writes under _lock).
+
+    /// <summary>Specific (closed) behaviors grouped by request type. Written under <see cref="_lock"/>.</summary>
     protected Dictionary<Type, List<PipelineBehaviorValue<T>>> _pipelineBehaviors = [];
+
+    /// <summary>Open-generic behaviors. Written under <see cref="_lock"/>.</summary>
     protected List<PipelineBehaviorValue<T>> _openGenericHandlers = [];
+
+    /// <summary>The next registration index, used as the fallback sort key for behaviors without a priority.</summary>
     protected int _registrationIndex = 0;
 
     // Read-optimized frozen snapshots (atomic reference writes via Build).
