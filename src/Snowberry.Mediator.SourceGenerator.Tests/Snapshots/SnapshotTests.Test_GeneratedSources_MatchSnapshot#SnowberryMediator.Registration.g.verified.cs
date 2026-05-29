@@ -17,26 +17,52 @@ namespace Snowberry.Mediator.Generated
             ctx.TryRegister(typeof(global::Snowberry.Mediator.Abstractions.Handler.IRequestHandler<global::App.GetUser, string>), typeof(global::App.GetUserHandler), lifetime);
 
             // Pipeline behaviors.
-            var pipeline = new global::Snowberry.Mediator.Registries.GlobalPipelineRegistry(CloseRequestPipeline);
-            pipeline.Register(new global::Snowberry.Mediator.Models.PipelineBehaviorHandlerInfo
+            global::Snowberry.Mediator.Registries.Contracts.IGlobalPipelineRegistry? pipeline;
+            if (!append || !ctx.IsServiceRegistered<global::Snowberry.Mediator.Registries.Contracts.IGlobalPipelineRegistry>())
+            {
+                pipeline = new global::Snowberry.Mediator.Registries.GlobalPipelineRegistry(CloseRequestPipeline);
+                ctx.TryRegister(typeof(global::Snowberry.Mediator.Registries.Contracts.IGlobalPipelineRegistry), pipeline);
+            }
+            else
+            {
+                pipeline = ctx.TryToGetSingleton<global::Snowberry.Mediator.Registries.Contracts.IGlobalPipelineRegistry>(out bool foundPipeline);
+                if (!foundPipeline)
+                {
+                    pipeline = new global::Snowberry.Mediator.Registries.GlobalPipelineRegistry(CloseRequestPipeline);
+                    ctx.TryRegister(typeof(global::Snowberry.Mediator.Registries.Contracts.IGlobalPipelineRegistry), pipeline);
+                }
+            }
+            pipeline!.Register(new global::Snowberry.Mediator.Models.PipelineBehaviorHandlerInfo
             {
                 HandlerType = typeof(global::App.LoggingBehavior<,>),
                 PriorityOverride = 50
             });
             ctx.TryRegister(typeof(global::App.LoggingBehavior<global::App.GetUser, string>), typeof(global::App.LoggingBehavior<global::App.GetUser, string>), lifetime);
-            pipeline.Build();
-            ctx.TryRegister(typeof(global::Snowberry.Mediator.Registries.Contracts.IGlobalPipelineRegistry), pipeline);
+            pipeline!.Build();
 
             // Notification handlers (open-generic handlers flattened to closed registrations).
-            var notifications = new global::Snowberry.Mediator.Registries.GlobalNotificationHandlerRegistry();
-            notifications.Register(new global::Snowberry.Mediator.Models.NotificationHandlerInfo
+            global::Snowberry.Mediator.Registries.Contracts.IGlobalNotificationHandlerRegistry<global::Snowberry.Mediator.Models.NotificationHandlerInfo>? notifications;
+            if (!append || !ctx.IsServiceRegistered<global::Snowberry.Mediator.Registries.Contracts.IGlobalNotificationHandlerRegistry<global::Snowberry.Mediator.Models.NotificationHandlerInfo>>())
+            {
+                notifications = new global::Snowberry.Mediator.Registries.GlobalNotificationHandlerRegistry();
+                ctx.TryRegister(typeof(global::Snowberry.Mediator.Registries.Contracts.IGlobalNotificationHandlerRegistry<global::Snowberry.Mediator.Models.NotificationHandlerInfo>), notifications);
+            }
+            else
+            {
+                notifications = ctx.TryToGetSingleton<global::Snowberry.Mediator.Registries.Contracts.IGlobalNotificationHandlerRegistry<global::Snowberry.Mediator.Models.NotificationHandlerInfo>>(out bool foundNotifications);
+                if (!foundNotifications)
+                {
+                    notifications = new global::Snowberry.Mediator.Registries.GlobalNotificationHandlerRegistry();
+                    ctx.TryRegister(typeof(global::Snowberry.Mediator.Registries.Contracts.IGlobalNotificationHandlerRegistry<global::Snowberry.Mediator.Models.NotificationHandlerInfo>), notifications);
+                }
+            }
+            notifications!.Register(new global::Snowberry.Mediator.Models.NotificationHandlerInfo
             {
                 HandlerType = typeof(global::App.UserCreatedHandler),
                 NotificationType = typeof(global::App.UserCreated)
             });
             ctx.TryRegister(typeof(global::App.UserCreatedHandler), typeof(global::App.UserCreatedHandler), lifetime);
-            notifications.Build();
-            ctx.TryRegister(typeof(global::Snowberry.Mediator.Registries.Contracts.IGlobalNotificationHandlerRegistry<global::Snowberry.Mediator.Models.NotificationHandlerInfo>), notifications);
+            notifications!.Build();
         }
 
         [global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2055", Justification = "All discovered request/response pairs resolve to a statically-known closed type; the MakeGenericType fallback is unreachable under closed-world AOT.")]

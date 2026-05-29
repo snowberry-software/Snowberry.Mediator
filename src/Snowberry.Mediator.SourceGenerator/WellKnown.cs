@@ -26,9 +26,11 @@ internal static class WellKnown
     public const string TriggerAttributeName = "SnowberryMediatorAttribute";
     public const string TriggerAttributeMetadataName = "Snowberry.Mediator.SnowberryMediatorAttribute";
 
-    // DI container detection.
-    public const string MicrosoftServiceCollection = "Microsoft.Extensions.DependencyInjection.IServiceCollection";
-    public const string SnowberryServiceRegistry = "Snowberry.DependencyInjection.Abstractions.Interfaces.IServiceRegistry";
+    // DI integration detection. The bridge context type is probed rather than the container abstraction: its
+    // presence proves the matching Snowberry integration package is referenced, which transitively guarantees
+    // the container abstraction and lifetime enum that the generated entry point also depends on.
+    public const string MicrosoftServiceContext = "Snowberry.Mediator.Extensions.DependencyInjection.MicrosoftServiceContext";
+    public const string SnowberryServiceContext = "Snowberry.Mediator.DependencyInjection.SnowberryServiceContext";
 
     // Emitted, fully-qualified runtime type names (without the global:: prefix; the emitter adds it).
     public const string FqMediatorInterface = "global::Snowberry.Mediator.Abstractions.IMediator";

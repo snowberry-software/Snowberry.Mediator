@@ -98,14 +98,16 @@ internal static class Emitter
         string infoType = isStream ? WellKnown.FqStreamPipelineBehaviorHandlerInfo : WellKnown.FqPipelineBehaviorHandlerInfo;
         string resolver = isStream ? "CloseStreamPipeline" : "CloseRequestPipeline";
         string registry = isStream ? "streamPipeline" : "pipeline";
+        string found = isStream ? "foundStreamPipeline" : "foundPipeline";
+        string newExpr = $"new {registryType}({(hasOpen ? resolver : string.Empty)})";
 
         w.Line();
         w.Line($"// {(isStream ? "Stream pipeline" : "Pipeline")} behaviors.");
-        w.Line($"var {registry} = new {registryType}({(hasOpen ? resolver : string.Empty)});");
+        EmitRegistryGetOrCreate(w, registryIface, newExpr, registry, found);
 
         foreach (var b in behaviors)
         {
-            w.Line($"{registry}.Register(new {infoType}");
+            w.Line($"{registry}!.Register(new {infoType}");
             w.OpenBrace();
 
             if (b.IsOpenGeneric)
@@ -141,8 +143,7 @@ internal static class Emitter
             }
         }
 
-        w.Line($"{registry}.Build();");
-        w.Line($"ctx.TryRegister(typeof({registryIface}), {registry});");
+        w.Line($"{registry}!.Build();");
     }
 
     private static void EmitNotificationBlock(CodeWriter w, in DiscoveryModel model)
@@ -150,13 +151,15 @@ internal static class Emitter
         if (model.NotificationHandlers.Count == 0)
             return;
 
+        string registryIface = $"{WellKnown.FqIGlobalNotificationHandlerRegistry}<{WellKnown.FqNotificationHandlerInfo}>";
+
         w.Line();
         w.Line("// Notification handlers (open-generic handlers flattened to closed registrations).");
-        w.Line($"var notifications = new {WellKnown.FqGlobalNotificationHandlerRegistry}();");
+        EmitRegistryGetOrCreate(w, registryIface, $"new {WellKnown.FqGlobalNotificationHandlerRegistry}()", "notifications", "foundNotifications");
 
         foreach (var handler in model.NotificationHandlers)
         {
-            w.Line($"notifications.Register(new {WellKnown.FqNotificationHandlerInfo}");
+            w.Line($"notifications!.Register(new {WellKnown.FqNotificationHandlerInfo}");
             w.OpenBrace();
             w.Line($"HandlerType = typeof({handler.HandlerFqn}),");
             w.Line($"NotificationType = typeof({handler.NotificationFqn})");
@@ -164,8 +167,33 @@ internal static class Emitter
             w.Line($"ctx.TryRegister(typeof({handler.HandlerFqn}), typeof({handler.HandlerFqn}), lifetime);");
         }
 
-        w.Line("notifications.Build();");
-        w.Line($"ctx.TryRegister(typeof({WellKnown.FqIGlobalNotificationHandlerRegistry}<{WellKnown.FqNotificationHandlerInfo}>), notifications);");
+        w.Line("notifications!.Build();");
+    }
+
+    /// <summary>
+    /// Emits a nullable registry local that is created and registered when not appending (or when no registry
+    /// of the given type is registered yet), and otherwise reuses the existing singleton so that appended
+    /// registrations extend the configured registry instead of being discarded.
+    /// </summary>
+    /// <param name="w">The code writer.</param>
+    /// <param name="iface">The fully-qualified registry interface used as both the service type and the singleton key.</param>
+    /// <param name="newExpr">The expression that constructs a fresh registry instance.</param>
+    /// <param name="varName">The name of the emitted registry local.</param>
+    /// <param name="foundVar">The name of the emitted <see langword="out"/> flag for the singleton lookup.</param>
+    private static void EmitRegistryGetOrCreate(CodeWriter w, string iface, string newExpr, string varName, string foundVar)
+    {
+        w.Line($"{iface}? {varName};");
+        w.Open($"if (!append || !ctx.IsServiceRegistered<{iface}>())");
+        w.Line($"{varName} = {newExpr};");
+        w.Line($"ctx.TryRegister(typeof({iface}), {varName});");
+        w.Close();
+        w.Open("else");
+        w.Line($"{varName} = ctx.TryToGetSingleton<{iface}>(out bool {foundVar});");
+        w.Open($"if (!{foundVar})");
+        w.Line($"{varName} = {newExpr};");
+        w.Line($"ctx.TryRegister(typeof({iface}), {varName});");
+        w.Close();
+        w.Close();
     }
 
     private static void EmitResolver(CodeWriter w, in DiscoveryModel model, bool isStream, string methodName)

@@ -86,6 +86,31 @@ internal static class GeneratorTestHelper
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, nullableContextOptions: NullableContextOptions.Enable));
     }
 
+    /// <summary>
+    /// Creates a compilation with the standard reference set minus any assembly whose file name appears in
+    /// <paramref name="excludedAssemblyFileNames"/>. Simulates a consumer that has not referenced a particular
+    /// Snowberry integration package.
+    /// </summary>
+    /// <param name="source">The C# source to compile.</param>
+    /// <param name="excludedAssemblyFileNames">The assembly file names to omit (for example,
+    /// <c>Snowberry.Mediator.Extensions.DependencyInjection.dll</c>).</param>
+    /// <returns>The created compilation without the excluded references.</returns>
+    public static CSharpCompilation CreateCompilationWithout(string source, params string[] excludedAssemblyFileNames)
+    {
+        var excluded = new HashSet<string>(excludedAssemblyFileNames, StringComparer.OrdinalIgnoreCase);
+        var references = s_references.Where(r =>
+            r is not PortableExecutableReference pe
+            || pe.FilePath is not { } path
+            || !excluded.Contains(Path.GetFileName(path)));
+
+        var tree = CSharpSyntaxTree.ParseText(source, new CSharpParseOptions(LanguageVersion.Latest));
+        return CSharpCompilation.Create(
+            "Tests",
+            new[] { tree },
+            references,
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, nullableContextOptions: NullableContextOptions.Enable));
+    }
+
     public static GeneratorResult Run(CSharpCompilation compilation)
     {
         var generator = new SnowberryMediatorGenerator();

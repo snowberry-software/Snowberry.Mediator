@@ -28,8 +28,8 @@ internal static class Discovery
         if (!TryReadConfig(compilation, markers, diagnostics, out var config))
             return null; // No [assembly: SnowberryMediator] -> the generator stays silent.
 
-        bool hasMicrosoftDI = compilation.GetTypeByMetadataName(WellKnown.MicrosoftServiceCollection) is not null;
-        bool hasSnowberryDI = compilation.GetTypeByMetadataName(WellKnown.SnowberryServiceRegistry) is not null;
+        bool hasMicrosoftDI = compilation.GetTypeByMetadataName(WellKnown.MicrosoftServiceContext) is not null;
+        bool hasSnowberryDI = compilation.GetTypeByMetadataName(WellKnown.SnowberryServiceContext) is not null;
 
         var collector = new Collector(compilation, markers, config, diagnostics);
 
