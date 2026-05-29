@@ -44,8 +44,8 @@ internal static class Emitter
 
         w.Open($"internal static void Register({WellKnown.FqIServiceContext} ctx, {WellKnown.FqRegistrationServiceLifetime} lifetime, bool append)");
 
-        w.Line($"if (!append || !ctx.IsServiceRegistered<{WellKnown.FqMediatorInterface}>())");
-        w.Line($"    ctx.TryRegister(typeof({WellKnown.FqMediatorInterface}), typeof({WellKnown.FqMediator}), lifetime);");
+        w.Line($"if (!append || !ctx.{WellKnown.MethodIsServiceRegistered}<{WellKnown.FqMediatorInterface}>())");
+        w.Line($"    ctx.{WellKnown.MethodTryRegister}(typeof({WellKnown.FqMediatorInterface}), typeof({WellKnown.FqMediator}), lifetime);");
 
         EmitRequestHandlers(w, model);
         EmitPipelineBlock(w, model, isStream: false, hasOpenRequestBehavior);
@@ -77,7 +77,7 @@ internal static class Emitter
             }
 
             string iface = handler.IsStream ? WellKnown.FqStreamRequestHandlerInterface : WellKnown.FqRequestHandlerInterface;
-            w.Line($"ctx.TryRegister(typeof({iface}<{handler.RequestFqn}, {handler.ResponseFqn}>), typeof({handler.HandlerFqn}), lifetime);");
+            w.Line($"ctx.{WellKnown.MethodTryRegister}(typeof({iface}<{handler.RequestFqn}, {handler.ResponseFqn}>), typeof({handler.HandlerFqn}), lifetime);");
         }
     }
 
@@ -107,43 +107,43 @@ internal static class Emitter
 
         foreach (var b in behaviors)
         {
-            w.Line($"{registry}!.Register(new {infoType}");
+            w.Line($"{registry}!.{WellKnown.MethodRegister}(new {infoType}");
             w.OpenBrace();
 
             if (b.IsOpenGeneric)
             {
                 if (b.HasPriority)
-                    w.Line($"HandlerType = typeof({b.OpenHandlerTypeOf}),");
+                    w.Line($"{WellKnown.PropHandlerType} = typeof({b.OpenHandlerTypeOf}),");
                 else
-                    w.Line($"HandlerType = typeof({b.OpenHandlerTypeOf})");
+                    w.Line($"{WellKnown.PropHandlerType} = typeof({b.OpenHandlerTypeOf})");
             }
             else
             {
-                w.Line($"HandlerType = typeof({b.HandlerFqn}),");
-                w.Line($"RequestType = typeof({b.RequestFqn}),");
+                w.Line($"{WellKnown.PropHandlerType} = typeof({b.HandlerFqn}),");
+                w.Line($"{WellKnown.PropRequestType} = typeof({b.RequestFqn}),");
                 if (b.HasPriority)
-                    w.Line($"ResponseType = typeof({b.ResponseFqn}),");
+                    w.Line($"{WellKnown.PropResponseType} = typeof({b.ResponseFqn}),");
                 else
-                    w.Line($"ResponseType = typeof({b.ResponseFqn})");
+                    w.Line($"{WellKnown.PropResponseType} = typeof({b.ResponseFqn})");
             }
 
             if (b.HasPriority)
-                w.Line($"PriorityOverride = {b.Priority}");
+                w.Line($"{WellKnown.PropPriorityOverride} = {b.Priority}");
 
             w.Close(");");
 
             if (b.IsOpenGeneric)
             {
                 foreach (var closed in b.ClosedInstances)
-                    w.Line($"ctx.TryRegister(typeof({closed.ClosedHandlerFqn}), typeof({closed.ClosedHandlerFqn}), lifetime);");
+                    w.Line($"ctx.{WellKnown.MethodTryRegister}(typeof({closed.ClosedHandlerFqn}), typeof({closed.ClosedHandlerFqn}), lifetime);");
             }
             else
             {
-                w.Line($"ctx.TryRegister(typeof({b.HandlerFqn}), typeof({b.HandlerFqn}), lifetime);");
+                w.Line($"ctx.{WellKnown.MethodTryRegister}(typeof({b.HandlerFqn}), typeof({b.HandlerFqn}), lifetime);");
             }
         }
 
-        w.Line($"{registry}!.Build();");
+        w.Line($"{registry}!.{WellKnown.MethodBuild}();");
     }
 
     private static void EmitNotificationBlock(CodeWriter w, in DiscoveryModel model)
@@ -159,15 +159,15 @@ internal static class Emitter
 
         foreach (var handler in model.NotificationHandlers)
         {
-            w.Line($"notifications!.Register(new {WellKnown.FqNotificationHandlerInfo}");
+            w.Line($"notifications!.{WellKnown.MethodRegister}(new {WellKnown.FqNotificationHandlerInfo}");
             w.OpenBrace();
-            w.Line($"HandlerType = typeof({handler.HandlerFqn}),");
-            w.Line($"NotificationType = typeof({handler.NotificationFqn})");
+            w.Line($"{WellKnown.PropHandlerType} = typeof({handler.HandlerFqn}),");
+            w.Line($"{WellKnown.PropNotificationType} = typeof({handler.NotificationFqn})");
             w.Close(");");
-            w.Line($"ctx.TryRegister(typeof({handler.HandlerFqn}), typeof({handler.HandlerFqn}), lifetime);");
+            w.Line($"ctx.{WellKnown.MethodTryRegister}(typeof({handler.HandlerFqn}), typeof({handler.HandlerFqn}), lifetime);");
         }
 
-        w.Line("notifications!.Build();");
+        w.Line($"notifications!.{WellKnown.MethodBuild}();");
     }
 
     /// <summary>
@@ -183,15 +183,15 @@ internal static class Emitter
     private static void EmitRegistryGetOrCreate(CodeWriter w, string iface, string newExpr, string varName, string foundVar)
     {
         w.Line($"{iface}? {varName};");
-        w.Open($"if (!append || !ctx.IsServiceRegistered<{iface}>())");
+        w.Open($"if (!append || !ctx.{WellKnown.MethodIsServiceRegistered}<{iface}>())");
         w.Line($"{varName} = {newExpr};");
-        w.Line($"ctx.TryRegister(typeof({iface}), {varName});");
+        w.Line($"ctx.{WellKnown.MethodTryRegister}(typeof({iface}), {varName});");
         w.Close();
         w.Open("else");
-        w.Line($"{varName} = ctx.TryToGetSingleton<{iface}>(out bool {foundVar});");
+        w.Line($"{varName} = ctx.{WellKnown.MethodTryToGetSingleton}<{iface}>(out bool {foundVar});");
         w.Open($"if (!{foundVar})");
         w.Line($"{varName} = {newExpr};");
-        w.Line($"ctx.TryRegister(typeof({iface}), {varName});");
+        w.Line($"ctx.{WellKnown.MethodTryRegister}(typeof({iface}), {varName});");
         w.Close();
         w.Close();
     }
@@ -220,7 +220,7 @@ internal static class Emitter
             w.Close();
         }
 
-        w.Line("return open.MakeGenericType(request, response);");
+        w.Line($"return open.{WellKnown.MethodMakeGenericType}(request, response);");
         w.Close();
     }
 
@@ -236,7 +236,7 @@ internal static class Emitter
         w.Line("/// <param name=\"append\">Whether to append to existing registrations instead of replacing them.</param>");
         w.Line("/// <returns>The same service collection, for chaining.</returns>");
         w.Open($"public static {WellKnown.FqMicrosoftServiceCollection} AddSnowberryMediator(this {WellKnown.FqMicrosoftServiceCollection} services, {WellKnown.FqMicrosoftServiceLifetime} lifetime = {WellKnown.FqMicrosoftServiceLifetime}.Scoped, bool append = false)");
-        w.Line($"var ctx = {WellKnown.FqMicrosoftServiceContext}.Create(services);");
+        w.Line($"var ctx = {WellKnown.FqMicrosoftServiceContext}.{WellKnown.MethodCreate}(services);");
         w.Line($"{WellKnown.FqGeneratedRegistration}.Register(ctx, Map(lifetime), append);");
         w.Line("return services;");
         w.Close();
@@ -259,7 +259,7 @@ internal static class Emitter
         w.Line("/// <param name=\"append\">Whether to append to existing registrations instead of replacing them.</param>");
         w.Line("/// <returns>The same service registry, for chaining.</returns>");
         w.Open($"public static {WellKnown.FqSnowberryServiceRegistry} AddSnowberryMediator(this {WellKnown.FqSnowberryServiceRegistry} registry, {WellKnown.FqSnowberryServiceLifetime} lifetime = {WellKnown.FqSnowberryServiceLifetime}.Scoped, bool append = false)");
-        w.Line($"var ctx = {WellKnown.FqSnowberryServiceContext}.Create(registry);");
+        w.Line($"var ctx = {WellKnown.FqSnowberryServiceContext}.{WellKnown.MethodCreate}(registry);");
         w.Line($"{WellKnown.FqGeneratedRegistration}.Register(ctx, Map(lifetime), append);");
         w.Line("return registry;");
         w.Close();

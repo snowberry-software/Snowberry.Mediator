@@ -63,6 +63,23 @@ internal static class WellKnown
     public const string FqSnowberryServiceRegistry = "global::Snowberry.DependencyInjection.Abstractions.Interfaces.IServiceRegistry";
     public const string FqSnowberryServiceLifetime = "global::Snowberry.DependencyInjection.Abstractions.ServiceLifetime";
 
+    // Emitted member names (simple identifiers written into the generated source). The generator cannot
+    // reference the runtime types directly (RS1038 / self-contained analyzer), so these are pinned to the real
+    // members by WellKnownNamesTests: renaming a referenced property or method breaks that test's build.
+    public const string PropHandlerType = "HandlerType";
+    public const string PropRequestType = "RequestType";
+    public const string PropResponseType = "ResponseType";
+    public const string PropNotificationType = "NotificationType";
+    public const string PropPriorityOverride = "PriorityOverride";
+
+    public const string MethodRegister = "Register";
+    public const string MethodBuild = "Build";
+    public const string MethodIsServiceRegistered = "IsServiceRegistered";
+    public const string MethodTryRegister = "TryRegister";
+    public const string MethodTryToGetSingleton = "TryToGetSingleton";
+    public const string MethodCreate = "Create";
+    public const string MethodMakeGenericType = "MakeGenericType";
+
     public const string GeneratedNamespace = "Snowberry.Mediator.Generated";
     public const string FqGeneratedRegistration = "global::Snowberry.Mediator.Generated.SnowberryMediatorRegistration";
 }
