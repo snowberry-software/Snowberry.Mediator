@@ -8,7 +8,7 @@
 public class PipelineBehaviorNotFoundException(Type requestType, bool isStream) : Exception($"Pipeline behavior found for request type: {requestType.FullName}.")
 {
     /// <summary>
-    /// Specifies the request type that has no associated stream pipeline behavior.
+    /// Gets a value indicating whether the request is a stream request.
     /// </summary>
     public bool IsStream { get; } = isStream;
 

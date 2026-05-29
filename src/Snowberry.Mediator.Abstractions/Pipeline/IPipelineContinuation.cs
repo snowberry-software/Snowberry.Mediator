@@ -6,10 +6,7 @@ namespace Snowberry.Mediator.Abstractions.Pipeline;
 /// Contract for the next-step continuation passed to <see cref="IPipelineBehavior{TRequest,TResponse}.HandleAsync{TNext}"/>.
 /// </summary>
 /// <remarks>
-/// Implementations are mutable struct-based "walkers" supplied by the mediator infrastructure - callers should
-/// only invoke <see cref="InvokeAsync"/>. Constrain the generic next-parameter as
-/// <c>where TNext : struct, IPipelineContinuation&lt;TRequest, TResponse&gt;</c> to let the JIT specialize the
-/// pipeline-behavior method and devirtualize the continuation call without allocating a delegate.
+/// Implementations are supplied by the mediator infrastructure; callers should only invoke <see cref="InvokeAsync"/>.
 /// </remarks>
 /// <typeparam name="TRequest">The request type.</typeparam>
 /// <typeparam name="TResponse">The response type.</typeparam>
@@ -22,5 +19,6 @@ public interface IPipelineContinuation<TRequest, TResponse>
     /// </summary>
     /// <param name="request">The request.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A task representing the asynchronous operation, containing the <typeparamref name="TResponse"/>.</returns>
     ValueTask<TResponse> InvokeAsync(TRequest request, CancellationToken cancellationToken);
 }

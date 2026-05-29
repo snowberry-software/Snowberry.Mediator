@@ -17,10 +17,10 @@ public static class ServiceCollectionExtensions
     /// A service provider must be registered in the service collection before calling this method.
     /// Alternatively, if the <see cref="IServiceRegistry"/> instance is also an <see cref="IServiceProvider"/>, it will be registered as a singleton.
     /// </remarks>
-    /// <param name="serviceRegistry">The service collection.</param>
-    /// <param name="configure">The configuration method.</param>
+    /// <param name="serviceRegistry">The service registry to add the registrations to.</param>
+    /// <param name="configure">A callback used to configure the <see cref="MediatorOptions"/>.</param>
     /// <param name="serviceLifetime">The service lifetime of the mediator and handlers.</param>
-    /// <returns>The service collection.</returns>
+    /// <returns>The supplied <paramref name="serviceRegistry"/> for chaining.</returns>
     [RequiresDynamicCode("This method uses reflection to find types from the asemblies defined in the options.")]
     [RequiresUnreferencedCode("This method uses reflection to find types from the asemblies defined in the options.")]
     public static IServiceRegistry AddSnowberryMediator(this IServiceRegistry serviceRegistry, Action<MediatorOptions> configure, ServiceLifetime serviceLifetime = ServiceLifetime.Scoped)
@@ -35,10 +35,10 @@ public static class ServiceCollectionExtensions
     /// A service provider must be registered in the service collection before calling this method.
     /// Alternatively, if the <see cref="IServiceRegistry"/> instance is also an <see cref="IServiceProvider"/>, it will be registered as a singleton.
     /// </remarks>
-    /// <param name="serviceRegistry">The service collection.</param>
-    /// <param name="configure">The configuration method.</param>
+    /// <param name="serviceRegistry">The service registry to add the registrations to.</param>
+    /// <param name="configure">A callback used to configure the <see cref="MediatorOptions"/>.</param>
     /// <param name="serviceLifetime">The service lifetime of the mediator and handlers.</param>
-    /// <returns>The service collection.</returns>
+    /// <returns>The supplied <paramref name="serviceRegistry"/> for chaining.</returns>
     [RequiresDynamicCode("This method uses reflection to find types from the asemblies defined in the options.")]
     [RequiresUnreferencedCode("This method uses reflection to find types from the asemblies defined in the options.")]
     public static IServiceRegistry AppendSnowberryMediator(this IServiceRegistry serviceRegistry, Action<MediatorOptions> configure, ServiceLifetime serviceLifetime = ServiceLifetime.Scoped)
@@ -53,11 +53,11 @@ public static class ServiceCollectionExtensions
     /// A service provider must be registered in the service collection before calling this method.
     /// Alternatively, if the <see cref="IServiceRegistry"/> instance is also an <see cref="IServiceProvider"/>, it will be registered as a singleton.
     /// </remarks>
-    /// <param name="serviceRegistry">The service collection.</param>
-    /// <param name="configure">The configuration method.</param>
+    /// <param name="serviceRegistry">The service registry to add the registrations to.</param>
+    /// <param name="configure">A callback used to configure the <see cref="MediatorOptions"/>.</param>
     /// <param name="serviceLifetime">The service lifetime of the mediator and handlers.</param>
     /// <param name="append">Whether to append the registrations to existing ones.</param>
-    /// <returns>The service collection.</returns>
+    /// <returns>The supplied <paramref name="serviceRegistry"/> for chaining.</returns>
     [RequiresDynamicCode("This method uses reflection to find types from the asemblies defined in the options.")]
     [RequiresUnreferencedCode("This method uses reflection to find types from the asemblies defined in the options.")]
     private static IServiceRegistry AddSnowberryMediator(this IServiceRegistry serviceRegistry, Action<MediatorOptions> configure, ServiceLifetime serviceLifetime, bool append)

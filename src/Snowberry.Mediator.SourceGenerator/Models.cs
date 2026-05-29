@@ -97,7 +97,7 @@ internal readonly record struct DiagnosticInfo(
     }
 }
 
-/// <summary>An equatable, serializable source location (a raw <see cref="Location"/> would defeat caching).</summary>
+/// <summary>An equatable, serializable representation of a Roslyn <see cref="Location"/>.</summary>
 /// <param name="FilePath">The source file path.</param>
 /// <param name="Span">The character span within the file.</param>
 /// <param name="LineSpan">The line/character span within the file.</param>

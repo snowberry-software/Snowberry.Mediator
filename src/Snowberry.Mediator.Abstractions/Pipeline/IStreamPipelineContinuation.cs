@@ -6,11 +6,7 @@ namespace Snowberry.Mediator.Abstractions.Pipeline;
 /// Contract for the next-step continuation passed to <see cref="IStreamPipelineBehavior{TRequest,TResponse}.HandleAsync{TNext}"/>.
 /// </summary>
 /// <remarks>
-/// Implementations are struct-based "walkers" supplied by the mediator infrastructure — callers should only
-/// invoke <see cref="InvokeAsync"/>. Constrain the generic next-parameter as
-/// <c>where TNext : struct, IStreamPipelineContinuation&lt;TRequest, TResponse&gt;</c> to let the JIT
-/// specialize the stream-pipeline-behavior method and devirtualize the continuation call without allocating
-/// a delegate.
+/// Implementations are supplied by the mediator infrastructure; callers should only invoke <see cref="InvokeAsync"/>.
 /// </remarks>
 /// <typeparam name="TRequest">The stream request type.</typeparam>
 /// <typeparam name="TResponse">The response element type produced by the stream.</typeparam>

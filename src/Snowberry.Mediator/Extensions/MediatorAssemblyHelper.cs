@@ -75,8 +75,8 @@ public static class MediatorAssemblyHelper
     /// <summary>
     /// Scans the provided assembly for mediator contracts.
     /// </summary>
-    /// <param name="assembly">The assembly.</param>
-    /// <returns>The result.</returns>
+    /// <param name="assembly">The assembly to scan.</param>
+    /// <returns>An <see cref="AssemblyScanResult"/> describing the mediator contracts discovered in <paramref name="assembly"/>.</returns>
     [RequiresUnreferencedCode("Assembly scanning requires unreferenced code. Use explicit handler registration for AOT compatibility.")]
     public static AssemblyScanResult ScanAssembly(Assembly assembly)
     {

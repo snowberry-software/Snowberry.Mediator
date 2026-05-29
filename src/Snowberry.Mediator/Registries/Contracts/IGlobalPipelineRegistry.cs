@@ -10,13 +10,15 @@ namespace Snowberry.Mediator.Registries.Contracts;
 public interface IGlobalPipelineRegistry : IBaseGlobalPipelineRegistry<PipelineBehaviorHandlerInfo>
 {
     /// <summary>
-    /// Executes the pipeline behavior.
+    /// Executes the registered pipeline behaviors for the request and then invokes the terminal <paramref name="handler"/>.
     /// </summary>
-    /// <param name="serviceProvider">The service provider.</param>
-    /// <param name="handler">The request handler.</param>
-    /// <param name="request">The request.</param>
+    /// <typeparam name="TRequest">The request type.</typeparam>
+    /// <typeparam name="TResponse">The response type returned for the request.</typeparam>
+    /// <param name="serviceProvider">The service provider used to resolve each pipeline behavior.</param>
+    /// <param name="handler">The terminal request handler invoked after all behaviors have run.</param>
+    /// <param name="request">The request to dispatch through the pipeline.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>The response.</returns>
+    /// <returns>A <see cref="ValueTask{TResult}"/> that produces the response of type <typeparamref name="TResponse"/>.</returns>
     ValueTask<TResponse> ExecuteAsync<TRequest, TResponse>(
         IServiceProvider serviceProvider,
         IRequestHandler<TRequest, TResponse> handler,

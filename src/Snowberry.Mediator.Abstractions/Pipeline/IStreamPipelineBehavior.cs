@@ -15,8 +15,7 @@ public interface IStreamPipelineBehavior<TRequest, TResponse>
     /// Handles the request and forwards to <paramref name="next"/>, optionally adding behavior-specific
     /// stream transformations.
     /// </summary>
-    /// <typeparam name="TNext">The struct continuation type — the JIT specializes the method per
-    /// continuation type so that <c>next.InvokeAsync(...)</c> is a direct call with no delegate or boxing.</typeparam>
+    /// <typeparam name="TNext">The continuation type advancing to the next step in the pipeline.</typeparam>
     /// <param name="request">The stream request.</param>
     /// <param name="next">The continuation to the next step in the pipeline.</param>
     /// <param name="cancellationToken">The cancellation token.</param>

@@ -78,7 +78,7 @@ public sealed class GlobalNotificationHandlerRegistry : IGlobalNotificationHandl
             {
                 var info = openGeneric[i];
                 var current = Unsafe.As<INotificationHandler<TNotification>>(serviceProvider.GetService(closedTypes[i]))
-                    ?? throw new NotificationHandlerNotResolvedException(info.HandlerType);
+                    ?? throw new NotificationHandlerNotResolvedException(notificationType, closedTypes[i]);
 
                 hadHandler = true;
                 if (!MediatorDiagnostics.IsNotificationEnabled)
@@ -100,7 +100,7 @@ public sealed class GlobalNotificationHandlerRegistry : IGlobalNotificationHandl
             {
                 var info = specific[i];
                 var current = Unsafe.As<INotificationHandler<TNotification>>(serviceProvider.GetService(info.HandlerType)
-                    ?? throw new NotificationHandlerNotResolvedException(info.HandlerType));
+                    ?? throw new NotificationHandlerNotResolvedException(typeof(TNotification), info.HandlerType));
 
                 hadHandler = true;
                 if (!MediatorDiagnostics.IsNotificationEnabled)

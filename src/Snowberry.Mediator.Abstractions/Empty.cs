@@ -11,6 +11,7 @@ public readonly struct Empty
     /// Implicitly converts an <see cref="Empty"/> instance to a <see cref="ValueTask{TResult}"/> of <see cref="Empty"/>.
     /// </summary>
     /// <param name="_">The <see cref="Empty"/> instance (ignored).</param>
+    /// <returns>A completed <see cref="ValueTask{TResult}"/> wrapping the singleton <see cref="Empty"/> value.</returns>
     public static implicit operator ValueTask<Empty>(Empty _)
     {
         return new(s_Value);

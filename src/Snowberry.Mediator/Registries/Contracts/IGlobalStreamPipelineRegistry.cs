@@ -10,13 +10,15 @@ namespace Snowberry.Mediator.Registries.Contracts;
 public interface IGlobalStreamPipelineRegistry : IBaseGlobalPipelineRegistry<StreamPipelineBehaviorHandlerInfo>
 {
     /// <summary>
-    /// Executes the pipeline behavior.
+    /// Executes the registered stream pipeline behaviors for the request and then invokes the terminal <paramref name="handler"/>.
     /// </summary>
-    /// <param name="serviceProvider">The service provider.</param>
-    /// <param name="handler">The request handler.</param>
-    /// <param name="request">The request.</param>
+    /// <typeparam name="TRequest">The stream request type.</typeparam>
+    /// <typeparam name="TResponse">The response element type produced by the stream.</typeparam>
+    /// <param name="serviceProvider">The service provider used to resolve each stream pipeline behavior.</param>
+    /// <param name="handler">The terminal stream request handler invoked after all behaviors have run.</param>
+    /// <param name="request">The request to dispatch through the pipeline.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>The response.</returns>
+    /// <returns>An <see cref="IAsyncEnumerable{T}"/> that yields the response elements of type <typeparamref name="TResponse"/>.</returns>
     IAsyncEnumerable<TResponse> ExecuteAsync<TRequest, TResponse>(
         IServiceProvider serviceProvider,
         IStreamRequestHandler<TRequest, TResponse> handler,

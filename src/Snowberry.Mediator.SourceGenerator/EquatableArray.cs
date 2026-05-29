@@ -5,9 +5,8 @@ using System.Collections.Generic;
 namespace Snowberry.Mediator.SourceGenerator;
 
 /// <summary>
-/// A small immutable array wrapper with structural (value) equality, so it can be used inside the
-/// incremental generator's cached models without defeating Roslyn's caching (unlike
-/// <see cref="System.Collections.Immutable.ImmutableArray{T}"/>, which has reference equality).
+/// A small immutable array wrapper with structural (value) equality, in contrast to
+/// <see cref="System.Collections.Immutable.ImmutableArray{T}"/>, which compares by reference.
 /// </summary>
 /// <typeparam name="T">The element type, which must itself provide value equality.</typeparam>
 internal readonly struct EquatableArray<T> : IEquatable<EquatableArray<T>>, IReadOnlyList<T>

@@ -14,7 +14,7 @@ public interface IRequestHandler<in TRequest, TResponse>
     /// Handles the request and returns a response of type <typeparamref name="TResponse"/>.
     /// </summary>
     /// <param name="request">The request.</param>
-    /// <param name="cancellationToken">The cancellation.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A task representing the asynchronous operation, containing the <typeparamref name="TResponse"/>.</returns>
     ValueTask<TResponse> HandleAsync(TRequest request, CancellationToken cancellationToken = default);
 }

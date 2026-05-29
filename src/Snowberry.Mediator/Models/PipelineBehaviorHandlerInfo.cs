@@ -9,9 +9,9 @@ namespace Snowberry.Mediator.Models;
 public class PipelineBehaviorHandlerInfo : RequestHandlerInfo
 {
     /// <summary>
-    /// An optional, pre-resolved priority. When set (for example, baked by the source generator from
-    /// <see cref="PipelineOverwritePriorityAttribute"/> at compile time), <see cref="TryGetPriority(out int)"/>
-    /// returns this value instead of reading the attribute from <see cref="RequestHandlerInfo.HandlerType"/>.
+    /// An optional, pre-resolved execution-order priority. When set, <see cref="TryGetPriority(out int)"/>
+    /// returns this value instead of reading <see cref="PipelineOverwritePriorityAttribute"/> from
+    /// <see cref="RequestHandlerInfo.HandlerType"/>.
     /// </summary>
     public int? PriorityOverride { get; init; }
 

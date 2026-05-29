@@ -19,10 +19,11 @@ public interface IGlobalNotificationHandlerRegistry<TNotificationHandlerInfo>
     /// <summary>
     /// Publishes the notification to all registered handlers.
     /// </summary>
-    /// <param name="serviceProvider">The service provider.</param>
-    /// <param name="notification">The notification.</param>
+    /// <typeparam name="TNotification">The notification type being published.</typeparam>
+    /// <param name="serviceProvider">The service provider used to resolve the notification handlers.</param>
+    /// <param name="notification">The notification to publish.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
+    /// <returns>A <see cref="ValueTask"/> that completes when every matching handler has finished handling the notification.</returns>
     ValueTask PublishAsync<TNotification>(IServiceProvider serviceProvider, TNotification notification, CancellationToken cancellationToken)
         where TNotification : INotification;
 

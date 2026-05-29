@@ -13,9 +13,9 @@ public static class ServiceCollectionExtensions
     /// Adds the Mediator services to the specified <see cref="IServiceCollection" />.
     /// </summary>
     /// <param name="services">The service collection.</param>
-    /// <param name="configure">The configuration method.</param>
+    /// <param name="configure">A callback used to configure the <see cref="MediatorOptions"/>.</param>
     /// <param name="serviceLifetime">The service lifetime of the mediator and handlers.</param>
-    /// <returns>The service collection.</returns>
+    /// <returns>The supplied <paramref name="services"/> for chaining.</returns>
     [RequiresDynamicCode("This method uses reflection to find types from the asemblies defined in the options.")]
     [RequiresUnreferencedCode("This method uses reflection to find types from the asemblies defined in the options.")]
     public static IServiceCollection AddSnowberryMediator(this IServiceCollection services, Action<MediatorOptions> configure, ServiceLifetime serviceLifetime = ServiceLifetime.Scoped)

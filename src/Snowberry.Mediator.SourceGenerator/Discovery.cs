@@ -7,8 +7,7 @@ namespace Snowberry.Mediator.SourceGenerator;
 
 /// <summary>
 /// Compile-time discovery of mediator handlers/behaviors/notification handlers across the current
-/// compilation and referenced assemblies. Produces a value-equatable <see cref="DiscoveryModel"/> so the
-/// downstream emit step is only re-run when the discovered set actually changes.
+/// compilation and referenced assemblies. Produces a value-equatable <see cref="DiscoveryModel"/>.
 /// </summary>
 internal static class Discovery
 {
