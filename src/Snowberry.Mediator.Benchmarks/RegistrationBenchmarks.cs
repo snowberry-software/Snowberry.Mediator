@@ -14,7 +14,7 @@ namespace Snowberry.Mediator.Benchmarks;
 [MemoryDiagnoser]
 public class RegistrationBenchmarks
 {
-    private static readonly Assembly s_assembly = typeof(NoPipelineRequest).Assembly;
+    private static readonly Assembly s_Assembly = typeof(NoPipelineRequest).Assembly;
 
     /// <summary>Builds a provider by scanning the benchmark assembly with reflection.</summary>
     /// <returns>The resolved mediator.</returns>
@@ -24,7 +24,7 @@ public class RegistrationBenchmarks
         var services = new ServiceCollection();
         services.AddSnowberryMediator(options =>
         {
-            options.Assemblies = new List<Assembly> { s_assembly };
+            options.Assemblies = new List<Assembly> { s_Assembly };
             options.ScanPipelineBehaviors = true;
             options.ScanStreamPipelineBehaviors = true;
             options.ScanNotificationHandlers = true;

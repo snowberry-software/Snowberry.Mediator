@@ -4,7 +4,7 @@ namespace Snowberry.Mediator.SourceGenerator.Tests;
 
 public class BasicGenerationTests
 {
-    private const string SimpleSource = """
+    private const string c_SimpleSource = """
         using System.Threading;
         using System.Threading.Tasks;
         using Microsoft.Extensions.DependencyInjection;
@@ -44,7 +44,7 @@ public class BasicGenerationTests
     public void Test_RequestHandler_GeneratesAndDispatches()
     {
         // Act
-        var result = GeneratorTestHelper.Run(SimpleSource);
+        var result = GeneratorTestHelper.Run(c_SimpleSource);
 
         // Assert: no errors from the generated source.
         Assert.DoesNotContain(result.OutputCompilation.GetDiagnostics(), d => d.Severity == DiagnosticSeverity.Error);
@@ -60,7 +60,7 @@ public class BasicGenerationTests
     [Fact]
     public void Test_GeneratedSource_RegistersClosedHandlerWithoutReflection()
     {
-        var result = GeneratorTestHelper.Run(SimpleSource);
+        var result = GeneratorTestHelper.Run(c_SimpleSource);
         var source = result.RegistrationSource;
 
         Assert.NotNull(source);

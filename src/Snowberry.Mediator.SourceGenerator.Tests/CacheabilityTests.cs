@@ -5,7 +5,7 @@ namespace Snowberry.Mediator.SourceGenerator.Tests;
 
 public class CacheabilityTests
 {
-    private const string Source = """
+    private const string c_Source = """
         using System.Threading;
         using System.Threading.Tasks;
         using Snowberry.Mediator.Abstractions.Handler;
@@ -30,7 +30,7 @@ public class CacheabilityTests
     [Fact]
     public void Test_UnrelatedEdit_DiscoveryOutputUnchanged()
     {
-        var compilation = GeneratorTestHelper.CreateCompilation(Source, "App");
+        var compilation = GeneratorTestHelper.CreateCompilation(c_Source, "App");
         var driver = CreateDriver().RunGenerators(compilation);
 
         // Unrelated edit: add a non-handler type in another tree.
@@ -38,7 +38,7 @@ public class CacheabilityTests
             CSharpSyntaxTree.ParseText("namespace Unrelated { internal sealed class Foo { public int X; } }"));
         driver = driver.RunGenerators(edited);
 
-        var steps = driver.GetRunResult().Results[0].TrackedSteps[TrackingNames.Discovery];
+        var steps = driver.GetRunResult().Results[0].TrackedSteps[TrackingNames.c_Discovery];
         Assert.All(steps, step => Assert.All(step.Outputs, output =>
             Assert.True(
                 output.Reason is IncrementalStepRunReason.Unchanged or IncrementalStepRunReason.Cached,
@@ -48,7 +48,7 @@ public class CacheabilityTests
     [Fact]
     public void Test_AddingHandler_DiscoveryOutputChanges()
     {
-        var compilation = GeneratorTestHelper.CreateCompilation(Source, "App");
+        var compilation = GeneratorTestHelper.CreateCompilation(c_Source, "App");
         var driver = CreateDriver().RunGenerators(compilation);
 
         var edited = compilation.AddSyntaxTrees(CSharpSyntaxTree.ParseText("""
@@ -67,7 +67,7 @@ public class CacheabilityTests
             """));
         driver = driver.RunGenerators(edited);
 
-        var steps = driver.GetRunResult().Results[0].TrackedSteps[TrackingNames.Discovery];
+        var steps = driver.GetRunResult().Results[0].TrackedSteps[TrackingNames.c_Discovery];
         Assert.Contains(steps, step => step.Outputs.Any(o =>
             o.Reason is IncrementalStepRunReason.Modified or IncrementalStepRunReason.New));
     }

@@ -11,7 +11,7 @@ namespace Snowberry.Mediator.SourceGenerator;
 /// </summary>
 internal sealed class Collector
 {
-    private static readonly SymbolEqualityComparer Cmp = SymbolEqualityComparer.Default;
+    private static readonly SymbolEqualityComparer s_Cmp = SymbolEqualityComparer.Default;
 
     private readonly Compilation _compilation;
     private readonly Markers _markers;
@@ -64,21 +64,21 @@ internal sealed class Collector
         {
             var def = iface.OriginalDefinition;
 
-            if (Cmp.Equals(def, _markers.IRequest))
+            if (s_Cmp.Equals(def, _markers.IRequest))
                 AddRequestPair(_requestPairs, iface);
-            else if (Cmp.Equals(def, _markers.IStreamRequest))
+            else if (s_Cmp.Equals(def, _markers.IStreamRequest))
                 AddRequestPair(_streamPairs, iface);
-            else if (Cmp.Equals(iface, _markers.INotification))
+            else if (s_Cmp.Equals(iface, _markers.INotification))
                 AddNotificationType(type);
-            else if (Cmp.Equals(def, _markers.IRequestHandler))
+            else if (s_Cmp.Equals(def, _markers.IRequestHandler))
                 HandleRequestHandler(type, iface, accessible, instantiable, isStream: false);
-            else if (Cmp.Equals(def, _markers.IStreamRequestHandler))
+            else if (s_Cmp.Equals(def, _markers.IStreamRequestHandler))
                 HandleRequestHandler(type, iface, accessible, instantiable, isStream: true);
-            else if (Cmp.Equals(def, _markers.INotificationHandler))
+            else if (s_Cmp.Equals(def, _markers.INotificationHandler))
                 HandleNotificationHandler(type, iface, accessible, instantiable);
-            else if (Cmp.Equals(def, _markers.IPipelineBehavior))
+            else if (s_Cmp.Equals(def, _markers.IPipelineBehavior))
                 HandleBehavior(type, iface, accessible, instantiable, isStream: false);
-            else if (Cmp.Equals(def, _markers.IStreamPipelineBehavior))
+            else if (s_Cmp.Equals(def, _markers.IStreamPipelineBehavior))
                 HandleBehavior(type, iface, accessible, instantiable, isStream: true);
         }
     }
@@ -115,13 +115,13 @@ internal sealed class Collector
 
         if (!instantiable)
         {
-            Report(Diagnostics.NonInstantiableHandler, type, type.Fqn());
+            Report(Diagnostics.s_NonInstantiableHandler, type, type.Fqn());
             return;
         }
 
         if (!accessible)
         {
-            Report(Diagnostics.InaccessibleHandler, type, type.Fqn());
+            Report(Diagnostics.s_InaccessibleHandler, type, type.Fqn());
             return;
         }
 
@@ -129,13 +129,13 @@ internal sealed class Collector
         var resp = iface.TypeArguments[1];
         if (!req.IsFullyAccessible(_compilation))
         {
-            Report(Diagnostics.InaccessibleTypeArgument, type, type.Fqn(), req.Fqn());
+            Report(Diagnostics.s_InaccessibleTypeArgument, type, type.Fqn(), req.Fqn());
             return;
         }
 
         if (!resp.IsFullyAccessible(_compilation))
         {
-            Report(Diagnostics.InaccessibleTypeArgument, type, type.Fqn(), resp.Fqn());
+            Report(Diagnostics.s_InaccessibleTypeArgument, type, type.Fqn(), resp.Fqn());
             return;
         }
 
@@ -148,7 +148,7 @@ internal sealed class Collector
             if (existing.HandlerFqn != handlerFqn)
             {
                 Report(
-                    isStream ? Diagnostics.DuplicateStreamRequestHandler : Diagnostics.DuplicateRequestHandler,
+                    isStream ? Diagnostics.s_DuplicateStreamRequestHandler : Diagnostics.s_DuplicateRequestHandler,
                     type, existing.HandlerFqn, handlerFqn, req.Fqn());
             }
 
@@ -166,13 +166,13 @@ internal sealed class Collector
 
         if (!instantiable)
         {
-            Report(Diagnostics.NonInstantiableHandler, type, type.Fqn());
+            Report(Diagnostics.s_NonInstantiableHandler, type, type.Fqn());
             return;
         }
 
         if (!accessible)
         {
-            Report(Diagnostics.InaccessibleHandler, type, type.Fqn());
+            Report(Diagnostics.s_InaccessibleHandler, type, type.Fqn());
             return;
         }
 
@@ -187,7 +187,7 @@ internal sealed class Collector
         var notification = iface.TypeArguments[0];
         if (!notification.IsFullyAccessible(_compilation))
         {
-            Report(Diagnostics.InaccessibleTypeArgument, type, type.Fqn(), notification.Fqn());
+            Report(Diagnostics.s_InaccessibleTypeArgument, type, type.Fqn(), notification.Fqn());
             return;
         }
 
@@ -204,13 +204,13 @@ internal sealed class Collector
 
         if (!instantiable)
         {
-            Report(Diagnostics.NonInstantiableHandler, type, type.Fqn());
+            Report(Diagnostics.s_NonInstantiableHandler, type, type.Fqn());
             return;
         }
 
         if (!accessible)
         {
-            Report(Diagnostics.InaccessibleHandler, type, type.Fqn());
+            Report(Diagnostics.s_InaccessibleHandler, type, type.Fqn());
             return;
         }
 
@@ -228,13 +228,13 @@ internal sealed class Collector
         var resp = iface.TypeArguments[1];
         if (!req.IsFullyAccessible(_compilation))
         {
-            Report(Diagnostics.InaccessibleTypeArgument, type, type.Fqn(), req.Fqn());
+            Report(Diagnostics.s_InaccessibleTypeArgument, type, type.Fqn(), req.Fqn());
             return;
         }
 
         if (!resp.IsFullyAccessible(_compilation))
         {
-            Report(Diagnostics.InaccessibleTypeArgument, type, type.Fqn(), resp.Fqn());
+            Report(Diagnostics.s_InaccessibleTypeArgument, type, type.Fqn(), resp.Fqn());
             return;
         }
 
@@ -247,7 +247,7 @@ internal sealed class Collector
             ResponseFqn: resp.Fqn(),
             Priority: priority,
             HasPriority: hasPriority,
-            ClosedInstances: EquatableArray<ClosedBehaviorInstance>.Empty));
+            ClosedInstances: EquatableArray<ClosedBehaviorInstance>.s_Empty));
     }
 
     /// <summary>Produces the final discovery model, resolving open generics into closed instantiations.</summary>
@@ -299,7 +299,7 @@ internal sealed class Collector
 
         if (!model.HasAnyHandlers)
         {
-            _diagnostics.Add(new DiagnosticInfo(Diagnostics.NoHandlersDiscovered.Id, EquatableArray<string>.Empty, null));
+            _diagnostics.Add(new DiagnosticInfo(Diagnostics.s_NoHandlersDiscovered.Id, EquatableArray<string>.s_Empty, null));
 
             // Recreate with the appended diagnostic.
             model = model with { Diagnostics = EquatableArray<DiagnosticInfo>.From(_diagnostics) };
@@ -349,7 +349,7 @@ internal sealed class Collector
         priority = 0;
         foreach (var attribute in type.GetAttributes())
         {
-            if (!Cmp.Equals(attribute.AttributeClass, _markers.PriorityAttribute))
+            if (!s_Cmp.Equals(attribute.AttributeClass, _markers.PriorityAttribute))
                 continue;
 
             foreach (var named in attribute.NamedArguments)
@@ -371,7 +371,7 @@ internal sealed class Collector
 
         for (int i = 0; i < iface.TypeArguments.Length; i++)
         {
-            if (iface.TypeArguments[i] is not ITypeParameterSymbol tp || !Cmp.Equals(tp, type.TypeParameters[i]))
+            if (iface.TypeArguments[i] is not ITypeParameterSymbol tp || !s_Cmp.Equals(tp, type.TypeParameters[i]))
                 return false;
         }
 

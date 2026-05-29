@@ -2,7 +2,7 @@ namespace Snowberry.Mediator.SourceGenerator.Tests;
 
 public class DiagnosticsTests
 {
-    private const string Header = """
+    private const string c_Header = """
         using System.Threading;
         using System.Threading.Tasks;
         using Snowberry.Mediator.Abstractions.Handler;
@@ -29,7 +29,7 @@ public class DiagnosticsTests
             }
             """;
 
-        var result = GeneratorTestHelper.Run(Header + body);
+        var result = GeneratorTestHelper.Run(c_Header + body);
 
         Assert.Contains("SBMED001", result.ReportedIds);
     }
@@ -52,7 +52,7 @@ public class DiagnosticsTests
             }
             """;
 
-        var result = GeneratorTestHelper.Run(Header + body);
+        var result = GeneratorTestHelper.Run(c_Header + body);
 
         Assert.Contains("SBMED002", result.ReportedIds);
     }
@@ -68,7 +68,7 @@ public class DiagnosticsTests
             }
             """;
 
-        var result = GeneratorTestHelper.Run(Header + body);
+        var result = GeneratorTestHelper.Run(c_Header + body);
 
         Assert.Contains("SBMED103", result.ReportedIds);
         Assert.Null(result.RegistrationSource);
@@ -128,7 +128,7 @@ public class DiagnosticsTests
             }
             """;
 
-        var result = GeneratorTestHelper.Run(Header + body);
+        var result = GeneratorTestHelper.Run(c_Header + body);
 
         Assert.Empty(result.ReportedIds);
     }

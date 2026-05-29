@@ -10,18 +10,18 @@ namespace Snowberry.Mediator.SourceGenerator;
 internal static class RoslynExtensions
 {
     /// <summary>The display format used to render fully-qualified, <c>global::</c>-prefixed type names.</summary>
-    public static readonly SymbolDisplayFormat FqnFormat = SymbolDisplayFormat.FullyQualifiedFormat;
+    public static readonly SymbolDisplayFormat s_FqnFormat = SymbolDisplayFormat.FullyQualifiedFormat;
 
     /// <summary>Renders the fully-qualified name of a type for emission.</summary>
     /// <param name="type">The type to render.</param>
     /// <returns>The fully-qualified, <c>global::</c>-prefixed type name.</returns>
-    public static string Fqn(this ITypeSymbol type) => type.ToDisplayString(FqnFormat);
+    public static string Fqn(this ITypeSymbol type) => type.ToDisplayString(s_FqnFormat);
 
     /// <summary>Renders the unbound open-generic form, for example <c>global::App.LogBehavior&lt;,&gt;</c>.</summary>
     /// <param name="type">The open-generic type definition.</param>
     /// <returns>The unbound open-generic type-of expression.</returns>
     public static string OpenTypeOf(this INamedTypeSymbol type) =>
-        type.ConstructUnboundGenericType().ToDisplayString(FqnFormat);
+        type.ConstructUnboundGenericType().ToDisplayString(s_FqnFormat);
 
     /// <summary>Determines whether a type has type parameters (is an open-generic definition).</summary>
     /// <param name="type">The type to inspect.</param>
@@ -70,7 +70,7 @@ internal static class RoslynExtensions
         {
             foreach (var referenced in module.ReferencedAssemblies)
             {
-                if (referenced.Name == WellKnown.AbstractionsAssemblyName)
+                if (referenced.Name == WellKnown.c_AbstractionsAssemblyName)
                     return true;
             }
         }

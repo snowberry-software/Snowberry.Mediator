@@ -13,7 +13,7 @@ internal readonly struct EquatableArray<T> : IEquatable<EquatableArray<T>>, IRea
     where T : IEquatable<T>
 {
     /// <summary>An empty array instance.</summary>
-    public static readonly EquatableArray<T> Empty = new(Array.Empty<T>());
+    public static readonly EquatableArray<T> s_Empty = new(Array.Empty<T>());
 
     private readonly T[]? _array;
 
@@ -79,8 +79,8 @@ internal readonly struct EquatableArray<T> : IEquatable<EquatableArray<T>>, IRea
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-    /// <summary>Creates an <see cref="EquatableArray{T}"/> from a list, returning <see cref="Empty"/> when empty.</summary>
+    /// <summary>Creates an <see cref="EquatableArray{T}"/> from a list, returning <see cref="s_Empty"/> when empty.</summary>
     /// <param name="items">The source items.</param>
     /// <returns>The equatable array.</returns>
-    public static EquatableArray<T> From(List<T> items) => items.Count == 0 ? Empty : new(items.ToArray());
+    public static EquatableArray<T> From(List<T> items) => items.Count == 0 ? s_Empty : new(items.ToArray());
 }

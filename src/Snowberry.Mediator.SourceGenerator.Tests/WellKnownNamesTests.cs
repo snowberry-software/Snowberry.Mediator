@@ -18,26 +18,26 @@ public class WellKnownNamesTests
     [Fact]
     public void PropertyNameConstants_MatchRuntimeMembers()
     {
-        Assert.Equal(nameof(RequestHandlerInfo.HandlerType), WellKnown.PropHandlerType);
-        Assert.Equal(nameof(NotificationHandlerInfo.HandlerType), WellKnown.PropHandlerType);
-        Assert.Equal(nameof(RequestHandlerInfo.RequestType), WellKnown.PropRequestType);
-        Assert.Equal(nameof(RequestHandlerInfo.ResponseType), WellKnown.PropResponseType);
-        Assert.Equal(nameof(NotificationHandlerInfo.NotificationType), WellKnown.PropNotificationType);
-        Assert.Equal(nameof(PipelineBehaviorHandlerInfo.PriorityOverride), WellKnown.PropPriorityOverride);
+        Assert.Equal(nameof(RequestHandlerInfo.HandlerType), WellKnown.c_PropHandlerType);
+        Assert.Equal(nameof(NotificationHandlerInfo.HandlerType), WellKnown.c_PropHandlerType);
+        Assert.Equal(nameof(RequestHandlerInfo.RequestType), WellKnown.c_PropRequestType);
+        Assert.Equal(nameof(RequestHandlerInfo.ResponseType), WellKnown.c_PropResponseType);
+        Assert.Equal(nameof(NotificationHandlerInfo.NotificationType), WellKnown.c_PropNotificationType);
+        Assert.Equal(nameof(PipelineBehaviorHandlerInfo.PriorityOverride), WellKnown.c_PropPriorityOverride);
     }
 
     [Fact]
     public void MethodNameConstants_MatchRuntimeMembers()
     {
-        Assert.Equal(nameof(GlobalPipelineRegistry.Register), WellKnown.MethodRegister);
-        Assert.Equal(nameof(GlobalNotificationHandlerRegistry.Register), WellKnown.MethodRegister);
-        Assert.Equal(nameof(GlobalPipelineRegistry.Build), WellKnown.MethodBuild);
-        Assert.Equal(nameof(GlobalNotificationHandlerRegistry.Build), WellKnown.MethodBuild);
-        Assert.Equal(nameof(IServiceContext.IsServiceRegistered), WellKnown.MethodIsServiceRegistered);
-        Assert.Equal(nameof(IServiceContext.TryRegister), WellKnown.MethodTryRegister);
-        Assert.Equal(nameof(IServiceContext.TryToGetSingleton), WellKnown.MethodTryToGetSingleton);
-        Assert.Equal(nameof(MicrosoftServiceContext.Create), WellKnown.MethodCreate);
-        Assert.Equal(nameof(SnowberryServiceContext.Create), WellKnown.MethodCreate);
-        Assert.Equal(nameof(System.Type.MakeGenericType), WellKnown.MethodMakeGenericType);
+        Assert.Equal(nameof(GlobalPipelineRegistry.Register), WellKnown.c_MethodRegister);
+        Assert.Equal(nameof(GlobalNotificationHandlerRegistry.Register), WellKnown.c_MethodRegister);
+        Assert.Equal(nameof(GlobalPipelineRegistry.Build), WellKnown.c_MethodBuild);
+        Assert.Equal(nameof(GlobalNotificationHandlerRegistry.Build), WellKnown.c_MethodBuild);
+        Assert.Equal(nameof(IServiceContext.IsServiceRegistered), WellKnown.c_MethodIsServiceRegistered);
+        Assert.Equal(nameof(IServiceContext.TryRegister), WellKnown.c_MethodTryRegister);
+        Assert.Equal(nameof(IServiceContext.TryToGetSingleton), WellKnown.c_MethodTryToGetSingleton);
+        Assert.Equal(nameof(MicrosoftServiceContext.Create), WellKnown.c_MethodCreate);
+        Assert.Equal(nameof(SnowberryServiceContext.Create), WellKnown.c_MethodCreate);
+        Assert.Equal(nameof(System.Type.MakeGenericType), WellKnown.c_MethodMakeGenericType);
     }
 }

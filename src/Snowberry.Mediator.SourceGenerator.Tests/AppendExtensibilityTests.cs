@@ -8,7 +8,7 @@ namespace Snowberry.Mediator.SourceGenerator.Tests;
 /// </summary>
 public class AppendExtensibilityTests
 {
-    private const string NotificationAppendSource = """
+    private const string c_NotificationAppendSource = """
         using System.Threading;
         using System.Threading.Tasks;
         using Microsoft.Extensions.DependencyInjection;
@@ -66,7 +66,7 @@ public class AppendExtensibilityTests
         }
         """;
 
-    private const string PipelineAppendSource = """
+    private const string c_PipelineAppendSource = """
         using System.Threading;
         using System.Threading.Tasks;
         using Microsoft.Extensions.DependencyInjection;
@@ -136,7 +136,7 @@ public class AppendExtensibilityTests
     [Fact]
     public void Test_Append_MergesNotificationHandlersIntoExistingRegistry()
     {
-        var result = GeneratorTestHelper.Run(NotificationAppendSource);
+        var result = GeneratorTestHelper.Run(c_NotificationAppendSource);
 
         Assert.DoesNotContain(result.OutputCompilation.GetDiagnostics(), d => d.Severity == DiagnosticSeverity.Error);
         Assert.DoesNotContain(result.Diagnostics, d => d.Severity == DiagnosticSeverity.Error);
@@ -152,7 +152,7 @@ public class AppendExtensibilityTests
     [Fact]
     public void Test_Append_MergesPipelineBehaviorsIntoExistingRegistry()
     {
-        var result = GeneratorTestHelper.Run(PipelineAppendSource);
+        var result = GeneratorTestHelper.Run(c_PipelineAppendSource);
 
         Assert.DoesNotContain(result.OutputCompilation.GetDiagnostics(), d => d.Severity == DiagnosticSeverity.Error);
         Assert.DoesNotContain(result.Diagnostics, d => d.Severity == DiagnosticSeverity.Error);

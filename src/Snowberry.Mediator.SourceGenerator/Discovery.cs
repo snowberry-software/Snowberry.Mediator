@@ -28,8 +28,8 @@ internal static class Discovery
         if (!TryReadConfig(compilation, markers, diagnostics, out var config))
             return null; // No [assembly: SnowberryMediator] -> the generator stays silent.
 
-        bool hasMicrosoftDI = compilation.GetTypeByMetadataName(WellKnown.MicrosoftServiceContext) is not null;
-        bool hasSnowberryDI = compilation.GetTypeByMetadataName(WellKnown.SnowberryServiceContext) is not null;
+        bool hasMicrosoftDI = compilation.GetTypeByMetadataName(WellKnown.c_MicrosoftServiceContext) is not null;
+        bool hasSnowberryDI = compilation.GetTypeByMetadataName(WellKnown.c_SnowberryServiceContext) is not null;
 
         var collector = new Collector(compilation, markers, config, diagnostics);
 
@@ -55,7 +55,7 @@ internal static class Discovery
 
     private static bool TryReadConfig(Compilation compilation, Markers markers, List<DiagnosticInfo> diagnostics, out MediatorConfig config)
     {
-        config = MediatorConfig.Default;
+        config = MediatorConfig.s_Default;
 
         AttributeData? triggerAttribute = null;
         int count = 0;
@@ -76,8 +76,8 @@ internal static class Discovery
                     location = LocationInfo.From(syntaxRef.GetSyntax().GetLocation());
 
                 diagnostics.Add(new DiagnosticInfo(
-                    Diagnostics.MultipleTriggerAttributes.Id,
-                    EquatableArray<string>.Empty,
+                    Diagnostics.s_MultipleTriggerAttributes.Id,
+                    EquatableArray<string>.s_Empty,
                     location));
             }
         }

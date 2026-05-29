@@ -32,7 +32,7 @@ internal sealed record GeneratorResult(
 
 internal static class GeneratorTestHelper
 {
-    private static readonly MetadataReference[] s_references = CreateReferences();
+    private static readonly MetadataReference[] s_References = CreateReferences();
 
     private static MetadataReference[] CreateReferences()
     {
@@ -77,7 +77,7 @@ internal static class GeneratorTestHelper
         IEnumerable<MetadataReference>? extraReferences = null)
     {
         var tree = CSharpSyntaxTree.ParseText(source, new CSharpParseOptions(LanguageVersion.Latest));
-        var references = extraReferences is null ? s_references : s_references.Concat(extraReferences);
+        var references = extraReferences is null ? s_References : s_References.Concat(extraReferences);
 
         return CSharpCompilation.Create(
             assemblyName,
@@ -98,7 +98,7 @@ internal static class GeneratorTestHelper
     public static CSharpCompilation CreateCompilationWithout(string source, params string[] excludedAssemblyFileNames)
     {
         var excluded = new HashSet<string>(excludedAssemblyFileNames, StringComparer.OrdinalIgnoreCase);
-        var references = s_references.Where(r =>
+        var references = s_References.Where(r =>
             r is not PortableExecutableReference pe
             || pe.FilePath is not { } path
             || !excluded.Contains(Path.GetFileName(path)));

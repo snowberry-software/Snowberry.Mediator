@@ -6,7 +6,7 @@ namespace Snowberry.Mediator.SourceGenerator.Tests;
 
 public class CrossAssemblyTests
 {
-    private const string PublicLibSource = """
+    private const string c_PublicLibSource = """
         using System.Threading;
         using System.Threading.Tasks;
         using Snowberry.Mediator.Abstractions.Handler;
@@ -22,7 +22,7 @@ public class CrossAssemblyTests
         }
         """;
 
-    private const string MainUsingLib = """
+    private const string c_MainUsingLib = """
         using System.Threading;
         using System.Threading.Tasks;
         using Microsoft.Extensions.DependencyInjection;
@@ -45,8 +45,8 @@ public class CrossAssemblyTests
     [Fact]
     public void Test_PublicHandlerInReferencedAssembly_IsDiscovered()
     {
-        var libReference = GeneratorTestHelper.CompileToReference(PublicLibSource, "Lib");
-        var compilation = GeneratorTestHelper.CreateCompilation(MainUsingLib, "App", new[] { libReference });
+        var libReference = GeneratorTestHelper.CompileToReference(c_PublicLibSource, "Lib");
+        var compilation = GeneratorTestHelper.CreateCompilation(c_MainUsingLib, "App", new[] { libReference });
 
         var result = GeneratorTestHelper.Run(compilation);
 
@@ -58,8 +58,8 @@ public class CrossAssemblyTests
     [Fact]
     public void Test_CrossAssembly_DispatchesAtRuntime()
     {
-        var (libReference, libImage) = GeneratorTestHelper.CompileAssembly(PublicLibSource, "Lib");
-        var compilation = GeneratorTestHelper.CreateCompilation(MainUsingLib, "App", new[] { libReference });
+        var (libReference, libImage) = GeneratorTestHelper.CompileAssembly(c_PublicLibSource, "Lib");
+        var compilation = GeneratorTestHelper.CreateCompilation(c_MainUsingLib, "App", new[] { libReference });
 
         var result = GeneratorTestHelper.Run(compilation);
         Scenarios.AssertNoErrors(result);

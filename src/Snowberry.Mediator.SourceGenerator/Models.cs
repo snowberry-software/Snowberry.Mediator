@@ -17,7 +17,7 @@ internal readonly record struct MediatorConfig(
     bool RegisterStreamPipelineBehaviors)
 {
     /// <summary>The default configuration, which registers every handler category.</summary>
-    public static readonly MediatorConfig Default = new(true, true, true, true, true);
+    public static readonly MediatorConfig s_Default = new(true, true, true, true, true);
 }
 
 /// <summary>A concrete request or stream-request handler registration.</summary>

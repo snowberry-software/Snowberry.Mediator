@@ -40,18 +40,18 @@ internal sealed class Markers
     /// <returns>The resolved markers, or <see langword="null"/> if Snowberry.Mediator.Abstractions is not referenced.</returns>
     public static Markers? Resolve(Compilation compilation)
     {
-        var requestHandler = compilation.GetTypeByMetadataName(WellKnown.IRequestHandler);
+        var requestHandler = compilation.GetTypeByMetadataName(WellKnown.c_IRequestHandler);
         if (requestHandler is null)
             return null;
 
-        var request = compilation.GetTypeByMetadataName(WellKnown.IRequest);
-        var streamRequest = compilation.GetTypeByMetadataName(WellKnown.IStreamRequest);
-        var notification = compilation.GetTypeByMetadataName(WellKnown.INotification);
-        var streamRequestHandler = compilation.GetTypeByMetadataName(WellKnown.IStreamRequestHandler);
-        var notificationHandler = compilation.GetTypeByMetadataName(WellKnown.INotificationHandler);
-        var pipelineBehavior = compilation.GetTypeByMetadataName(WellKnown.IPipelineBehavior);
-        var streamPipelineBehavior = compilation.GetTypeByMetadataName(WellKnown.IStreamPipelineBehavior);
-        var priorityAttribute = compilation.GetTypeByMetadataName(WellKnown.PipelineOverwritePriorityAttribute);
+        var request = compilation.GetTypeByMetadataName(WellKnown.c_IRequest);
+        var streamRequest = compilation.GetTypeByMetadataName(WellKnown.c_IStreamRequest);
+        var notification = compilation.GetTypeByMetadataName(WellKnown.c_INotification);
+        var streamRequestHandler = compilation.GetTypeByMetadataName(WellKnown.c_IStreamRequestHandler);
+        var notificationHandler = compilation.GetTypeByMetadataName(WellKnown.c_INotificationHandler);
+        var pipelineBehavior = compilation.GetTypeByMetadataName(WellKnown.c_IPipelineBehavior);
+        var streamPipelineBehavior = compilation.GetTypeByMetadataName(WellKnown.c_IStreamPipelineBehavior);
+        var priorityAttribute = compilation.GetTypeByMetadataName(WellKnown.c_PipelineOverwritePriorityAttribute);
 
         if (request is null || streamRequest is null || notification is null || streamRequestHandler is null ||
             notificationHandler is null || pipelineBehavior is null || streamPipelineBehavior is null ||
@@ -71,7 +71,7 @@ internal sealed class Markers
             IPipelineBehavior = pipelineBehavior,
             IStreamPipelineBehavior = streamPipelineBehavior,
             PriorityAttribute = priorityAttribute,
-            TriggerAttribute = compilation.GetTypeByMetadataName(WellKnown.TriggerAttributeMetadataName),
+            TriggerAttribute = compilation.GetTypeByMetadataName(WellKnown.c_TriggerAttributeMetadataName),
         };
     }
 }

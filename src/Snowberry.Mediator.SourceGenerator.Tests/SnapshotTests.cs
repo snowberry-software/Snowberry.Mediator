@@ -4,7 +4,7 @@ namespace Snowberry.Mediator.SourceGenerator.Tests;
 
 public class SnapshotTests
 {
-    private const string Source = """
+    private const string c_Source = """
         using System.Threading;
         using System.Threading.Tasks;
         using Microsoft.Extensions.DependencyInjection;
@@ -43,7 +43,7 @@ public class SnapshotTests
     [Fact]
     public Task Test_GeneratedSources_MatchSnapshot()
     {
-        var result = GeneratorTestHelper.Run(Source);
+        var result = GeneratorTestHelper.Run(c_Source);
         return Verifier.Verify(result.Driver).UseDirectory("Snapshots");
     }
 }

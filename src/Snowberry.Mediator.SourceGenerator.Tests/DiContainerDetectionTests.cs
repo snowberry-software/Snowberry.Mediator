@@ -2,7 +2,7 @@ namespace Snowberry.Mediator.SourceGenerator.Tests;
 
 public class DiContainerDetectionTests
 {
-    private const string TriggerWithHandlerSource = """
+    private const string c_TriggerWithHandlerSource = """
         using System.Threading;
         using System.Threading.Tasks;
         using Snowberry.Mediator.Abstractions.Handler;
@@ -27,7 +27,7 @@ public class DiContainerDetectionTests
         // is not. Detection probes the bridge context type, so the Microsoft entry point must be skipped while
         // the Snowberry one (still referenced) remains.
         var compilation = GeneratorTestHelper.CreateCompilationWithout(
-            TriggerWithHandlerSource,
+            c_TriggerWithHandlerSource,
             "Snowberry.Mediator.Extensions.DependencyInjection.dll");
 
         var source = GeneratorTestHelper.Run(compilation).RegistrationSource;
@@ -44,7 +44,7 @@ public class DiContainerDetectionTests
     {
         // Neither integration assembly is referenced: only the container-agnostic registration core is emitted.
         var compilation = GeneratorTestHelper.CreateCompilationWithout(
-            TriggerWithHandlerSource,
+            c_TriggerWithHandlerSource,
             "Snowberry.Mediator.Extensions.DependencyInjection.dll",
             "Snowberry.Mediator.DependencyInjection.dll");
 

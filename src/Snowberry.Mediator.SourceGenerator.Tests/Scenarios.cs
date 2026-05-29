@@ -6,7 +6,7 @@ namespace Snowberry.Mediator.SourceGenerator.Tests;
 internal static class Scenarios
 {
     /// <summary>Common usings, the opt-in attribute, a file-scoped <c>E2E</c> namespace, and a result sink.</summary>
-    public const string Prelude = """
+    public const string c_Prelude = """
         using System.Collections.Generic;
         using System.Runtime.CompilerServices;
         using System.Threading;
@@ -38,10 +38,10 @@ internal static class Scenarios
         Assert.True(compileErrors.Length == 0, "Generated code did not compile:\n" + string.Join("\n", compileErrors));
     }
 
-    /// <summary>Builds <c>Prelude + body</c>, runs the generator, emits, loads, and invokes <c>E2E.Runner.Run()</c>.</summary>
+    /// <summary>Builds <c>c_Prelude + body</c>, runs the generator, emits, loads, and invokes <c>E2E.Runner.Run()</c>.</summary>
     public static string Run(string body)
     {
-        var result = GeneratorTestHelper.Run(Prelude + body);
+        var result = GeneratorTestHelper.Run(c_Prelude + body);
         AssertNoErrors(result);
 
         var assembly = GeneratorTestHelper.EmitAndLoad(result.OutputCompilation);
