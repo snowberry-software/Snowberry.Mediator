@@ -23,7 +23,6 @@
         <RepositoryType>git</RepositoryType>
         <RepositoryUrl>https://github.com/snowberry-software/Snowberry.Mediator.git</RepositoryUrl>
 
-        <NukeMarkPackable>true</NukeMarkPackable>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <PackageReadmeFile>README.md</PackageReadmeFile>
     </PropertyGroup>
