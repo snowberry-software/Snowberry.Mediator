@@ -33,6 +33,7 @@
 		<ProjectReference Include="..\Snowberry.Mediator.Abstractions\Snowberry.Mediator.Abstractions.csproj" />
 		<ProjectReference Include="..\Snowberry.Mediator.Extensions.DependencyInjection\Snowberry.Mediator.Extensions.DependencyInjection.csproj" />
 		<ProjectReference Include="..\Snowberry.Mediator.DependencyInjection\Snowberry.Mediator.DependencyInjection.csproj" />
+		<ProjectReference Include="..\Snowberry.Mediator.OpenTelemetry\Snowberry.Mediator.OpenTelemetry.csproj" />
 		<ProjectReference Include="..\Snowberry.Mediator.Tests.Common\Snowberry.Mediator.Tests.Common.csproj" />
 	</ItemGroup>
 

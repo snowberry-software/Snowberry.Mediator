@@ -67,6 +67,9 @@ internal static class GeneratorTestHelper
         Add(typeof(global::Microsoft.Extensions.DependencyInjection.ServiceCollection).Assembly.Location);
         Add(typeof(global::Microsoft.Extensions.DependencyInjection.ServiceProvider).Assembly.Location);
         Add(typeof(global::Snowberry.DependencyInjection.Abstractions.Interfaces.IServiceRegistry).Assembly.Location);
+        Add(typeof(global::Snowberry.DependencyInjection.ServiceContainer).Assembly.Location);
+        Add(typeof(global::Snowberry.Mediator.OpenTelemetry.OpenTelemetryServiceRegistryExtensions).Assembly.Location);
+        Add(typeof(global::Snowberry.Mediator.OpenTelemetry.MediatorTelemetryOptions).Assembly.Location);
 
         return references.Values.ToArray();
     }
