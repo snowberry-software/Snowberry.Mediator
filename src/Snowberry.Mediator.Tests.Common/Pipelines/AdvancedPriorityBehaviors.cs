@@ -1,4 +1,3 @@
-using Snowberry.Mediator.Abstractions;
 using Snowberry.Mediator.Abstractions.Attributes;
 using Snowberry.Mediator.Abstractions.Pipeline;
 using Snowberry.Mediator.Tests.Common.Helper;
@@ -18,36 +17,34 @@ public class PerformancePipelineBehavior : IPipelineBehavior<PerformanceTestRequ
         _priority = priority;
     }
 
-    public async ValueTask<int> HandleAsync(PerformanceTestRequest request, CancellationToken cancellationToken = default)
+    public async ValueTask<int> HandleAsync<TNext>(PerformanceTestRequest request, TNext next, CancellationToken cancellationToken = default)
+        where TNext : struct, IPipelineContinuation<PerformanceTestRequest, int>
     {
         PipelineExecutionTracker.RecordExecution(_name);
-        int result = await NextPipeline(request, cancellationToken);
+        int result = await next.InvokeAsync(request, cancellationToken);
         return result + 1; // Each behavior adds 1
     }
-
-    public PipelineHandlerDelegate<PerformanceTestRequest, int> NextPipeline { get; set; } = null!;
 }
 
 // Inheritance testing behaviors
 public class BasePipelineBehavior : IPipelineBehavior<InheritanceTestRequest, string>
 {
-    public virtual async ValueTask<string> HandleAsync(InheritanceTestRequest request, CancellationToken cancellationToken = default)
+    public virtual async ValueTask<string> HandleAsync<TNext>(InheritanceTestRequest request, TNext next, CancellationToken cancellationToken = default)
+        where TNext : struct, IPipelineContinuation<InheritanceTestRequest, string>
     {
         PipelineExecutionTracker.RecordExecution(nameof(BasePipelineBehavior));
-        string result = await NextPipeline(request, cancellationToken);
+        string result = await next.InvokeAsync(request, cancellationToken);
         return $"Base({result})";
     }
-
-    public PipelineHandlerDelegate<InheritanceTestRequest, string> NextPipeline { get; set; } = null!;
 }
 
 [PipelineOverwritePriority(Priority = 200)]
 public class DerivedPipelineBehavior : BasePipelineBehavior
 {
-    public override async ValueTask<string> HandleAsync(InheritanceTestRequest request, CancellationToken cancellationToken = default)
+    public override async ValueTask<string> HandleAsync<TNext>(InheritanceTestRequest request, TNext next, CancellationToken cancellationToken = default)
     {
         PipelineExecutionTracker.RecordExecution(nameof(DerivedPipelineBehavior));
-        string result = await NextPipeline(request, cancellationToken);
+        string result = await next.InvokeAsync(request, cancellationToken);
         return $"Derived({result})";
     }
 }
@@ -55,10 +52,10 @@ public class DerivedPipelineBehavior : BasePipelineBehavior
 [PipelineOverwritePriority(Priority = 300)]
 public class GrandChildPipelineBehavior : DerivedPipelineBehavior
 {
-    public override async ValueTask<string> HandleAsync(InheritanceTestRequest request, CancellationToken cancellationToken = default)
+    public override async ValueTask<string> HandleAsync<TNext>(InheritanceTestRequest request, TNext next, CancellationToken cancellationToken = default)
     {
         PipelineExecutionTracker.RecordExecution(nameof(GrandChildPipelineBehavior));
-        string result = await NextPipeline(request, cancellationToken);
+        string result = await next.InvokeAsync(request, cancellationToken);
         return $"GrandChild({result})";
     }
 }

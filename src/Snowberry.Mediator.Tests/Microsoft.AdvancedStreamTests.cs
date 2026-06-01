@@ -13,41 +13,49 @@ namespace Snowberry.Mediator.Tests;
 public class Microsoft_AdvancedStreamTests : Common.MediatorTestBase
 {
     [Fact]
-    public async Task Test_MultipleStreamPipelines_ChainedTransformations()
+    public async Task Test_ConcurrentStreamRequests()
     {
         var serviceCollection = new ServiceCollection();
 
         serviceCollection.AddSnowberryMediator(options =>
         {
-            options.Assemblies = [typeof(ChainedStreamBehavior1).Assembly];
-            options.StreamPipelineBehaviorTypes = [
-                typeof(ChainedStreamBehavior1),    // Priority 300 - First execution (*10)
-                typeof(ChainedStreamBehavior2),    // Priority 200 - Second (+100) 
-                typeof(ChainedStreamBehavior3),    // Priority 100 - Third (*2)
-                typeof(ChainedStreamBehavior4)     // Priority 0 - Last (+1)
-            ];
-        }, serviceLifetime: ServiceLifetime.Scoped);
+            options.Assemblies = [typeof(NumberStreamRequest).Assembly];
+        }, serviceLifetime: ServiceLifetime.Singleton);
 
         using var serviceProvider = serviceCollection.BuildServiceProvider();
         var mediator = serviceProvider.GetRequiredService<IMediator>();
 
-        var request = new NumberStreamRequest { Count = 5, StartValue = 1 };
-        var results = new List<int>();
+        var tasks = new List<Task<List<int>>>();
 
-        await foreach (int item in mediator.CreateStreamAsync(request, CancellationToken.None))
+        for (int i = 0; i < 10; i++)
         {
-            results.Add(item);
+            int streamIndex = i;
+            var request = new NumberStreamRequest { Count = 5, StartValue = (streamIndex * 10) + 1 };
+
+            tasks.Add(Task.Run(async () =>
+            {
+                var results = new List<int>();
+                await foreach (int item in mediator.CreateStreamAsync(request, CancellationToken.None))
+                {
+                    results.Add(item);
+                }
+
+                return results;
+            }));
         }
 
-        int[] expected = new[] { 1040, 1060, 1080, 1100, 1120 };
-        Assert.Equal(expected, results);
+        var allResults = await Task.WhenAll(tasks);
 
-        var executionOrder = StreamPipelineExecutionTracker.GetExecutionOrder();
-        Assert.Equal(4, executionOrder.Count);
-        Assert.Equal(nameof(ChainedStreamBehavior1), executionOrder[0]);
-        Assert.Equal(nameof(ChainedStreamBehavior2), executionOrder[1]);
-        Assert.Equal(nameof(ChainedStreamBehavior3), executionOrder[2]);
-        Assert.Equal(nameof(ChainedStreamBehavior4), executionOrder[3]);
+        for (int i = 0; i < 10; i++)
+        {
+            Assert.Equal(5, allResults[i].Count);
+            int expectedStart = (i * 10) + 1;
+            Assert.Equal(Enumerable.Range(expectedStart, 5), allResults[i]);
+        }
+
+        int[] flatResults = allResults.SelectMany(r => r).ToArray();
+        int[] uniqueResults = flatResults.Distinct().ToArray();
+        Assert.Equal(flatResults.Length, uniqueResults.Length);
     }
 
     [Fact]
@@ -136,39 +144,41 @@ public class Microsoft_AdvancedStreamTests : Common.MediatorTestBase
     }
 
     [Fact]
-    public async Task Test_StreamRequest_WithComplexData()
+    public async Task Test_MultipleStreamPipelines_ChainedTransformations()
     {
         var serviceCollection = new ServiceCollection();
 
         serviceCollection.AddSnowberryMediator(options =>
         {
-            options.Assemblies = [typeof(ComplexDataStreamRequest).Assembly];
+            options.Assemblies = [typeof(ChainedStreamBehavior1).Assembly];
+            options.StreamPipelineBehaviorTypes = [
+                typeof(ChainedStreamBehavior1),    // Priority 300 - First execution (*10)
+                typeof(ChainedStreamBehavior2),    // Priority 200 - Second (+100) 
+                typeof(ChainedStreamBehavior3),    // Priority 100 - Third (*2)
+                typeof(ChainedStreamBehavior4)     // Priority 0 - Last (+1)
+            ];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
         using var serviceProvider = serviceCollection.BuildServiceProvider();
         var mediator = serviceProvider.GetRequiredService<IMediator>();
 
-        var request = new ComplexDataStreamRequest
-        {
-            StartDate = DateTime.UtcNow.Date,
-            Count = 7,
-            Prefix = "Week"
-        };
+        var request = new NumberStreamRequest { Count = 5, StartValue = 1 };
+        var results = new List<int>();
 
-        var results = new List<ComplexDataItem>();
-
-        await foreach (var item in mediator.CreateStreamAsync(request, CancellationToken.None))
+        await foreach (int item in mediator.CreateStreamAsync(request, CancellationToken.None))
         {
             results.Add(item);
         }
 
-        Assert.Equal(7, results.Count);
-        Assert.All(results, item => Assert.StartsWith("Week", item.Name));
+        int[] expected = new[] { 1040, 1060, 1080, 1100, 1120 };
+        Assert.Equal(expected, results);
 
-        for (int i = 0; i < 7; i++)
-        {
-            Assert.Equal(request.StartDate.AddDays(i), results[i].Date);
-        }
+        var executionOrder = StreamPipelineExecutionTracker.GetExecutionOrder();
+        Assert.Equal(4, executionOrder.Count);
+        Assert.Equal(nameof(ChainedStreamBehavior1), executionOrder[0]);
+        Assert.Equal(nameof(ChainedStreamBehavior2), executionOrder[1]);
+        Assert.Equal(nameof(ChainedStreamBehavior3), executionOrder[2]);
+        Assert.Equal(nameof(ChainedStreamBehavior4), executionOrder[3]);
     }
 
     [Fact]
@@ -240,49 +250,42 @@ public class Microsoft_AdvancedStreamTests : Common.MediatorTestBase
     }
 
     [Fact]
-    public async Task Test_ConcurrentStreamRequests()
+    public async Task Test_StreamRequest_ExceptionRecovery()
     {
         var serviceCollection = new ServiceCollection();
 
         serviceCollection.AddSnowberryMediator(options =>
         {
-            options.Assemblies = [typeof(NumberStreamRequest).Assembly];
-        }, serviceLifetime: ServiceLifetime.Singleton);
+            options.Assemblies = [typeof(ExceptionRecoveryBehavior).Assembly];
+            options.StreamPipelineBehaviorTypes = [typeof(ExceptionRecoveryBehavior)];
+        }, serviceLifetime: ServiceLifetime.Scoped);
 
         using var serviceProvider = serviceCollection.BuildServiceProvider();
         var mediator = serviceProvider.GetRequiredService<IMediator>();
 
-        var tasks = new List<Task<List<int>>>();
+        var request = new FaultyStreamRequest { Count = 10, FaultAtPositions = [3, 7] };
+        var results = new List<int>();
+
+        await foreach (int item in mediator.CreateStreamAsync(request, CancellationToken.None))
+        {
+            results.Add(item);
+        }
+
+        Assert.Equal(10, results.Count);
+        Assert.Equal(-1, results[2]);
+        Assert.Equal(-1, results[6]);
 
         for (int i = 0; i < 10; i++)
         {
-            int streamIndex = i;
-            var request = new NumberStreamRequest { Count = 5, StartValue = (streamIndex * 10) + 1 };
-
-            tasks.Add(Task.Run(async () =>
+            if (i != 2 && i != 6)
             {
-                var results = new List<int>();
-                await foreach (int item in mediator.CreateStreamAsync(request, CancellationToken.None))
-                {
-                    results.Add(item);
-                }
-
-                return results;
-            }));
+                Assert.Equal(i + 1, results[i]);
+            }
         }
 
-        var allResults = await Task.WhenAll(tasks);
-
-        for (int i = 0; i < 10; i++)
-        {
-            Assert.Equal(5, allResults[i].Count);
-            int expectedStart = (i * 10) + 1;
-            Assert.Equal(Enumerable.Range(expectedStart, 5), allResults[i]);
-        }
-
-        int[] flatResults = allResults.SelectMany(r => r).ToArray();
-        int[] uniqueResults = flatResults.Distinct().ToArray();
-        Assert.Equal(flatResults.Length, uniqueResults.Length);
+        var executionOrder = StreamPipelineExecutionTracker.GetExecutionOrder();
+        Assert.Single(executionOrder);
+        Assert.Equal(nameof(ExceptionRecoveryBehavior), executionOrder[0]);
     }
 
     [Fact]
@@ -322,41 +325,38 @@ public class Microsoft_AdvancedStreamTests : Common.MediatorTestBase
     }
 
     [Fact]
-    public async Task Test_StreamRequest_ExceptionRecovery()
+    public async Task Test_StreamRequest_WithComplexData()
     {
         var serviceCollection = new ServiceCollection();
 
         serviceCollection.AddSnowberryMediator(options =>
         {
-            options.Assemblies = [typeof(ExceptionRecoveryBehavior).Assembly];
-            options.StreamPipelineBehaviorTypes = [typeof(ExceptionRecoveryBehavior)];
+            options.Assemblies = [typeof(ComplexDataStreamRequest).Assembly];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
         using var serviceProvider = serviceCollection.BuildServiceProvider();
         var mediator = serviceProvider.GetRequiredService<IMediator>();
 
-        var request = new FaultyStreamRequest { Count = 10, FaultAtPositions = [3, 7] };
-        var results = new List<int>();
+        var request = new ComplexDataStreamRequest
+        {
+            StartDate = DateTime.UtcNow.Date,
+            Count = 7,
+            Prefix = "Week"
+        };
 
-        await foreach (int item in mediator.CreateStreamAsync(request, CancellationToken.None))
+        var results = new List<ComplexDataItem>();
+
+        await foreach (var item in mediator.CreateStreamAsync(request, CancellationToken.None))
         {
             results.Add(item);
         }
 
-        Assert.Equal(10, results.Count);
-        Assert.Equal(-1, results[2]);
-        Assert.Equal(-1, results[6]);
+        Assert.Equal(7, results.Count);
+        Assert.All(results, item => Assert.StartsWith("Week", item.Name));
 
-        for (int i = 0; i < 10; i++)
+        for (int i = 0; i < 7; i++)
         {
-            if (i != 2 && i != 6)
-            {
-                Assert.Equal(i + 1, results[i]);
-            }
+            Assert.Equal(request.StartDate.AddDays(i), results[i].Date);
         }
-
-        var executionOrder = StreamPipelineExecutionTracker.GetExecutionOrder();
-        Assert.Single(executionOrder);
-        Assert.Equal(nameof(ExceptionRecoveryBehavior), executionOrder[0]);
     }
 }

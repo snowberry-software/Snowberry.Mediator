@@ -1,0 +1,5 @@
+using System.Runtime.CompilerServices;
+
+// The test project is strong-signed with the same key (src/Snowberry.Mediator.snk) via
+// src/Directory.Build.props, so the PublicKey must be included.
+[assembly: InternalsVisibleTo("Snowberry.Mediator.SourceGenerator.Tests, PublicKey=002400000480000094000000060200000024000052534131000400000100010081c08a132b0a868e9e8c40463e5cc9c19ffa93d12d0894624690e1558afc0935b8e2c8f1cb528827a00d4d12bb4705ebea5f080e4661e4f0ce5a2cc12a9f23782b3a41b72daf50ed29344d3f1dc1423236e49e6f6c14890b027cb5254f5aa81498d479cea9a6d5f3d50f203f90bf6eb6577ca30cf55b200f444b8c144dc045aa")]

@@ -7,6 +7,14 @@ namespace Snowberry.Mediator.Models;
 /// </summary>
 public class RequestHandlerInfo : IEquatable<RequestHandlerInfo>
 {
+    /// <summary>
+    /// Parses a handler type into one <typeparamref name="T"/> per implementation of
+    /// <paramref name="expectedInterface"/> it declares, extracting the request and response types.
+    /// </summary>
+    /// <typeparam name="T">The handler-info type to produce.</typeparam>
+    /// <param name="type">The handler type to inspect.</param>
+    /// <param name="expectedInterface">The open-generic handler interface to match (for example, <c>IRequestHandler&lt;,&gt;</c>).</param>
+    /// <returns>The parsed handler-info entries, or <see langword="null"/> if <paramref name="type"/> is abstract or an interface.</returns>
     public static IList<T>? TryParse<T>([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.Interfaces | DynamicallyAccessedMemberTypes.PublicProperties)] Type type, Type expectedInterface) where T : RequestHandlerInfo, new()
     {
         if (type.IsAbstract || type.IsInterface)
@@ -40,12 +48,6 @@ public class RequestHandlerInfo : IEquatable<RequestHandlerInfo>
         }
 
         return results;
-    }
-
-    /// <inheritdoc/>
-    public override string ToString()
-    {
-        return $"{HandlerType.FullName} : {RequestType.FullName} -> {ResponseType.FullName}";
     }
 
     /// <inheritdoc/>
@@ -85,6 +87,18 @@ public class RequestHandlerInfo : IEquatable<RequestHandlerInfo>
 #endif
     }
 
+    /// <inheritdoc/>
+    public override string ToString()
+    {
+        return $"{HandlerType.FullName} : {RequestType.FullName} -> {ResponseType.FullName}";
+    }
+
+    /// <summary>
+    /// The handler type.
+    /// </summary>
+    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)]
+    public Type HandlerType { get; init; } = null!;
+
     /// <summary>
     /// The request type.
     /// </summary>
@@ -94,10 +108,4 @@ public class RequestHandlerInfo : IEquatable<RequestHandlerInfo>
     /// The response type.
     /// </summary>
     public Type ResponseType { get; init; } = null!;
-
-    /// <summary>
-    /// The handler type.
-    /// </summary>
-    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)]
-    public Type HandlerType { get; init; } = null!;
 }

@@ -5,4 +5,4 @@
 /// </summary>
 /// <typeparam name="TRequest">The request type.</typeparam>
 /// <typeparam name="TResponse">The response type.</typeparam>
-public interface IStreamRequest<in TRequest, out TResponse>;
+public interface IStreamRequest<in TRequest, out TResponse> where TRequest : class;

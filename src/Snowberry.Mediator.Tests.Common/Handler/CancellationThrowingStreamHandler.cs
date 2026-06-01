@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Snowberry.Mediator.Abstractions.Handler;
 using Snowberry.Mediator.Tests.Common.Requests;
 
@@ -5,7 +6,7 @@ namespace Snowberry.Mediator.Tests.Common.Handler;
 
 public class CancellationThrowingStreamHandler : IStreamRequestHandler<CancellationThrowingStreamRequest, int>
 {
-    public async IAsyncEnumerable<int> HandleAsync(CancellationThrowingStreamRequest request, CancellationToken cancellationToken = default)
+    public async IAsyncEnumerable<int> HandleAsync(CancellationThrowingStreamRequest request, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         for (int i = 1; i <= request.ThrowAfterCount; i++)
         {

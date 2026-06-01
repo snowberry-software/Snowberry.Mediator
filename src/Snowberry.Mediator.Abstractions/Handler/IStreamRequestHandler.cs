@@ -8,7 +8,7 @@ namespace Snowberry.Mediator.Abstractions.Handler;
 /// <typeparam name="TRequest">The request type.</typeparam>
 /// <typeparam name="TResponse">The response type.</typeparam>
 public interface IStreamRequestHandler<in TRequest, out TResponse>
-    where TRequest : IStreamRequest<TRequest, TResponse>
+    where TRequest : class, IStreamRequest<TRequest, TResponse>
 {
     /// <summary>
     /// Handles the stream request and returns an asynchronous stream of responses.

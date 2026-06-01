@@ -1,0 +1,78 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>netstandard2.0</TargetFramework>
+		<LangVersion>latest</LangVersion>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>disable</ImplicitUsings>
+
+		<!-- Roslyn component -->
+		<IsRoslynComponent>true</IsRoslynComponent>
+		<EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+
+		<!-- Never an AOT runtime asset; it runs inside the compiler host. -->
+		<IsAotCompatible>false</IsAotCompatible>
+
+		<!-- Package -->
+		<Description>Roslyn incremental source generator that emits AOT-friendly, reflection-free mediator handler registrations for Snowberry.Mediator.</Description>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageTags>mediator, mediator pattern, source generator, aot, roslyn</PackageTags>
+		<DevelopmentDependency>true</DevelopmentDependency>
+	</PropertyGroup>
+
+	<!-- Analyzer packaging overrides for NuGetPackage.props (which targets normal libraries). -->
+	<PropertyGroup>
+		<IncludeBuildOutput>false</IncludeBuildOutput>
+		<IncludeSymbols>false</IncludeSymbols>
+		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+		<NoPackageAnalysis>true</NoPackageAnalysis>
+		<SuppressDependenciesWhenPacking>false</SuppressDependenciesWhenPacking>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.11.0" PrivateAssets="all" />
+		<PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0" PrivateAssets="all">
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+	</ItemGroup>
+
+	<!-- Analyzer release tracking (required by EnforceExtendedAnalyzerRules / RS2008). -->
+	<ItemGroup>
+		<AdditionalFiles Include="AnalyzerReleases.Shipped.md" />
+		<AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />
+	</ItemGroup>
+
+	<!-- Per-package README, same convention as the other packable projects. -->
+	<ItemGroup>
+		<None Include="README.md">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+	</ItemGroup>
+
+	<!-- Pack the generator assembly into the analyzers path (NOT lib/). -->
+	<ItemGroup>
+		<None Include="$(OutputPath)$(AssemblyName).dll"
+		      Pack="true"
+		      PackagePath="analyzers/dotnet/cs"
+		      Visible="false" />
+	</ItemGroup>
+
+	<!-- The generated code references Snowberry.Mediator runtime types; declare it as a NuGet dependency
+	     so consumers get the runtime package automatically. ReferenceOutputAssembly="false" keeps it OUT
+	     of the analyzer's compile references (the generator only emits text) so RS1038 is not triggered,
+	     while pack still emits a <dependency> on Snowberry.Mediator. -->
+	<ItemGroup>
+		<ProjectReference Include="..\Snowberry.Mediator\Snowberry.Mediator.csproj" ReferenceOutputAssembly="false" />
+	</ItemGroup>
+
+	<Import Project="../NuGetPackage.props" />
+	<Import Project="../PolySharp.props" />
+
+	<!-- Re-assert overrides AFTER the import so NuGetPackage.props cannot flip them back. -->
+	<PropertyGroup>
+		<IncludeBuildOutput>false</IncludeBuildOutput>
+		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+	</PropertyGroup>
+
+</Project>

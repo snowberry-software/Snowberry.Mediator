@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Snowberry.Mediator.Abstractions.Handler;
 using Snowberry.Mediator.Tests.Common.Requests;
 
@@ -5,7 +6,7 @@ namespace Snowberry.Mediator.Tests.Common.Handler;
 
 public class ComplexDataStreamHandler : IStreamRequestHandler<ComplexDataStreamRequest, ComplexDataItem>
 {
-    public async IAsyncEnumerable<ComplexDataItem> HandleAsync(ComplexDataStreamRequest request, CancellationToken cancellationToken = default)
+    public async IAsyncEnumerable<ComplexDataItem> HandleAsync(ComplexDataStreamRequest request, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         for (int i = 0; i < request.Count; i++)
         {
@@ -24,7 +25,7 @@ public class ComplexDataStreamHandler : IStreamRequestHandler<ComplexDataStreamR
 
 public class DisposableStreamHandler : IStreamRequestHandler<DisposableStreamRequest, DisposableResource>
 {
-    public async IAsyncEnumerable<DisposableResource> HandleAsync(DisposableStreamRequest request, CancellationToken cancellationToken = default)
+    public async IAsyncEnumerable<DisposableResource> HandleAsync(DisposableStreamRequest request, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         for (int i = 0; i < request.ResourceCount; i++)
         {
@@ -38,7 +39,7 @@ public class DisposableStreamHandler : IStreamRequestHandler<DisposableStreamReq
 
 public class FilterableStreamHandler : IStreamRequestHandler<FilterableStreamRequest, int>
 {
-    public async IAsyncEnumerable<int> HandleAsync(FilterableStreamRequest request, CancellationToken cancellationToken = default)
+    public async IAsyncEnumerable<int> HandleAsync(FilterableStreamRequest request, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         for (int i = 0; i < request.Count; i++)
         {
@@ -52,7 +53,7 @@ public class FilterableStreamHandler : IStreamRequestHandler<FilterableStreamReq
 
 public class FaultyStreamHandler : IStreamRequestHandler<FaultyStreamRequest, int>
 {
-    public async IAsyncEnumerable<int> HandleAsync(FaultyStreamRequest request, CancellationToken cancellationToken = default)
+    public async IAsyncEnumerable<int> HandleAsync(FaultyStreamRequest request, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         for (int i = 0; i < request.Count; i++)
         {

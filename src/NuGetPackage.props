@@ -4,7 +4,7 @@
         <Platforms>AnyCPU;x64;x86</Platforms>
 
         <Authors>Snowberry Software</Authors>
-        <AssemblyVersion>1.1.0.0</AssemblyVersion>
+        <AssemblyVersion>2.0.0.0</AssemblyVersion>
         <VersionPrefix>$(AssemblyVersion)</VersionPrefix>
         <!-- <VersionSuffix>alpha</VersionSuffix> -->
 
@@ -15,6 +15,7 @@
 
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <IncludeBuildOutput>true</IncludeBuildOutput>
+
         <Copyright>Copyright © $([System.DateTime]::Now.Year) Snowberry Software</Copyright>
         <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
         <PackageProjectUrl>https://github.com/snowberry-software/Snowberry.Mediator</PackageProjectUrl>
@@ -22,7 +23,8 @@
         <RepositoryType>git</RepositoryType>
         <RepositoryUrl>https://github.com/snowberry-software/Snowberry.Mediator.git</RepositoryUrl>
 
-        <NukeMarkPackable>true</NukeMarkPackable>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -48,6 +50,7 @@
     <!-- SourceLink -->
     <ItemGroup>
         <!-- For GitHub -->
-        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.202"
+            PrivateAssets="All" />
     </ItemGroup>
 </Project>

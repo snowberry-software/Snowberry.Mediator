@@ -1,10 +1,10 @@
-﻿using Snowberry.Mediator.Abstractions.Messages;
+using Snowberry.Mediator.Abstractions.Messages;
 
 namespace Snowberry.Mediator.Abstractions.Pipeline;
 
 /// <summary>
-/// Contract for a pipeline behavior in a linked delegate chain. Each behavior MUST have a non-null <see cref="NextPipeline"/> delegate.
-/// The final behavior's <see cref="NextPipeline"/> points to the terminal request handler.
+/// Contract for a pipeline behavior. Each behavior receives a struct continuation that, when invoked,
+/// advances to the next behavior in the chain (or the terminal handler).
 /// </summary>
 /// <typeparam name="TRequest">The request type.</typeparam>
 /// <typeparam name="TResponse">The response type.</typeparam>
@@ -12,14 +12,16 @@ public interface IPipelineBehavior<TRequest, TResponse>
     where TRequest : class, IRequest<TRequest, TResponse>
 {
     /// <summary>
-    /// The next delegate in the pipeline chain. Always non-null once execution begins.
+    /// Handles the request and forwards to <paramref name="next"/>, optionally adding behavior-specific logic.
     /// </summary>
-    PipelineHandlerDelegate<TRequest, TResponse> NextPipeline { get; set; }
-
-    /// <summary>
-    /// Handles the request and forwards to <see cref="NextPipeline"/>, optionally adding behavior-specific logic.
-    /// </summary>
-    ValueTask<TResponse> HandleAsync(
+    /// <typeparam name="TNext">The continuation type advancing to the next step in the pipeline.</typeparam>
+    /// <param name="request">The request.</param>
+    /// <param name="next">The continuation to the next step in the pipeline.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A task representing the asynchronous operation, containing the <typeparamref name="TResponse"/>.</returns>
+    ValueTask<TResponse> HandleAsync<TNext>(
         TRequest request,
-        CancellationToken cancellationToken = default);
+        TNext next,
+        CancellationToken cancellationToken = default)
+        where TNext : struct, IPipelineContinuation<TRequest, TResponse>;
 }

@@ -1,0 +1,42 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/Benchmarks/">
+    <Project Path="Snowberry.Mediator.Benchmarks/Snowberry.Mediator.Benchmarks.csproj" />
+  </Folder>
+  <Folder Name="/Extensions/">
+    <Project Path="Snowberry.Mediator.DependencyInjection.Shared/Snowberry.Mediator.DependencyInjection.Shared.csproj" />
+    <Project Path="Snowberry.Mediator.DependencyInjection/Snowberry.Mediator.DependencyInjection.csproj" />
+    <Project Path="Snowberry.Mediator.Extensions.DependencyInjection/Snowberry.Mediator.Extensions.DependencyInjection.csproj" />
+    <Project Path="Snowberry.Mediator.Extensions.OpenTelemetry/Snowberry.Mediator.Extensions.OpenTelemetry.csproj">
+      <Platform Solution="*|x64" Project="x64" />
+      <Platform Solution="*|x86" Project="x86" />
+    </Project>
+    <Project Path="Snowberry.Mediator.OpenTelemetry.Shared/Snowberry.Mediator.OpenTelemetry.Shared.csproj">
+      <Platform Solution="*|x64" Project="x64" />
+      <Platform Solution="*|x86" Project="x86" />
+    </Project>
+    <Project Path="Snowberry.Mediator.OpenTelemetry/Snowberry.Mediator.OpenTelemetry.csproj">
+      <Platform Solution="*|x64" Project="x64" />
+      <Platform Solution="*|x86" Project="x86" />
+    </Project>
+    <Project Path="Snowberry.Mediator.SourceGenerator.Tests/Snowberry.Mediator.SourceGenerator.Tests.csproj" />
+    <Project Path="Snowberry.Mediator.SourceGenerator/Snowberry.Mediator.SourceGenerator.csproj">
+      <Platform Solution="*|x64" Project="x64" />
+      <Platform Solution="*|x86" Project="x86" />
+    </Project>
+  </Folder>
+  <Folder Name="/Samples/">
+    <Project Path="../samples/Snowberry.Mediator.SourceGenerator.Sample.Handlers/Snowberry.Mediator.SourceGenerator.Sample.Handlers.csproj" />
+    <Project Path="../samples/Snowberry.Mediator.SourceGenerator.Sample/Snowberry.Mediator.SourceGenerator.Sample.csproj" />
+  </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="Snowberry.Mediator.Tests.Common/Snowberry.Mediator.Tests.Common.csproj" />
+    <Project Path="Snowberry.Mediator.Tests/Snowberry.Mediator.Tests.csproj" />
+  </Folder>
+  <Project Path="Snowberry.Mediator.Abstractions/Snowberry.Mediator.Abstractions.csproj" />
+  <Project Path="Snowberry.Mediator/Snowberry.Mediator.csproj" />
+</Solution>

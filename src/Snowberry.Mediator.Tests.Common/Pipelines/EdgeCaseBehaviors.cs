@@ -1,4 +1,3 @@
-using Snowberry.Mediator.Abstractions;
 using Snowberry.Mediator.Abstractions.Pipeline;
 using Snowberry.Mediator.Tests.Common.Helper;
 using Snowberry.Mediator.Tests.Common.Requests;
@@ -7,13 +6,14 @@ namespace Snowberry.Mediator.Tests.Common.Pipelines;
 
 public class ExceptionHandlingBehavior : IPipelineBehavior<ExceptionThrowingRequest, string>
 {
-    public async ValueTask<string> HandleAsync(ExceptionThrowingRequest request, CancellationToken cancellationToken = default)
+    public async ValueTask<string> HandleAsync<TNext>(ExceptionThrowingRequest request, TNext next, CancellationToken cancellationToken = default)
+        where TNext : struct, IPipelineContinuation<ExceptionThrowingRequest, string>
     {
         PipelineExecutionTracker.RecordExecution(nameof(ExceptionHandlingBehavior));
 
         try
         {
-            return await NextPipeline(request, cancellationToken);
+            return await next.InvokeAsync(request, cancellationToken);
         }
         catch (CustomBusinessException ex)
         {
@@ -21,13 +21,12 @@ public class ExceptionHandlingBehavior : IPipelineBehavior<ExceptionThrowingRequ
             return $"Exception caught: {ex.Message}";
         }
     }
-
-    public PipelineHandlerDelegate<ExceptionThrowingRequest, string> NextPipeline { get; set; } = null!;
 }
 
 public class RequestModifyingBehavior : IPipelineBehavior<MutableRequest, string>
 {
-    public async ValueTask<string> HandleAsync(MutableRequest request, CancellationToken cancellationToken = default)
+    public async ValueTask<string> HandleAsync<TNext>(MutableRequest request, TNext next, CancellationToken cancellationToken = default)
+        where TNext : struct, IPipelineContinuation<MutableRequest, string>
     {
         PipelineExecutionTracker.RecordExecution(nameof(RequestModifyingBehavior));
 
@@ -35,8 +34,6 @@ public class RequestModifyingBehavior : IPipelineBehavior<MutableRequest, string
         request.Value *= 10;
         request.Text = $"Modified {request.Text}";
 
-        return await NextPipeline(request, cancellationToken);
+        return await next.InvokeAsync(request, cancellationToken);
     }
-
-    public PipelineHandlerDelegate<MutableRequest, string> NextPipeline { get; set; } = null!;
 }

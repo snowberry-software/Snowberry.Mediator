@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<IsPackable>false</IsPackable>
+	</PropertyGroup>
+
+	<!-- The Aspire service defaults brings in the ASP.NET Core shared framework so the same defaults
+	     apply to both web apps and workers (health-check endpoint mapping is a no-op without a server). -->
+	<ItemGroup>
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="10.6.0" />
+		<PackageReference Include="Microsoft.Extensions.ServiceDiscovery" Version="10.6.0" />
+		<PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.3" />
+		<PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.15.3" />
+		<PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.2" />
+		<PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.15.1" />
+		<PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.1" />
+	</ItemGroup>
+
+	<!-- The Microsoft.Extensions.DependencyInjection integration brings in the Snowberry.Mediator
+	     OpenTelemetry tracer/meter subscription extensions used by ConfigureOpenTelemetry. -->
+	<ItemGroup>
+		<ProjectReference Include="..\..\src\Snowberry.Mediator.Extensions.OpenTelemetry\Snowberry.Mediator.Extensions.OpenTelemetry.csproj" />
+	</ItemGroup>
+
+</Project>

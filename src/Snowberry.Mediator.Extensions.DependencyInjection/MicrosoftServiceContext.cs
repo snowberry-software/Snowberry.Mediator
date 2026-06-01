@@ -10,9 +10,15 @@ namespace Snowberry.Mediator.Extensions.DependencyInjection;
 /// An implementation of <see cref="IServiceContext"/> that uses <see cref="IServiceCollection"/> to register services.
 /// </summary>
 /// <param name="serviceCollection">The service collection.</param>
-internal class MicrosoftServiceContext(IServiceCollection serviceCollection) : IServiceContext
+public class MicrosoftServiceContext(IServiceCollection serviceCollection) : IServiceContext
 {
     private readonly IServiceCollection _serviceCollection = serviceCollection;
+
+    /// <summary>Creates an <see cref="IServiceContext"/> over the given <see cref="IServiceCollection"/>.</summary>
+    /// <remarks>Used by the Snowberry.Mediator source generator to build the registration context.</remarks>
+    /// <param name="serviceCollection">The service collection.</param>
+    /// <returns>The service context.</returns>
+    public static IServiceContext Create(IServiceCollection serviceCollection) => new MicrosoftServiceContext(serviceCollection);
 
     /// <inheritdoc/>
     public bool IsServiceRegistered<T>()

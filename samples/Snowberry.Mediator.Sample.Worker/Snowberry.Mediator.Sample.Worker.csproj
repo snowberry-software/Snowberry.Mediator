@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<IsPackable>false</IsPackable>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Snowberry.Mediator.Sample.ServiceDefaults\Snowberry.Mediator.Sample.ServiceDefaults.csproj" />
+		<ProjectReference Include="..\..\src\Snowberry.Mediator\Snowberry.Mediator.csproj" />
+		<ProjectReference Include="..\..\src\Snowberry.Mediator.Abstractions\Snowberry.Mediator.Abstractions.csproj" />
+		<ProjectReference Include="..\..\src\Snowberry.Mediator.Extensions.DependencyInjection\Snowberry.Mediator.Extensions.DependencyInjection.csproj" />
+		<ProjectReference Include="..\..\src\Snowberry.Mediator.Extensions.OpenTelemetry\Snowberry.Mediator.Extensions.OpenTelemetry.csproj" />
+		<ProjectReference Include="..\..\src\Snowberry.Mediator.SourceGenerator\Snowberry.Mediator.SourceGenerator.csproj"
+		                  OutputItemType="Analyzer"
+		                  ReferenceOutputAssembly="false" />
+	</ItemGroup>
+
+</Project>

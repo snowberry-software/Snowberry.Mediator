@@ -9,11 +9,19 @@
 
 		<!-- Package -->
 		<Description>The abstractions required for the main package.</Description>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
 	</PropertyGroup>
+
+	<ItemGroup>
+		<None Include="README.md">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+	</ItemGroup>
 
 	<ItemGroup Condition="$(TargetFramework) == 'netstandard2.0'">
 		<PackageReference Include="System.Threading.Tasks.Extensions" Version="4.6.3" />
-		<PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="10.0.0" />
+		<PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="10.0.6" />
 	</ItemGroup>
 
 	<Import Project="../NuGetPackage.props" />

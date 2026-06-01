@@ -17,181 +17,59 @@ namespace Snowberry.Mediator.Tests;
 public class Snowberry_NotificationTests : Common.MediatorTestBase
 {
     [Fact]
-    public async Task Test_SimpleNotification_SingleConcreteHandler()
+    public async Task Test_ConcurrentNotificationPublishing()
     {
         // Clean up static state
-        SimpleNotificationHandler.ClearReceivedNotifications();
-
-        using var serviceContainer = new ServiceContainer();
-        serviceContainer.AddSnowberryMediator(options =>
-        {
-            options.Assemblies = [typeof(SimpleNotification).Assembly];
-            // Only register specific concrete handlers
-            options.NotificationHandlerTypes = [typeof(SimpleNotificationHandler)];
-        }, serviceLifetime: ServiceLifetime.Scoped);
-
-        var mediator = serviceContainer.GetRequiredService<IMediator>();
-
-        var notification = new SimpleNotification
-        {
-            Message = "Test notification",
-            Value = 42
-        };
-
-        await mediator.PublishAsync(notification, CancellationToken.None);
-
-        // Verify only the registered handler was executed
-        var executions = NotificationHandlerExecutionTracker.GetExecutions();
-        Assert.Single(executions);
-        Assert.Contains(nameof(SimpleNotificationHandler), executions);
-
-        // Verify notification was received
-        Assert.Single(SimpleNotificationHandler.ReceivedNotifications);
-        var receivedNotification = SimpleNotificationHandler.ReceivedNotifications.First();
-        Assert.Equal(notification.Message, receivedNotification.Message);
-        Assert.Equal(notification.Value, receivedNotification.Value);
-    }
-
-    [Fact]
-    public async Task Test_SimpleNotification_MultipleConcreteHandlers()
-    {
-        // Clean up static state
-        SimpleNotificationHandler.ClearReceivedNotifications();
-        AnotherSimpleNotificationHandler.ResetExecutionCount();
-
-        using var serviceContainer = new ServiceContainer();
-        serviceContainer.AddSnowberryMediator(options =>
-        {
-            options.Assemblies = [typeof(SimpleNotification).Assembly];
-            // Register multiple concrete handlers explicitly
-            options.NotificationHandlerTypes = [
-                typeof(SimpleNotificationHandler),
-                typeof(AnotherSimpleNotificationHandler)
-            ];
-        }, serviceLifetime: ServiceLifetime.Scoped);
-
-        var mediator = serviceContainer.GetRequiredService<IMediator>();
-
-        var notification = new SimpleNotification
-        {
-            Message = "Multiple handlers test",
-            Value = 123
-        };
-
-        await mediator.PublishAsync(notification, CancellationToken.None);
-
-        // Verify both registered handlers were executed
-        var executions = NotificationHandlerExecutionTracker.GetExecutions();
-        Assert.Equal(2, executions.Count);
-        Assert.Contains(nameof(SimpleNotificationHandler), executions);
-        Assert.Contains(nameof(AnotherSimpleNotificationHandler), executions);
-
-        // Verify each handler processed the notification
-        Assert.Single(SimpleNotificationHandler.ReceivedNotifications);
-        Assert.Equal(1, AnotherSimpleNotificationHandler.ExecutionCount);
-
-        var receivedNotification = SimpleNotificationHandler.ReceivedNotifications.First();
-        Assert.Equal(notification.Message, receivedNotification.Message);
-        Assert.Equal(notification.Value, receivedNotification.Value);
-    }
-
-    [Fact]
-    public async Task Test_UserRegisteredNotification_MultipleConcreteHandlers()
-    {
-        // Clean up static state
-        UserRegisteredNotificationHandler.ClearProcessedUsers();
-        UserRegistrationEmailHandler.ClearEmailsSent();
-
-        using var serviceContainer = new ServiceContainer();
-        serviceContainer.AddSnowberryMediator(options =>
-        {
-            options.Assemblies = [typeof(UserRegisteredNotification).Assembly];
-            // Register specific domain handlers
-            options.NotificationHandlerTypes = [
-                typeof(UserRegisteredNotificationHandler),
-                typeof(UserRegistrationEmailHandler)
-            ];
-        }, serviceLifetime: ServiceLifetime.Scoped);
-
-        var mediator = serviceContainer.GetRequiredService<IMediator>();
-
-        var notification = new UserRegisteredNotification
-        {
-            UserId = "user123",
-            Email = "test@example.com",
-            Name = "John Doe"
-        };
-
-        await mediator.PublishAsync(notification, CancellationToken.None);
-
-        // Verify both domain-specific handlers executed
-        var executions = NotificationHandlerExecutionTracker.GetExecutions();
-        Assert.Equal(2, executions.Count);
-        Assert.Contains(nameof(UserRegisteredNotificationHandler), executions);
-        Assert.Contains(nameof(UserRegistrationEmailHandler), executions);
-
-        // Verify business logic was executed
-        Assert.Single(UserRegisteredNotificationHandler.ProcessedUsers);
-        Assert.Single(UserRegistrationEmailHandler.EmailsSent);
-
-        var processedUser = UserRegisteredNotificationHandler.ProcessedUsers.First();
-        Assert.Equal(notification.UserId, processedUser.UserId);
-        Assert.Equal(notification.Email, processedUser.Email);
-        Assert.Equal(notification.Name, processedUser.Name);
-
-        string emailSent = UserRegistrationEmailHandler.EmailsSent.First();
-        Assert.Contains(notification.Email, emailSent);
-    }
-
-    [Fact]
-    public async Task Test_OpenGenericHandlers_SingleNotification()
-    {
-        // Clean up static state
-        GenericLoggingHandler<SimpleNotification>.ClearLoggedNotifications();
-        GenericAuditingHandler<SimpleNotification>.ClearAuditLog();
         GenericMetricsHandler<SimpleNotification>.ClearMetrics();
+        GenericLoggingHandler<SimpleNotification>.ClearLoggedNotifications();
 
         using var serviceContainer = new ServiceContainer();
         serviceContainer.AddSnowberryMediator(options =>
         {
             options.Assemblies = [typeof(SimpleNotification).Assembly];
-            // Register only open generic notification handlers
+            // Register only generic handlers for cleaner concurrent test
             options.NotificationHandlerTypes = [
-                typeof(GenericLoggingHandler<>),
-                typeof(GenericAuditingHandler<>),
-                typeof(GenericMetricsHandler<>)
+                typeof(GenericMetricsHandler<>),
+                typeof(GenericLoggingHandler<>)
             ];
-        }, serviceLifetime: ServiceLifetime.Scoped);
+        }, serviceLifetime: ServiceLifetime.Singleton);
 
         var mediator = serviceContainer.GetRequiredService<IMediator>();
 
-        var notification = new SimpleNotification
+        var tasks = new List<Task>();
+
+        // Publish 5 notifications concurrently
+        for (int i = 0; i < 5; i++)
         {
-            Message = "Generic handlers test",
-            Value = 999
-        };
+            int index = i;
+            tasks.Add(Task.Run(async () =>
+            {
+                var notification = new SimpleNotification
+                {
+                    Message = $"Concurrent test {index}",
+                    Value = index
+                };
 
-        await mediator.PublishAsync(notification, CancellationToken.None);
+                await mediator.PublishAsync(notification, CancellationToken.None);
+            }));
+        }
 
-        // Should only execute the 3 registered generic handlers
+        await Task.WhenAll(tasks);
+
+        // With thread-safe collections, we should get exact counts
         var executions = NotificationHandlerExecutionTracker.GetExecutions();
-        Assert.Equal(3, executions.Count);
+        Assert.Equal(10, executions.Count); // Exactly 2 handlers ï¿½ 5 notifications
 
-        // Verify generic handlers executed
-        Assert.Contains("GenericLoggingHandler<SimpleNotification>", executions);
-        Assert.Contains("GenericAuditingHandler<SimpleNotification>", executions);
-        Assert.Contains("GenericMetricsHandler<SimpleNotification>", executions);
+        int metricsCount = executions.Count(e => e == "GenericMetricsHandler<SimpleNotification>");
+        int loggingCount = executions.Count(e => e == "GenericLoggingHandler<SimpleNotification>");
 
-        // Verify no concrete handlers executed (they weren't registered)
-        Assert.DoesNotContain(nameof(SimpleNotificationHandler), executions);
-        Assert.DoesNotContain(nameof(AnotherSimpleNotificationHandler), executions);
+        // Each notification should have been processed by both handlers
+        Assert.Equal(5, metricsCount);
+        Assert.Equal(5, loggingCount);
 
-        // Verify each generic handler processed the notification correctly
-        Assert.Single(GenericLoggingHandler<SimpleNotification>.LoggedNotifications);
-        Assert.Contains("SimpleNotification", GenericAuditingHandler<SimpleNotification>.AuditLog.Keys);
-        Assert.Single(GenericAuditingHandler<SimpleNotification>.AuditLog["SimpleNotification"]);
-        Assert.Equal(1, GenericMetricsHandler<SimpleNotification>.NotificationCounts["SimpleNotification"]);
-        Assert.True(GenericMetricsHandler<SimpleNotification>.LastProcessedTimes.ContainsKey("SimpleNotification"));
+        // Verify metrics were collected properly with thread-safe collections
+        Assert.Equal(5, GenericMetricsHandler<SimpleNotification>.NotificationCounts["SimpleNotification"]);
+        Assert.Equal(5, GenericLoggingHandler<SimpleNotification>.LoggedNotifications.Count);
     }
 
     [Fact]
@@ -289,7 +167,7 @@ public class Snowberry_NotificationTests : Common.MediatorTestBase
 
         // Verify generic handlers processed both notification types
         var executions = NotificationHandlerExecutionTracker.GetExecutions();
-        Assert.Equal(4, executions.Count); // 2 notifications × 2 generic handlers each
+        Assert.Equal(4, executions.Count); // 2 notifications ï¿½ 2 generic handlers each
 
         Assert.Contains("GenericLoggingHandler<UserRegisteredNotification>", executions);
         Assert.Contains("GenericLoggingHandler<OrderCompletedNotification>", executions);
@@ -303,37 +181,120 @@ public class Snowberry_NotificationTests : Common.MediatorTestBase
     }
 
     [Fact]
-    public async Task Test_OnlyGenericHandlers_MultipleTypes()
+    public async Task Test_MultipleNotificationTypes_SeparateHandlers()
     {
         // Clean up static state
-        GenericLoggingHandler<SimpleNotification>.ClearLoggedNotifications();
-        GenericLoggingHandler<SystemEventNotification>.ClearLoggedNotifications();
+        UserRegisteredNotificationHandler.ClearProcessedUsers();
+        UserRegistrationEmailHandler.ClearEmailsSent();
+        OrderCompletionHandler.Reset();
+        SystemEventLoggingHandler.ClearLoggedEvents();
 
         using var serviceContainer = new ServiceContainer();
         serviceContainer.AddSnowberryMediator(options =>
         {
-            options.Assemblies = [typeof(SimpleNotification).Assembly];
-            // Register only one generic handler type
-            options.NotificationHandlerTypes = [typeof(GenericLoggingHandler<>)];
+            options.Assemblies = [typeof(UserRegisteredNotification).Assembly];
+            // Register specific handlers for different notification types
+            options.NotificationHandlerTypes = [
+                typeof(UserRegisteredNotificationHandler),
+                typeof(UserRegistrationEmailHandler),
+                typeof(OrderCompletionHandler),
+                typeof(SystemEventLoggingHandler)
+            ];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
         var mediator = serviceContainer.GetRequiredService<IMediator>();
 
-        var simpleNotification = new SimpleNotification { Message = "Only generic test", Value = 1 };
-        var systemNotification = new SystemEventNotification { EventType = "Test", Description = "Generic only" };
+        // Send different notification types
+        var userNotification = new UserRegisteredNotification
+        {
+            UserId = "user456",
+            Email = "test@domain.com",
+            Name = "Jane Smith"
+        };
 
-        await mediator.PublishAsync(simpleNotification, CancellationToken.None);
+        var orderNotification = new OrderCompletedNotification
+        {
+            OrderId = "order789",
+            Amount = 99.99m,
+            CustomerId = "customer123"
+        };
+
+        var systemNotification = new SystemEventNotification
+        {
+            EventType = "SystemStartup",
+            Description = "Application started successfully"
+        };
+
+        await mediator.PublishAsync(userNotification, CancellationToken.None);
+        await mediator.PublishAsync(orderNotification, CancellationToken.None);
         await mediator.PublishAsync(systemNotification, CancellationToken.None);
 
-        // Should only execute generic handlers
+        // Verify appropriate handlers executed for each notification type
         var executions = NotificationHandlerExecutionTracker.GetExecutions();
-        Assert.Equal(2, executions.Count);
-        Assert.Contains("GenericLoggingHandler<SimpleNotification>", executions);
-        Assert.Contains("GenericLoggingHandler<SystemEventNotification>", executions);
+        Assert.Equal(4, executions.Count); // UserRegistered (2) + Order (1) + System (1)
 
-        // Verify no concrete handlers executed
-        Assert.DoesNotContain(nameof(SimpleNotificationHandler), executions);
-        Assert.DoesNotContain(nameof(SystemEventLoggingHandler), executions);
+        // User notification handlers
+        Assert.Contains(nameof(UserRegisteredNotificationHandler), executions);
+        Assert.Contains(nameof(UserRegistrationEmailHandler), executions);
+
+        // Order notification handler
+        Assert.Contains(nameof(OrderCompletionHandler), executions);
+
+        // System event handler
+        Assert.Contains(nameof(SystemEventLoggingHandler), executions);
+
+        // Verify each handler processed the correct notification
+        Assert.Single(UserRegisteredNotificationHandler.ProcessedUsers);
+        Assert.Single(UserRegistrationEmailHandler.EmailsSent);
+        Assert.Single(OrderCompletionHandler.CompletedOrders);
+        Assert.Single(SystemEventLoggingHandler.LoggedEvents);
+    }
+
+    [Fact]
+    public async Task Test_NoHandlersRegistered_ThrowsException()
+    {
+        using var serviceContainer = new ServiceContainer();
+        serviceContainer.AddSnowberryMediator(options =>
+        {
+            options.Assemblies = [typeof(SimpleNotification).Assembly];
+            // Don't register any handlers
+            options.NotificationHandlerTypes = [];
+        }, serviceLifetime: ServiceLifetime.Scoped);
+
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
+
+        var notification = new SimpleNotification { Message = "No handlers", Value = 0 };
+
+        // Should throw when no handlers are registered for the notification
+        await Assert.ThrowsAsync<Abstractions.Exceptions.NotificationHandlerNotFoundException>(async () =>
+        {
+            await mediator.PublishAsync(notification, CancellationToken.None);
+        });
+    }
+
+    [Fact]
+    public async Task Test_NotificationCancellation()
+    {
+        using var serviceContainer = new ServiceContainer();
+        serviceContainer.AddSnowberryMediator(options =>
+        {
+            options.Assemblies = [typeof(SimpleNotification).Assembly];
+            // Register one handler for cancellation test
+            options.NotificationHandlerTypes = [typeof(SimpleNotificationHandler)];
+        }, serviceLifetime: ServiceLifetime.Scoped);
+
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
+
+        var notification = new SimpleNotification { Message = "Cancellation test", Value = 0 };
+
+        using var cts = new CancellationTokenSource();
+        cts.Cancel(); // Pre-cancel
+
+        // Should respect cancellation token
+        await Assert.ThrowsAsync<OperationCanceledException>(async () =>
+        {
+            await mediator.PublishAsync(notification, cts.Token);
+        });
     }
 
     [Fact]
@@ -479,7 +440,7 @@ public class Snowberry_NotificationTests : Common.MediatorTestBase
 
         // Should have executed both handler types for each notification
         var executions = NotificationHandlerExecutionTracker.GetExecutions();
-        Assert.Equal(6, executions.Count); // 2 handlers × 3 notifications
+        Assert.Equal(6, executions.Count); // 2 handlers ï¿½ 3 notifications
 
         // Verify both handler types were called for each notification
         Assert.Equal(3, executions.Count(e => e == nameof(SimpleNotificationHandler)));
@@ -491,84 +452,88 @@ public class Snowberry_NotificationTests : Common.MediatorTestBase
     }
 
     [Fact]
-    public async Task Test_ConcurrentNotificationPublishing()
+    public async Task Test_OnlyGenericHandlers_MultipleTypes()
     {
         // Clean up static state
-        GenericMetricsHandler<SimpleNotification>.ClearMetrics();
         GenericLoggingHandler<SimpleNotification>.ClearLoggedNotifications();
+        GenericLoggingHandler<SystemEventNotification>.ClearLoggedNotifications();
 
         using var serviceContainer = new ServiceContainer();
         serviceContainer.AddSnowberryMediator(options =>
         {
             options.Assemblies = [typeof(SimpleNotification).Assembly];
-            // Register only generic handlers for cleaner concurrent test
-            options.NotificationHandlerTypes = [
-                typeof(GenericMetricsHandler<>),
-                typeof(GenericLoggingHandler<>)
-            ];
-        }, serviceLifetime: ServiceLifetime.Singleton);
-
-        var mediator = serviceContainer.GetRequiredService<IMediator>();
-
-        var tasks = new List<Task>();
-
-        // Publish 5 notifications concurrently
-        for (int i = 0; i < 5; i++)
-        {
-            int index = i;
-            tasks.Add(Task.Run(async () =>
-            {
-                var notification = new SimpleNotification
-                {
-                    Message = $"Concurrent test {index}",
-                    Value = index
-                };
-
-                await mediator.PublishAsync(notification, CancellationToken.None);
-            }));
-        }
-
-        await Task.WhenAll(tasks);
-
-        // With thread-safe collections, we should get exact counts
-        var executions = NotificationHandlerExecutionTracker.GetExecutions();
-        Assert.Equal(10, executions.Count); // Exactly 2 handlers × 5 notifications
-
-        int metricsCount = executions.Count(e => e == "GenericMetricsHandler<SimpleNotification>");
-        int loggingCount = executions.Count(e => e == "GenericLoggingHandler<SimpleNotification>");
-
-        // Each notification should have been processed by both handlers
-        Assert.Equal(5, metricsCount);
-        Assert.Equal(5, loggingCount);
-
-        // Verify metrics were collected properly with thread-safe collections
-        Assert.Equal(5, GenericMetricsHandler<SimpleNotification>.NotificationCounts["SimpleNotification"]);
-        Assert.Equal(5, GenericLoggingHandler<SimpleNotification>.LoggedNotifications.Count);
-    }
-
-    [Fact]
-    public async Task Test_NotificationCancellation()
-    {
-        using var serviceContainer = new ServiceContainer();
-        serviceContainer.AddSnowberryMediator(options =>
-        {
-            options.Assemblies = [typeof(SimpleNotification).Assembly];
-            // Register one handler for cancellation test
-            options.NotificationHandlerTypes = [typeof(SimpleNotificationHandler)];
+            // Register only one generic handler type
+            options.NotificationHandlerTypes = [typeof(GenericLoggingHandler<>)];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
         var mediator = serviceContainer.GetRequiredService<IMediator>();
 
-        var notification = new SimpleNotification { Message = "Cancellation test", Value = 0 };
+        var simpleNotification = new SimpleNotification { Message = "Only generic test", Value = 1 };
+        var systemNotification = new SystemEventNotification { EventType = "Test", Description = "Generic only" };
 
-        using var cts = new CancellationTokenSource();
-        cts.Cancel(); // Pre-cancel
+        await mediator.PublishAsync(simpleNotification, CancellationToken.None);
+        await mediator.PublishAsync(systemNotification, CancellationToken.None);
 
-        // Should respect cancellation token
-        await Assert.ThrowsAsync<OperationCanceledException>(async () =>
+        // Should only execute generic handlers
+        var executions = NotificationHandlerExecutionTracker.GetExecutions();
+        Assert.Equal(2, executions.Count);
+        Assert.Contains("GenericLoggingHandler<SimpleNotification>", executions);
+        Assert.Contains("GenericLoggingHandler<SystemEventNotification>", executions);
+
+        // Verify no concrete handlers executed
+        Assert.DoesNotContain(nameof(SimpleNotificationHandler), executions);
+        Assert.DoesNotContain(nameof(SystemEventLoggingHandler), executions);
+    }
+
+    [Fact]
+    public async Task Test_OpenGenericHandlers_SingleNotification()
+    {
+        // Clean up static state
+        GenericLoggingHandler<SimpleNotification>.ClearLoggedNotifications();
+        GenericAuditingHandler<SimpleNotification>.ClearAuditLog();
+        GenericMetricsHandler<SimpleNotification>.ClearMetrics();
+
+        using var serviceContainer = new ServiceContainer();
+        serviceContainer.AddSnowberryMediator(options =>
         {
-            await mediator.PublishAsync(notification, cts.Token);
-        });
+            options.Assemblies = [typeof(SimpleNotification).Assembly];
+            // Register only open generic notification handlers
+            options.NotificationHandlerTypes = [
+                typeof(GenericLoggingHandler<>),
+                typeof(GenericAuditingHandler<>),
+                typeof(GenericMetricsHandler<>)
+            ];
+        }, serviceLifetime: ServiceLifetime.Scoped);
+
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
+
+        var notification = new SimpleNotification
+        {
+            Message = "Generic handlers test",
+            Value = 999
+        };
+
+        await mediator.PublishAsync(notification, CancellationToken.None);
+
+        // Should only execute the 3 registered generic handlers
+        var executions = NotificationHandlerExecutionTracker.GetExecutions();
+        Assert.Equal(3, executions.Count);
+
+        // Verify generic handlers executed
+        Assert.Contains("GenericLoggingHandler<SimpleNotification>", executions);
+        Assert.Contains("GenericAuditingHandler<SimpleNotification>", executions);
+        Assert.Contains("GenericMetricsHandler<SimpleNotification>", executions);
+
+        // Verify no concrete handlers executed (they weren't registered)
+        Assert.DoesNotContain(nameof(SimpleNotificationHandler), executions);
+        Assert.DoesNotContain(nameof(AnotherSimpleNotificationHandler), executions);
+
+        // Verify each generic handler processed the notification correctly
+        Assert.Single(GenericLoggingHandler<SimpleNotification>.LoggedNotifications);
+        Assert.Contains("SimpleNotification", GenericAuditingHandler<SimpleNotification>.AuditLog.Keys);
+        Assert.Single(GenericAuditingHandler<SimpleNotification>.AuditLog["SimpleNotification"]);
+        Assert.Equal(1, GenericMetricsHandler<SimpleNotification>.NotificationCounts["SimpleNotification"]);
+        Assert.True(GenericMetricsHandler<SimpleNotification>.LastProcessedTimes.ContainsKey("SimpleNotification"));
     }
 
     [Fact]
@@ -618,95 +583,130 @@ public class Snowberry_NotificationTests : Common.MediatorTestBase
     }
 
     [Fact]
-    public async Task Test_MultipleNotificationTypes_SeparateHandlers()
+    public async Task Test_SimpleNotification_MultipleConcreteHandlers()
     {
         // Clean up static state
-        UserRegisteredNotificationHandler.ClearProcessedUsers();
-        UserRegistrationEmailHandler.ClearEmailsSent();
-        OrderCompletionHandler.Reset();
-        SystemEventLoggingHandler.ClearLoggedEvents();
+        SimpleNotificationHandler.ClearReceivedNotifications();
+        AnotherSimpleNotificationHandler.ResetExecutionCount();
 
         using var serviceContainer = new ServiceContainer();
         serviceContainer.AddSnowberryMediator(options =>
         {
-            options.Assemblies = [typeof(UserRegisteredNotification).Assembly];
-            // Register specific handlers for different notification types
+            options.Assemblies = [typeof(SimpleNotification).Assembly];
+            // Register multiple concrete handlers explicitly
             options.NotificationHandlerTypes = [
-                typeof(UserRegisteredNotificationHandler),
-                typeof(UserRegistrationEmailHandler),
-                typeof(OrderCompletionHandler),
-                typeof(SystemEventLoggingHandler)
+                typeof(SimpleNotificationHandler),
+                typeof(AnotherSimpleNotificationHandler)
             ];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
         var mediator = serviceContainer.GetRequiredService<IMediator>();
 
-        // Send different notification types
-        var userNotification = new UserRegisteredNotification
+        var notification = new SimpleNotification
         {
-            UserId = "user456",
-            Email = "test@domain.com",
-            Name = "Jane Smith"
+            Message = "Multiple handlers test",
+            Value = 123
         };
 
-        var orderNotification = new OrderCompletedNotification
-        {
-            OrderId = "order789",
-            Amount = 99.99m,
-            CustomerId = "customer123"
-        };
+        await mediator.PublishAsync(notification, CancellationToken.None);
 
-        var systemNotification = new SystemEventNotification
-        {
-            EventType = "SystemStartup",
-            Description = "Application started successfully"
-        };
-
-        await mediator.PublishAsync(userNotification, CancellationToken.None);
-        await mediator.PublishAsync(orderNotification, CancellationToken.None);
-        await mediator.PublishAsync(systemNotification, CancellationToken.None);
-
-        // Verify appropriate handlers executed for each notification type
+        // Verify both registered handlers were executed
         var executions = NotificationHandlerExecutionTracker.GetExecutions();
-        Assert.Equal(4, executions.Count); // UserRegistered (2) + Order (1) + System (1)
+        Assert.Equal(2, executions.Count);
+        Assert.Contains(nameof(SimpleNotificationHandler), executions);
+        Assert.Contains(nameof(AnotherSimpleNotificationHandler), executions);
 
-        // User notification handlers
-        Assert.Contains(nameof(UserRegisteredNotificationHandler), executions);
-        Assert.Contains(nameof(UserRegistrationEmailHandler), executions);
+        // Verify each handler processed the notification
+        Assert.Single(SimpleNotificationHandler.ReceivedNotifications);
+        Assert.Equal(1, AnotherSimpleNotificationHandler.ExecutionCount);
 
-        // Order notification handler
-        Assert.Contains(nameof(OrderCompletionHandler), executions);
-
-        // System event handler
-        Assert.Contains(nameof(SystemEventLoggingHandler), executions);
-
-        // Verify each handler processed the correct notification
-        Assert.Single(UserRegisteredNotificationHandler.ProcessedUsers);
-        Assert.Single(UserRegistrationEmailHandler.EmailsSent);
-        Assert.Single(OrderCompletionHandler.CompletedOrders);
-        Assert.Single(SystemEventLoggingHandler.LoggedEvents);
+        var receivedNotification = SimpleNotificationHandler.ReceivedNotifications.First();
+        Assert.Equal(notification.Message, receivedNotification.Message);
+        Assert.Equal(notification.Value, receivedNotification.Value);
     }
 
     [Fact]
-    public async Task Test_NoHandlersRegistered_ThrowsException()
+    public async Task Test_SimpleNotification_SingleConcreteHandler()
     {
+        // Clean up static state
+        SimpleNotificationHandler.ClearReceivedNotifications();
+
         using var serviceContainer = new ServiceContainer();
         serviceContainer.AddSnowberryMediator(options =>
         {
             options.Assemblies = [typeof(SimpleNotification).Assembly];
-            // Don't register any handlers
-            options.NotificationHandlerTypes = [];
+            // Only register specific concrete handlers
+            options.NotificationHandlerTypes = [typeof(SimpleNotificationHandler)];
         }, serviceLifetime: ServiceLifetime.Scoped);
 
         var mediator = serviceContainer.GetRequiredService<IMediator>();
 
-        var notification = new SimpleNotification { Message = "No handlers", Value = 0 };
-
-        // Should throw when no handlers are registered for the notification
-        await Assert.ThrowsAsync<Abstractions.Exceptions.NotificationHandlerNotFoundException>(async () =>
+        var notification = new SimpleNotification
         {
-            await mediator.PublishAsync(notification, CancellationToken.None);
-        });
+            Message = "Test notification",
+            Value = 42
+        };
+
+        await mediator.PublishAsync(notification, CancellationToken.None);
+
+        // Verify only the registered handler was executed
+        var executions = NotificationHandlerExecutionTracker.GetExecutions();
+        Assert.Single(executions);
+        Assert.Contains(nameof(SimpleNotificationHandler), executions);
+
+        // Verify notification was received
+        Assert.Single(SimpleNotificationHandler.ReceivedNotifications);
+        var receivedNotification = SimpleNotificationHandler.ReceivedNotifications.First();
+        Assert.Equal(notification.Message, receivedNotification.Message);
+        Assert.Equal(notification.Value, receivedNotification.Value);
+    }
+
+    [Fact]
+    public async Task Test_UserRegisteredNotification_MultipleConcreteHandlers()
+    {
+        // Clean up static state
+        UserRegisteredNotificationHandler.ClearProcessedUsers();
+        UserRegistrationEmailHandler.ClearEmailsSent();
+
+        using var serviceContainer = new ServiceContainer();
+        serviceContainer.AddSnowberryMediator(options =>
+        {
+            options.Assemblies = [typeof(UserRegisteredNotification).Assembly];
+            // Register specific domain handlers
+            options.NotificationHandlerTypes = [
+                typeof(UserRegisteredNotificationHandler),
+                typeof(UserRegistrationEmailHandler)
+            ];
+        }, serviceLifetime: ServiceLifetime.Scoped);
+
+        var mediator = serviceContainer.GetRequiredService<IMediator>();
+
+        var notification = new UserRegisteredNotification
+        {
+            UserId = "user123",
+            Email = "test@example.com",
+            Name = "John Doe"
+        };
+
+        await mediator.PublishAsync(notification, CancellationToken.None);
+
+        // Verify both domain-specific handlers executed
+        var executions = NotificationHandlerExecutionTracker.GetExecutions();
+        Assert.Equal(2, executions.Count);
+        Assert.Contains(nameof(UserRegisteredNotificationHandler), executions);
+        Assert.Contains(nameof(UserRegistrationEmailHandler), executions);
+
+        // Verify business logic was executed
+        Assert.Single(UserRegisteredNotificationHandler.ProcessedUsers);
+        Assert.Single(UserRegistrationEmailHandler.EmailsSent);
+
+        var processedUser = UserRegisteredNotificationHandler.ProcessedUsers.First();
+        Assert.Equal(notification.UserId, processedUser.UserId);
+        Assert.Equal(notification.Email, processedUser.Email);
+        Assert.Equal(notification.Name, processedUser.Name);
+
+        string emailSent = UserRegistrationEmailHandler.EmailsSent.First();
+        Assert.Contains(notification.Email, emailSent);
     }
 }
 

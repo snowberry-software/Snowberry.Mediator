@@ -1,6 +1,5 @@
 name: .NET
 
-# Trigger this workflow on a push, or pull request to the master or develop branch
 on:
   push:
   pull_request:
@@ -11,18 +10,40 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      # Keep Verify deterministic in CI (do not launch a diff tool on snapshot mismatch).
+      DiffEngine_Disabled: "true"
     steps:
       - uses: actions/checkout@v3
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: | 
+          dotnet-version: |
             9.x
             10.x
+      - name: Resolve build configuration
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF_TYPE}" == "tag" || "${GITHUB_REF_NAME}" == "main" || "${GITHUB_REF_NAME}" == "master" || "${GITHUB_REF_NAME}" == release/* ]]; then
+            echo "BUILD_CONFIGURATION=Release" >> "$GITHUB_ENV"
+          else
+            echo "BUILD_CONFIGURATION=Debug" >> "$GITHUB_ENV"
+          fi
+      - name: Restore
+        run: dotnet restore src/Snowberry.Mediator.slnx -m:1
       - name: Build
-        run: ./build.sh Compile
-      - name: Test
-        run: ./build.sh Test
+        run: dotnet build src/Snowberry.Mediator.slnx --configuration "$BUILD_CONFIGURATION" --no-restore -m:1
+      - name: Test mediator
+        run: dotnet test src/Snowberry.Mediator.Tests/Snowberry.Mediator.Tests.csproj --framework net10.0 --configuration "$BUILD_CONFIGURATION" --no-build --no-restore
+      - name: Test source generator
+        run: dotnet test src/Snowberry.Mediator.SourceGenerator.Tests/Snowberry.Mediator.SourceGenerator.Tests.csproj --framework net10.0 --configuration "$BUILD_CONFIGURATION" --no-build --no-restore
+      # Native AOT smoke test: proves the source-generated registration path runs with no dynamic code.
+      - name: Install Native AOT prerequisites
+        run: sudo apt-get update && sudo apt-get install -y clang zlib1g-dev
+      - name: Publish AOT sample
+        run: dotnet publish samples/Snowberry.Mediator.SourceGenerator.Sample/Snowberry.Mediator.SourceGenerator.Sample.csproj -c Release -r linux-x64
+      - name: Run AOT sample
+        run: ./samples/Snowberry.Mediator.SourceGenerator.Sample/bin/Release/net10.0/linux-x64/publish/Snowberry.Mediator.SourceGenerator.Sample
 
   deploy:
     runs-on: ubuntu-latest
@@ -39,5 +60,21 @@ jobs:
           dotnet-version: |
             9.x
             10.x
-      - name: Deploy
-        run: ./build.sh DeployNuGet -Configuration Release -NuGetPackageFilter Snowberry.Mediator.*.nupkg
+      - name: Pack
+        shell: bash
+        run: |
+          rm -rf Artifacts
+          dotnet pack src/Snowberry.Mediator.slnx --configuration Release --output Artifacts -p:GeneratePackageOnBuild=false -m:1
+      - name: Push packages
+        shell: bash
+        run: |
+          shopt -s nullglob
+          packages=(Artifacts/Snowberry.Mediator.*.nupkg)
+          if (( ${#packages[@]} == 0 )); then
+            echo "No packages matched Artifacts/Snowberry.Mediator.*.nupkg"
+            exit 1
+          fi
+
+          for package in "${packages[@]}"; do
+            dotnet nuget push "$package" --api-key "$NUGET_KEY" --source https://api.nuget.org/v3/index.json --skip-duplicate
+          done

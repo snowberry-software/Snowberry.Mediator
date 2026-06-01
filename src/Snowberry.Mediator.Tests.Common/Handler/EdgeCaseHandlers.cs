@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Snowberry.Mediator.Abstractions.Handler;
 using Snowberry.Mediator.Tests.Common.Requests;
 
@@ -27,7 +28,7 @@ public class ExceptionThrowingRequestHandler : IRequestHandler<ExceptionThrowing
 
 public class ExceptionThrowingStreamHandler : IStreamRequestHandler<ExceptionThrowingStreamRequest, int>
 {
-    public async IAsyncEnumerable<int> HandleAsync(ExceptionThrowingStreamRequest request, CancellationToken cancellationToken = default)
+    public async IAsyncEnumerable<int> HandleAsync(ExceptionThrowingStreamRequest request, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         for (int i = 1; i <= request.ThrowAfterCount; i++)
         {
@@ -51,22 +52,21 @@ public class LargeDataRequestHandler : IRequestHandler<LargeDataRequest, int>
 
 public class ConcurrentTestRequestHandler : IRequestHandler<ConcurrentTestRequest, string>
 {
+    private static readonly object s_Lock = new();
     private static readonly Random s_Random = new();
-
-    private static readonly object _lock = new();
-    private static int _processingCounter = 0;
+    private static int s_ProcessingCounter = 0;
 
     public async ValueTask<string> HandleAsync(ConcurrentTestRequest request, CancellationToken cancellationToken = default)
     {
-        lock (_lock)
+        lock (s_Lock)
         {
-            _processingCounter++;
+            s_ProcessingCounter++;
         }
 
         // Simulate some processing time
         await Task.Delay(s_Random.Next(1, 10), cancellationToken);
 
-        return $"Processed: Id={request.Id}, Data={request.Data}, Counter={_processingCounter}";
+        return $"Processed: Id={request.Id}, Data={request.Data}, Counter={s_ProcessingCounter}";
     }
 }
 
