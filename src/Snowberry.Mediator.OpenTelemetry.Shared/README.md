@@ -30,6 +30,10 @@ Consumers normally do not reference this package directly. Pick the DI integrati
 
 All activities use `ActivityKind.Internal`.
 
+`{RequestType}` / `{NotificationType}` / `{BehaviorType}` / `{HandlerType}` and the corresponding
+`*.type` tags use the **fully-qualified** type name (e.g. `MyApp.Orders.PlaceOrder`), so types that
+share a simple name across namespaces are not conflated into the same span name or metric series.
+
 ### Metrics
 
 Meter name: `Snowberry.Mediator` (configurable via `MediatorTelemetryOptions.SourceName`).
@@ -71,3 +75,5 @@ using var meterProvider = Sdk.CreateMeterProviderBuilder()
 ## Enrichment and filtering
 
 `MediatorTelemetryOptions` exposes enrichment callbacks (`EnrichWithRequest`, `EnrichWithResponse`, `EnrichWithNotification`, `EnrichWithException`) and a `Filter` that short-circuits instrumentation for a given dispatch. Exceptions thrown from enrichment callbacks are recorded as an `Activity` event named `snowberry.mediator.enrichment.failed` and do not propagate to the caller.
+
+The `Filter` callback is the exception: it is evaluated before any `Activity` exists, so a throwing `Filter` is **not** swallowed and instead propagates out of the dispatch call. Keep `Filter` total (non-throwing). `EnrichWithException` fires for failed `SendAsync`, `PublishAsync`, and `CreateStreamAsync` dispatches; for a stream it does **not** fire when the consumer merely stops enumerating early (no exception occurred), though the span is still marked `Error`.

@@ -20,7 +20,7 @@ public class OpenTelemetry_PipelineBehaviorSpanTests
 
         // Only the top-level dispatch activity.
         Assert.Single(fx.StoppedActivities);
-        Assert.Equal(MediatorTelemetryConventions.ActivityNames.c_SendPrefix + nameof(CounterRequest), fx.StoppedActivities[0].OperationName);
+        Assert.Equal(MediatorTelemetryConventions.ActivityNames.c_SendPrefix + typeof(CounterRequest).FullName, fx.StoppedActivities[0].OperationName);
     }
 
     [Fact]
@@ -47,7 +47,7 @@ public class OpenTelemetry_PipelineBehaviorSpanTests
         {
             Assert.Equal(System.Diagnostics.ActivityKind.Internal, b.Kind);
             Assert.NotNull(b.GetTagItem(MediatorTelemetryConventions.Tags.c_BehaviorType));
-            Assert.Equal(nameof(CounterRequest), b.GetTagItem(MediatorTelemetryConventions.Tags.c_RequestType));
+            Assert.Equal(typeof(CounterRequest).FullName, b.GetTagItem(MediatorTelemetryConventions.Tags.c_RequestType));
             Assert.Equal(dispatch.TraceId, b.TraceId);
         }
 

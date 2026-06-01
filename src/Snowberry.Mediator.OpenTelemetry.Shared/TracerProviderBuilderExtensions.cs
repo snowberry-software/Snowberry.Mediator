@@ -9,8 +9,8 @@ namespace Snowberry.Mediator.OpenTelemetry;
 public static class TracerProviderBuilderExtensions
 {
     /// <summary>
-    /// Adds the default Snowberry.Mediator activity sources — <c>"Snowberry.Mediator"</c>,
-    /// <c>"Snowberry.Mediator.Pipeline"</c>, and <c>"Snowberry.Mediator.Notification"</c> — to
+    /// Adds the default Snowberry.Mediator activity sources (<c>"Snowberry.Mediator"</c>,
+    /// <c>"Snowberry.Mediator.Pipeline"</c>, and <c>"Snowberry.Mediator.Notification"</c>) to
     /// <paramref name="builder"/>.
     /// </summary>
     /// <param name="builder">The tracer provider builder to register the sources with.</param>

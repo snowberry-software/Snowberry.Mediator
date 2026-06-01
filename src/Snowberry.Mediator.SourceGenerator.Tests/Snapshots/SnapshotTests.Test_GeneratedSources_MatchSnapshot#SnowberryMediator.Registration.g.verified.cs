@@ -18,6 +18,8 @@ namespace Snowberry.Mediator.Generated
 
             // Pipeline behaviors.
             global::Snowberry.Mediator.Registries.Contracts.IGlobalPipelineRegistry? pipeline;
+            if (!append && ctx.IsServiceRegistered<global::Snowberry.Mediator.Registries.Contracts.IGlobalPipelineRegistry>())
+                throw new global::System.InvalidOperationException("Snowberry.Mediator is already registered on this container. Call AddSnowberryMediator with append: true to add more registrations.");
             if (!append || !ctx.IsServiceRegistered<global::Snowberry.Mediator.Registries.Contracts.IGlobalPipelineRegistry>())
             {
                 pipeline = new global::Snowberry.Mediator.Registries.GlobalPipelineRegistry(CloseRequestPipeline);
@@ -42,6 +44,8 @@ namespace Snowberry.Mediator.Generated
 
             // Notification handlers (open-generic handlers flattened to closed registrations).
             global::Snowberry.Mediator.Registries.Contracts.IGlobalNotificationHandlerRegistry<global::Snowberry.Mediator.Models.NotificationHandlerInfo>? notifications;
+            if (!append && ctx.IsServiceRegistered<global::Snowberry.Mediator.Registries.Contracts.IGlobalNotificationHandlerRegistry<global::Snowberry.Mediator.Models.NotificationHandlerInfo>>())
+                throw new global::System.InvalidOperationException("Snowberry.Mediator is already registered on this container. Call AddSnowberryMediator with append: true to add more registrations.");
             if (!append || !ctx.IsServiceRegistered<global::Snowberry.Mediator.Registries.Contracts.IGlobalNotificationHandlerRegistry<global::Snowberry.Mediator.Models.NotificationHandlerInfo>>())
             {
                 notifications = new global::Snowberry.Mediator.Registries.GlobalNotificationHandlerRegistry();

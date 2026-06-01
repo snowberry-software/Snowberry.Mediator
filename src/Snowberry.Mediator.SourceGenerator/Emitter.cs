@@ -183,6 +183,10 @@ internal static class Emitter
     private static void EmitRegistryGetOrCreate(CodeWriter w, string iface, string newExpr, string varName, string foundVar)
     {
         w.Line($"{iface}? {varName};");
+        // A non-append call that finds an existing registry would orphan its registrations into a fresh
+        // instance the container never resolves; fail fast instead (matches the reflection-based helper).
+        w.Line($"if (!append && ctx.{WellKnown.c_MethodIsServiceRegistered}<{iface}>())");
+        w.Line($"    throw new global::System.InvalidOperationException(\"Snowberry.Mediator is already registered on this container. Call AddSnowberryMediator with append: true to add more registrations.\");");
         w.Open($"if (!append || !ctx.{WellKnown.c_MethodIsServiceRegistered}<{iface}>())");
         w.Line($"{varName} = {newExpr};");
         w.Line($"ctx.{WellKnown.c_MethodTryRegister}(typeof({iface}), {varName});");

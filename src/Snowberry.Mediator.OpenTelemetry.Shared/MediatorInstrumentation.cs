@@ -24,8 +24,8 @@ public sealed class MediatorInstrumentation : IDisposable
     {
         _ = options ?? throw new ArgumentNullException(nameof(options));
 
-        ActivitySource = new ActivitySource(options.SourceName);
-        Meter = new Meter(options.SourceName);
+        ActivitySource = new ActivitySource(options.SourceName, MediatorTelemetryConventions.c_InstrumentationVersion);
+        Meter = new Meter(options.SourceName, MediatorTelemetryConventions.c_InstrumentationVersion);
 
         SendCount = Meter.CreateCounter<long>(MediatorTelemetryConventions.Instruments.c_SendCount);
         SendDuration = Meter.CreateHistogram<double>(MediatorTelemetryConventions.Instruments.c_SendDuration, unit: MediatorTelemetryConventions.Instruments.c_DurationUnit);

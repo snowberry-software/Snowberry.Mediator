@@ -8,7 +8,7 @@ namespace Snowberry.Mediator.Benchmarks;
 
 /// <summary>
 /// Per-step span benchmarks. Lives in a separate class because <see cref="MediatorDiagnostics"/>
-/// uses process-wide static flags — enabling them in <c>[GlobalSetup]</c> would pollute the
+/// uses process-wide static flags, so enabling them in <c>[GlobalSetup]</c> would pollute the
 /// regression-guard benchmarks in <see cref="MediatorBenchmarks"/>. BDN runs each benchmark class
 /// as a separate process when invoked via <c>--filter</c>, so they stay isolated.
 /// </summary>
@@ -40,7 +40,7 @@ public class MediatorPerStepSpanBenchmarks
     /// <summary>
     /// Per-behavior-span overhead with the flag enabled but no listener attached. Measures the cost
     /// of the slow-path async state machine being instantiated when <c>StartActivity</c> still
-    /// returns null. Expected: ~50–80 ns / ~80 B per behavior step.
+    /// returns null. Expected: ~50 to 80 ns / ~80 B per behavior step.
     /// </summary>
     [Benchmark]
     public ValueTask<int> Send_Specific10_PerBehaviorSpans_NoListener()

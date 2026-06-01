@@ -47,7 +47,7 @@ public class AssemblyScopingTests
         }
         """;
 
-    private static string Main(string assemblyAttributes, string scanArg = "") => $$"""
+    private static string BuildSource(string assemblyAttributes, string scanArg = "") => $$"""
         using Snowberry.Mediator.Abstractions;
 
         [assembly: Snowberry.Mediator.SnowberryMediator({{scanArg}})]
@@ -63,7 +63,7 @@ public class AssemblyScopingTests
     {
         var libReference = GeneratorTestHelper.CompileToReference(c_LibSource, "Lib");
         var compilation = GeneratorTestHelper.CreateCompilation(
-            Main(assemblyAttributes: "", scanArg: "ScanReferencedAssemblies = false"), "App", new[] { libReference });
+            BuildSource(assemblyAttributes: "", scanArg: "ScanReferencedAssemblies = false"), "App", new[] { libReference });
 
         var result = GeneratorTestHelper.Run(compilation);
 
@@ -80,7 +80,7 @@ public class AssemblyScopingTests
         var libReference = GeneratorTestHelper.CompileToReference(c_LibSource, "Lib");
         var lib2Reference = GeneratorTestHelper.CompileToReference(c_Lib2Source, "Lib2");
         var compilation = GeneratorTestHelper.CreateCompilation(
-            Main(
+            BuildSource(
                 assemblyAttributes: "[assembly: Snowberry.Mediator.SnowberryMediatorAssembly(typeof(Lib.LibRequest))]",
                 scanArg: "ScanReferencedAssemblies = false"),
             "App",
@@ -101,10 +101,10 @@ public class AssemblyScopingTests
         // With auto-scan on, the include marker is a no-op: every eligible assembly is already scanned.
         var libReference = GeneratorTestHelper.CompileToReference(c_LibSource, "Lib");
         var withMarker = GeneratorTestHelper.Run(GeneratorTestHelper.CreateCompilation(
-            Main(assemblyAttributes: "[assembly: Snowberry.Mediator.SnowberryMediatorAssembly(typeof(Lib.LibRequest))]"),
+            BuildSource(assemblyAttributes: "[assembly: Snowberry.Mediator.SnowberryMediatorAssembly(typeof(Lib.LibRequest))]"),
             "App", new[] { libReference }));
         var withoutMarker = GeneratorTestHelper.Run(GeneratorTestHelper.CreateCompilation(
-            Main(assemblyAttributes: ""), "App", new[] { libReference }));
+            BuildSource(assemblyAttributes: ""), "App", new[] { libReference }));
 
         Scenarios.AssertNoErrors(withMarker);
         Scenarios.AssertNoErrors(withoutMarker);
@@ -118,7 +118,7 @@ public class AssemblyScopingTests
         // Backward-compat guard: no scoping configured behaves exactly as before.
         var libReference = GeneratorTestHelper.CompileToReference(c_LibSource, "Lib");
         var compilation = GeneratorTestHelper.CreateCompilation(
-            Main(assemblyAttributes: ""), "App", new[] { libReference });
+            BuildSource(assemblyAttributes: ""), "App", new[] { libReference });
 
         var result = GeneratorTestHelper.Run(compilation);
 

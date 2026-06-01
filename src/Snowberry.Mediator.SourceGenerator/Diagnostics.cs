@@ -82,6 +82,8 @@ internal static class Diagnostics
         "SBMED103" => s_NonInstantiableHandler,
         "SBMED201" => s_MultipleTriggerAttributes,
         "SBMED202" => s_NoHandlersDiscovered,
-        _ => s_NoHandlersDiscovered,
+        // Every DiagnosticInfo is created from a descriptor's own Id, so an unmapped id is a generator
+        // invariant violation - fail loudly in generator tests rather than mislabeling it as SBMED202.
+        _ => throw new System.ArgumentOutOfRangeException(nameof(id), id, "Unknown diagnostic id; add it to Diagnostics.ById."),
     };
 }

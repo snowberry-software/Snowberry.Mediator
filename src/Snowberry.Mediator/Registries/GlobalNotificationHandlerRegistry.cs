@@ -49,8 +49,8 @@ public sealed class GlobalNotificationHandlerRegistry : IGlobalNotificationHandl
     private volatile bool _dirty = false;
 
     /// <inheritdoc/>
-    [UnconditionalSuppressMessage("Trimming", "IL2055", Justification = "Notification handlers are explicitly registered, not discovered through reflection.")]
-    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "Notification handlers are explicitly registered, not discovered through reflection.")]
+    [UnconditionalSuppressMessage("Trimming", "IL2055", Justification = "Open-generic notification handlers are flattened to closed registrations by the source generator, so MakeGenericType is unreachable under AOT; the reflection fallback runs only in the non-AOT assembly-scan path.")]
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "Open-generic notification handlers are flattened to closed registrations by the source generator, so MakeGenericType is unreachable under AOT; the reflection fallback runs only in the non-AOT assembly-scan path.")]
     public async ValueTask PublishAsync<TNotification>(IServiceProvider serviceProvider, TNotification notification, CancellationToken cancellationToken)
         where TNotification : INotification
     {
@@ -77,11 +77,12 @@ public sealed class GlobalNotificationHandlerRegistry : IGlobalNotificationHandl
             for (int i = 0; i < openGeneric.Length; i++)
             {
                 var info = openGeneric[i];
-                var current = Unsafe.As<INotificationHandler<TNotification>>(serviceProvider.GetService(closedTypes[i]))
-                    ?? throw new NotificationHandlerNotResolvedException(notificationType, closedTypes[i]);
+                var current = Unsafe.As<INotificationHandler<TNotification>>(serviceProvider.GetService(closedTypes[i])
+                    ?? throw new NotificationHandlerNotResolvedException(notificationType, closedTypes[i]));
 
                 hadHandler = true;
-                if (!MediatorDiagnostics.IsNotificationEnabled)
+                // Skip the instrumented path unless enabled AND a tracer is subscribed to the per-handler source.
+                if (!MediatorDiagnostics.IsNotificationEnabled || !MediatorDiagnostics.s_NotificationSource.HasListeners())
                 {
                     var valueTask = current.HandleAsync(notification, cancellationToken);
                     if (!valueTask.IsCompletedSuccessfully)
@@ -103,7 +104,8 @@ public sealed class GlobalNotificationHandlerRegistry : IGlobalNotificationHandl
                     ?? throw new NotificationHandlerNotResolvedException(typeof(TNotification), info.HandlerType));
 
                 hadHandler = true;
-                if (!MediatorDiagnostics.IsNotificationEnabled)
+                // Skip the instrumented path unless enabled AND a tracer is subscribed to the per-handler source.
+                if (!MediatorDiagnostics.IsNotificationEnabled || !MediatorDiagnostics.s_NotificationSource.HasListeners())
                 {
                     var valueTask = current.HandleAsync(notification, cancellationToken);
                     if (!valueTask.IsCompletedSuccessfully)
@@ -153,6 +155,10 @@ public sealed class GlobalNotificationHandlerRegistry : IGlobalNotificationHandl
     {
         lock (_lock)
         {
+            // A concurrent caller may have already rebuilt the snapshot; avoid a redundant re-freeze.
+            if (!_dirty)
+                return;
+
             var openArr = _openGenericHandlers.ToArray();
 
             var dict = new Dictionary<Type, NotificationHandlerInfo[]>(_notificationHandlers.Count);
@@ -182,12 +188,13 @@ public sealed class GlobalNotificationHandlerRegistry : IGlobalNotificationHandl
         CancellationToken ct)
         where TNotification : INotification
     {
+        string handlerName = handlerType.FullName ?? handlerType.Name;
         using var activity = MediatorDiagnostics.s_NotificationSource.StartActivity(
-            MediatorDiagnostics.c_HandlerActivityNamePrefix + handlerType.Name, ActivityKind.Internal);
+            MediatorDiagnostics.c_HandlerActivityNamePrefix + handlerName, ActivityKind.Internal);
         if (activity is not null)
         {
-            activity.SetTag(MediatorDiagnostics.c_HandlerTypeTag, handlerType.Name);
-            activity.SetTag(MediatorDiagnostics.c_NotificationTypeTag, typeof(TNotification).Name);
+            activity.SetTag(MediatorDiagnostics.c_HandlerTypeTag, handlerName);
+            activity.SetTag(MediatorDiagnostics.c_NotificationTypeTag, typeof(TNotification).FullName ?? typeof(TNotification).Name);
         }
         try
         {

@@ -424,7 +424,7 @@ public class Snowberry_DependencyInjectionTests : MediatorTestBase
         if (count > 0)
         {
             Assert.Equal(1, results[0]);
-            Assert.Equal(count, results[^1]);
+            Assert.Equal(count, results[results.Count - 1]);
         }
     }
 

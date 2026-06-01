@@ -14,15 +14,17 @@ public static class ServiceCollectionExtensions
     /// Adds the Mediator services to the specified <see cref="IServiceRegistry" />.
     /// </summary>
     /// <remarks>
-    /// A service provider must be registered in the service collection before calling this method.
-    /// Alternatively, if the <see cref="IServiceRegistry"/> instance is also an <see cref="IServiceProvider"/>, it will be registered as a singleton.
+    /// The <see cref="IServiceRegistry"/> must be resolvable as an <see cref="IServiceProvider"/> so the mediator
+    /// can resolve handlers at dispatch time.
     /// </remarks>
     /// <param name="serviceRegistry">The service registry to add the registrations to.</param>
     /// <param name="configure">A callback used to configure the <see cref="MediatorOptions"/>.</param>
     /// <param name="serviceLifetime">The service lifetime of the mediator and handlers.</param>
     /// <returns>The supplied <paramref name="serviceRegistry"/> for chaining.</returns>
-    [RequiresDynamicCode("This method uses reflection to find types from the asemblies defined in the options.")]
-    [RequiresUnreferencedCode("This method uses reflection to find types from the asemblies defined in the options.")]
+    /// <exception cref="ArgumentNullException"><paramref name="serviceRegistry"/> or <paramref name="configure"/> is <see langword="null"/>.</exception>
+    /// <exception cref="InvalidOperationException">The mediator is already registered on <paramref name="serviceRegistry"/>; use <see cref="AppendSnowberryMediator"/> to extend it.</exception>
+    [RequiresDynamicCode("This method uses reflection to find types from the assemblies defined in the options.")]
+    [RequiresUnreferencedCode("This method uses reflection to find types from the assemblies defined in the options.")]
     public static IServiceRegistry AddSnowberryMediator(this IServiceRegistry serviceRegistry, Action<MediatorOptions> configure, ServiceLifetime serviceLifetime = ServiceLifetime.Scoped)
     {
         return AddSnowberryMediator(serviceRegistry, configure, serviceLifetime, append: false);
@@ -32,15 +34,16 @@ public static class ServiceCollectionExtensions
     /// Appends the Mediator services to the specified <see cref="IServiceRegistry" /> and preserves existing registrations.
     /// </summary>
     /// <remarks>
-    /// A service provider must be registered in the service collection before calling this method.
-    /// Alternatively, if the <see cref="IServiceRegistry"/> instance is also an <see cref="IServiceProvider"/>, it will be registered as a singleton.
+    /// The <see cref="IServiceRegistry"/> must be resolvable as an <see cref="IServiceProvider"/> so the mediator
+    /// can resolve handlers at dispatch time.
     /// </remarks>
     /// <param name="serviceRegistry">The service registry to add the registrations to.</param>
     /// <param name="configure">A callback used to configure the <see cref="MediatorOptions"/>.</param>
     /// <param name="serviceLifetime">The service lifetime of the mediator and handlers.</param>
     /// <returns>The supplied <paramref name="serviceRegistry"/> for chaining.</returns>
-    [RequiresDynamicCode("This method uses reflection to find types from the asemblies defined in the options.")]
-    [RequiresUnreferencedCode("This method uses reflection to find types from the asemblies defined in the options.")]
+    /// <exception cref="ArgumentNullException"><paramref name="serviceRegistry"/> or <paramref name="configure"/> is <see langword="null"/>.</exception>
+    [RequiresDynamicCode("This method uses reflection to find types from the assemblies defined in the options.")]
+    [RequiresUnreferencedCode("This method uses reflection to find types from the assemblies defined in the options.")]
     public static IServiceRegistry AppendSnowberryMediator(this IServiceRegistry serviceRegistry, Action<MediatorOptions> configure, ServiceLifetime serviceLifetime = ServiceLifetime.Scoped)
     {
         return AddSnowberryMediator(serviceRegistry, configure, serviceLifetime, append: true);
@@ -50,18 +53,21 @@ public static class ServiceCollectionExtensions
     /// Adds the Mediator services to the specified <see cref="IServiceRegistry" />.
     /// </summary>
     /// <remarks>
-    /// A service provider must be registered in the service collection before calling this method.
-    /// Alternatively, if the <see cref="IServiceRegistry"/> instance is also an <see cref="IServiceProvider"/>, it will be registered as a singleton.
+    /// The <see cref="IServiceRegistry"/> must be resolvable as an <see cref="IServiceProvider"/> so the mediator
+    /// can resolve handlers at dispatch time.
     /// </remarks>
     /// <param name="serviceRegistry">The service registry to add the registrations to.</param>
     /// <param name="configure">A callback used to configure the <see cref="MediatorOptions"/>.</param>
     /// <param name="serviceLifetime">The service lifetime of the mediator and handlers.</param>
     /// <param name="append">Whether to append the registrations to existing ones.</param>
     /// <returns>The supplied <paramref name="serviceRegistry"/> for chaining.</returns>
-    [RequiresDynamicCode("This method uses reflection to find types from the asemblies defined in the options.")]
-    [RequiresUnreferencedCode("This method uses reflection to find types from the asemblies defined in the options.")]
+    [RequiresDynamicCode("This method uses reflection to find types from the assemblies defined in the options.")]
+    [RequiresUnreferencedCode("This method uses reflection to find types from the assemblies defined in the options.")]
     private static IServiceRegistry AddSnowberryMediator(this IServiceRegistry serviceRegistry, Action<MediatorOptions> configure, ServiceLifetime serviceLifetime, bool append)
     {
+        _ = serviceRegistry ?? throw new ArgumentNullException(nameof(serviceRegistry));
+        _ = configure ?? throw new ArgumentNullException(nameof(configure));
+
         var options = new MediatorOptions();
         configure(options);
 
@@ -73,14 +79,6 @@ public static class ServiceCollectionExtensions
             ServiceLifetime.Transient => RegistrationServiceLifetime.Transient,
             _ => throw new NotSupportedException($"The service lifetime '{serviceLifetime}' is not supported."),
         }, append: append);
-
-        //if (!serviceRegistry.IsServiceRegistered<IServiceProvider>(serviceKey: null))
-        //{
-        //    if (serviceRegistry is IServiceProvider serviceProvider)
-        //        serviceRegistry.RegisterSingleton(instance: serviceProvider);
-        //    else
-        //        throw new InvalidOperationException($"The {nameof(IServiceRegistry)} instance is not an {nameof(IServiceProvider)}. Please register an {nameof(IServiceProvider)} instance before calling {nameof(AddSnowberryMediator)}.");
-        //}
 
         return serviceRegistry;
     }

@@ -32,9 +32,9 @@ public sealed class GlobalPipelineRegistry : BaseGlobalPipelineRegistry<Pipeline
     }
 
     /// <inheritdoc/>
-    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Pipeline behaviors are explicitly registered, not discovered through reflection.")]
-    [UnconditionalSuppressMessage("Trimming", "IL2055", Justification = "Pipeline behaviors are explicitly registered, not discovered through reflection.")]
-    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "Pipeline behaviors are explicitly registered, not discovered through reflection.")]
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = TrimmingJustifications.PipelineBehaviors)]
+    [UnconditionalSuppressMessage("Trimming", "IL2055", Justification = TrimmingJustifications.PipelineBehaviors)]
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = TrimmingJustifications.PipelineBehaviors)]
     public ValueTask<TResponse> ExecuteAsync<TRequest, TResponse>(IServiceProvider serviceProvider, IRequestHandler<TRequest, TResponse> handler, TRequest request, CancellationToken cancellationToken)
         where TRequest : class, IRequest<TRequest, TResponse>
     {
@@ -64,58 +64,6 @@ public sealed class GlobalPipelineRegistry : BaseGlobalPipelineRegistry<Pipeline
         _typeCache.Clear();
     }
 
-    [UnconditionalSuppressMessage("Trimming", "IL2055", Justification = "Pipeline behaviors are explicitly registered, not discovered through reflection.")]
-    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "Pipeline behaviors are explicitly registered, not discovered through reflection.")]
-    private Type[] BuildBehaviorTypesFor<TRequest, TResponse>()
-        where TRequest : class, IRequest<TRequest, TResponse>
-    {
-        var requestType = typeof(TRequest);
-        var responseType = typeof(TResponse);
-
-        bool hasSpecific = TryGetFrozenSpecific(requestType, out var specific);
-        var openGeneric = FrozenOpenGenericHandlers;
-
-        int specificLen = hasSpecific ? specific.Length : 0;
-        int totalLen = specificLen + openGeneric.Length;
-        if (totalLen == 0)
-            return [];
-
-        var result = new Type[totalLen];
-
-        // Frozen arrays are sorted DESCENDING by SortIndex (lowest priority at index 0). The walker iterates
-        // forward, so the OUTPUT must be ASCENDING by SortIndex (= HIGHEST priority first). Iterate both
-        // inputs back-to-front, picking the lower SortIndex (= higher priority) at each step. Tie-break:
-        // pick SPECIFIC so it lands at a lower output index (outer in the walker chain, runs first within
-        // that priority level) - matches the previous "specifics processed before open-generics at each
-        // priority level" ordering.
-        int i = specificLen - 1;
-        int j = openGeneric.Length - 1;
-        int k = 0;
-        while (i >= 0 || j >= 0)
-        {
-            bool pickSpecific;
-            if (i < 0) pickSpecific = false;
-            else if (j < 0) pickSpecific = true;
-            else pickSpecific = specific[i].SortIndex <= openGeneric[j].SortIndex;
-
-            if (pickSpecific)
-            {
-                result[k++] = specific[i].HandlerInfo.HandlerType;
-                i--;
-            }
-            else
-            {
-                result[k++] = CloseGeneric(openGeneric[j].HandlerInfo.HandlerType, requestType, responseType);
-                j--;
-            }
-        }
-
-        return result;
-    }
-
-    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Pipeline behaviors are explicitly registered, not discovered through reflection.")]
-    [UnconditionalSuppressMessage("Trimming", "IL2055", Justification = "Pipeline behaviors are explicitly registered, not discovered through reflection.")]
-    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "Pipeline behaviors are explicitly registered, not discovered through reflection.")]
     private ValueTask<TResponse> ExecuteSlow<TRequest, TResponse>(IServiceProvider serviceProvider, IRequestHandler<TRequest, TResponse> handler, TRequest request, CancellationToken cancellationToken)
         where TRequest : class, IRequest<TRequest, TResponse>
     {
@@ -124,7 +72,7 @@ public sealed class GlobalPipelineRegistry : BaseGlobalPipelineRegistry<Pipeline
         var key = (typeof(TRequest), typeof(TResponse));
         if (!_typeCache.TryGetValue(key, out var types))
         {
-            types = BuildBehaviorTypesFor<TRequest, TResponse>();
+            types = BuildBehaviorTypesFor(typeof(TRequest), typeof(TResponse));
             _typeCache.TryAdd(key, types);
         }
 

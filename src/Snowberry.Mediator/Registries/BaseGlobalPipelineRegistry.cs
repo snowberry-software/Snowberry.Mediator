@@ -143,16 +143,17 @@ public class BaseGlobalPipelineRegistry<T> : IBaseGlobalPipelineRegistry<T>
     {
         lock (_lock)
         {
+            // A concurrent slow-path builder may have already rebuilt the snapshot; avoid a redundant
+            // re-freeze + Generation bump (which would needlessly invalidate the per-pair fast caches).
+            if (!_dirty)
+                return;
+
             // Snapshot open-generic handlers, sorted by SortIndex descending.
             var openArr = _openGenericHandlers.ToArray();
             Array.Sort(openArr, static (a, b) => b.SortIndex.CompareTo(a.SortIndex));
 
             // Snapshot per-type specific handlers, sorted by SortIndex descending.
-#if NET8_0_OR_GREATER
             var dict = new Dictionary<Type, PipelineBehaviorValue<T>[]>(_pipelineBehaviors.Count);
-#else
-            var dict = new Dictionary<Type, PipelineBehaviorValue<T>[]>(_pipelineBehaviors.Count);
-#endif
             foreach (var kvp in _pipelineBehaviors)
             {
                 var arr = kvp.Value.ToArray();
@@ -209,11 +210,59 @@ public class BaseGlobalPipelineRegistry<T> : IBaseGlobalPipelineRegistry<T>
     /// otherwise <see langword="false"/>.</returns>
     protected bool TryGetFrozenSpecific(Type requestType, out PipelineBehaviorValue<T>[] values)
     {
-#if NET8_0_OR_GREATER
         return _frozenPipelineBehaviors.TryGetValue(requestType, out values!);
-#else
-        return _frozenPipelineBehaviors.TryGetValue(requestType, out values!);
-#endif
+    }
+
+    /// <summary>
+    /// Builds the closed behavior-type array for a request/response pair, in dispatch order (highest priority
+    /// first), merging the per-request specific behaviors with the open-generic behaviors closed over the pair.
+    /// </summary>
+    /// <param name="requestType">The closed request type.</param>
+    /// <param name="responseType">The closed response type.</param>
+    /// <returns>The closed behavior types in dispatch order; an empty array when no behaviors apply.</returns>
+    [UnconditionalSuppressMessage("Trimming", "IL2055", Justification = "A generated resolver supplies closed types in AOT scenarios; reflection is only used when no resolver is set.")]
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "A generated resolver supplies closed types in AOT scenarios; reflection is only used when no resolver is set.")]
+    protected Type[] BuildBehaviorTypesFor(Type requestType, Type responseType)
+    {
+        bool hasSpecific = TryGetFrozenSpecific(requestType, out var specific);
+        var openGeneric = FrozenOpenGenericHandlers;
+
+        int specificLen = hasSpecific ? specific.Length : 0;
+        int totalLen = specificLen + openGeneric.Length;
+        if (totalLen == 0)
+            return [];
+
+        var result = new Type[totalLen];
+
+        // Frozen arrays are sorted DESCENDING by SortIndex (lowest priority at index 0). The walker iterates
+        // forward, so the OUTPUT must be ASCENDING by SortIndex (= HIGHEST priority first). Iterate both
+        // inputs back-to-front, picking the lower SortIndex (= higher priority) at each step. Tie-break:
+        // pick SPECIFIC so it lands at a lower output index (outer in the walker chain, runs first within
+        // that priority level) - matches the previous "specifics processed before open-generics at each
+        // priority level" ordering.
+        int i = specificLen - 1;
+        int j = openGeneric.Length - 1;
+        int k = 0;
+        while (i >= 0 || j >= 0)
+        {
+            bool pickSpecific;
+            if (i < 0) pickSpecific = false;
+            else if (j < 0) pickSpecific = true;
+            else pickSpecific = specific[i].SortIndex <= openGeneric[j].SortIndex;
+
+            if (pickSpecific)
+            {
+                result[k++] = specific[i].HandlerInfo.HandlerType;
+                i--;
+            }
+            else
+            {
+                result[k++] = CloseGeneric(openGeneric[j].HandlerInfo.HandlerType, requestType, responseType);
+                j--;
+            }
+        }
+
+        return result;
     }
 
     /// <summary>

@@ -8,6 +8,13 @@ public static class MediatorTelemetryConventions
     /// <summary>The default name of the dispatch <see cref="System.Diagnostics.ActivitySource"/> and <see cref="System.Diagnostics.Metrics.Meter"/>.</summary>
     public const string c_DefaultSourceName = "Snowberry.Mediator";
 
+    /// <summary>
+    /// The instrumentation-scope version stamped onto every <see cref="System.Diagnostics.ActivitySource"/> and
+    /// <see cref="System.Diagnostics.Metrics.Meter"/> created by the instrumentation, so emitted telemetry carries
+    /// the library version (OpenTelemetry instrumentation-scope convention).
+    /// </summary>
+    public const string c_InstrumentationVersion = "1.1.0";
+
     /// <summary>The name of the <see cref="System.Diagnostics.ActivitySource"/> used for per-pipeline-behavior spans.</summary>
     public const string c_PipelineSourceName = MediatorDiagnostics.c_PipelineSourceName;
 

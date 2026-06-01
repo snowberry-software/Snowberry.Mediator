@@ -51,7 +51,7 @@ public class OpenTelemetry_MetricsTests
         await fx.Mediator.PublishAsync(new SimpleNotification());
 
         var count = Assert.Single(fx.Measurements, m => m.InstrumentName == MediatorTelemetryConventions.Instruments.c_PublishCount);
-        Assert.Equal(nameof(SimpleNotification), count.Tag(MediatorTelemetryConventions.Tags.c_MetricType));
+        Assert.Equal(typeof(SimpleNotification).FullName, count.Tag(MediatorTelemetryConventions.Tags.c_MetricType));
         Assert.Equal(MediatorTelemetryConventions.Status.c_Success, count.Tag(MediatorTelemetryConventions.Tags.c_MetricStatus));
     }
 
@@ -86,7 +86,7 @@ public class OpenTelemetry_MetricsTests
 
         var activity = Assert.Single(fx.StoppedActivities);
         Assert.Equal(System.Diagnostics.ActivityStatusCode.Error, activity.Status);
-        Assert.Equal(MediatorTelemetryConventions.ActivityNames.c_PublishPrefix + nameof(SimpleNotification), activity.OperationName);
+        Assert.Equal(MediatorTelemetryConventions.ActivityNames.c_PublishPrefix + typeof(SimpleNotification).FullName, activity.OperationName);
 
         var countMeasurement = Assert.Single(fx.Measurements, m => m.InstrumentName == MediatorTelemetryConventions.Instruments.c_PublishCount);
         Assert.Equal(MediatorTelemetryConventions.Status.c_Failure, countMeasurement.Tag(MediatorTelemetryConventions.Tags.c_MetricStatus));
@@ -104,7 +104,7 @@ public class OpenTelemetry_MetricsTests
 
         var count = Assert.Single(fx.Measurements, m => m.InstrumentName == MediatorTelemetryConventions.Instruments.c_SendCount);
         Assert.Equal(1d, count.Value);
-        Assert.Equal(nameof(CounterRequest), count.Tag(MediatorTelemetryConventions.Tags.c_MetricType));
+        Assert.Equal(typeof(CounterRequest).FullName, count.Tag(MediatorTelemetryConventions.Tags.c_MetricType));
         Assert.Equal(MediatorTelemetryConventions.Status.c_Success, count.Tag(MediatorTelemetryConventions.Tags.c_MetricStatus));
 
         var duration = Assert.Single(fx.Measurements, m => m.InstrumentName == MediatorTelemetryConventions.Instruments.c_SendDuration);

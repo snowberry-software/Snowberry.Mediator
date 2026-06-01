@@ -9,7 +9,7 @@ namespace Snowberry.Mediator.OpenTelemetry;
 public static class MeterProviderBuilderExtensions
 {
     /// <summary>
-    /// Adds the default Snowberry.Mediator meter — <c>"Snowberry.Mediator"</c> — to
+    /// Adds the default Snowberry.Mediator meter (<c>"Snowberry.Mediator"</c>) to
     /// <paramref name="builder"/>.
     /// </summary>
     /// <param name="builder">The meter provider builder to register the meter with.</param>

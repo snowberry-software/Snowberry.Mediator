@@ -95,7 +95,7 @@ public class ConditionalFilterBehavior : IStreamPipelineBehavior<FilterableStrea
     }
 }
 
-// Exception recovery behavior — does not delegate to next; synthesizes its own stream.
+// Exception recovery behavior that does not delegate to next; it synthesizes its own stream.
 public class ExceptionRecoveryBehavior : IStreamPipelineBehavior<FaultyStreamRequest, int>
 {
     public async IAsyncEnumerable<int> HandleAsync<TNext>(FaultyStreamRequest request, TNext next, [EnumeratorCancellation] CancellationToken cancellationToken = default)
@@ -103,7 +103,7 @@ public class ExceptionRecoveryBehavior : IStreamPipelineBehavior<FaultyStreamReq
     {
         StreamPipelineExecutionTracker.RecordExecution(nameof(ExceptionRecoveryBehavior));
 
-        // Synthesize the expected stream directly — the underlying handler can't be resumed after it throws.
+        // Synthesize the expected stream directly because the underlying handler can't be resumed after it throws.
         for (int i = 1; i <= request.Count; i++)
         {
             if (request.FaultAtPositions.Contains(i))

@@ -2,7 +2,7 @@
 
 A Roslyn incremental source generator for [Snowberry.Mediator](https://github.com/snowberry-software/Snowberry.Mediator) that
 discovers handlers, behaviors and notification handlers **at compile time** and emits the registration code with
-literal closed generics — eliminating all runtime reflection (`Assembly.GetTypes()`, `Type.GetInterfaces()`,
+literal closed generics, eliminating all runtime reflection (`Assembly.GetTypes()`, `Type.GetInterfaces()`,
 `MakeGenericType`). The result is fully trim- and NativeAOT-friendly: no dynamic code is executed on the generated path.
 
 ## Easy setup
@@ -16,7 +16,7 @@ literal closed generics — eliminating all runtime reflection (`Assembly.GetTyp
    [assembly: SnowberryMediator]
    ```
 
-3. Call the generated registration — no `options.Assemblies`, no hand-listed handler types:
+3. Call the generated registration with no `options.Assemblies` and no hand-listed handler types:
 
    ```csharp
    services.AddSnowberryMediator();                       // default Scoped lifetime
@@ -28,8 +28,8 @@ project can access the type (public, or `internal` exposed via `[InternalsVisibl
 
 ## What is discovered
 
-Types implementing any of the Snowberry.Mediator marker interfaces — `IRequestHandler<,>`,
-`IStreamRequestHandler<,>`, `INotificationHandler<>`, `IPipelineBehavior<,>`, `IStreamPipelineBehavior<,>` —
+Types implementing any of the Snowberry.Mediator marker interfaces (`IRequestHandler<,>`,
+`IStreamRequestHandler<,>`, `INotificationHandler<>`, `IPipelineBehavior<,>`, `IStreamPipelineBehavior<,>`),
 including open-generic behaviors and open-generic notification handlers. Pipeline ordering via
 `[PipelineOverwritePriority]` is honored, with byte-identical semantics to the reflection-based path.
 
@@ -51,7 +51,7 @@ and name the referenced assemblies to include with one
 [assembly: SnowberryMediatorAssembly(typeof(MyApp.Billing.Marker))]
 ```
 
-- The **current (composition-root) assembly is always scanned** — it carries the opt-in attribute.
+- The **current (composition-root) assembly is always scanned** because it carries the opt-in attribute.
 - `ScanReferencedAssemblies = true` (the default) scans every eligible referenced assembly;
   `SnowberryMediatorAssembly` markers are ignored in that mode (everything is already scanned).
 - Open-generic behaviors/handlers only close over request/notification types from scanned
@@ -63,7 +63,7 @@ registrations, or `SBMED001` duplicate-handler errors when two assemblies handle
 ## Per-handler service lifetime
 
 `AddSnowberryMediator(lifetime)` applies one lifetime to every discovered handler. To give a
-specific handler a different lifetime, **register it before** calling the generated entry point —
+specific handler a different lifetime, **register it before** calling the generated entry point, because
 the generated registrations use no-overwrite (`TryAdd`) semantics, so a pre-registered handler keeps
 your lifetime:
 

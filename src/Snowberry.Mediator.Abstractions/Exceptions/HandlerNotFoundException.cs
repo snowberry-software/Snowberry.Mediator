@@ -11,4 +11,9 @@ public class HandlerNotFoundException(Type requestType, bool isStream) : Excepti
     /// Gets a value indicating whether the request is a stream request.
     /// </summary>
     public bool IsStream { get; } = isStream;
+
+    /// <summary>
+    /// Gets the request type that has no associated handler.
+    /// </summary>
+    public Type RequestType { get; } = requestType;
 }

@@ -46,7 +46,7 @@ public static class OpenTelemetryServiceRegistryExtensions
         if (registry.IsServiceRegistered<MediatorInstrumentation>(serviceKey: null))
         {
             // Idempotency: re-applying the options would silently overwrite the singleton's state.
-            // Skip — the original registration wins.
+            // Skip so the original registration wins.
             return registry;
         }
 
@@ -55,13 +55,7 @@ public static class OpenTelemetryServiceRegistryExtensions
                 "AddSnowberryMediatorOpenTelemetry must be called before AddSnowberryMediator. " +
                 "Snowberry.DependencyInjection's registry does not permit re-registration of IMediator after it has been registered.");
 
-        var options = new MediatorTelemetryOptions();
-        configure?.Invoke(options);
-
-        if (options.EnablePipelineBehaviorSpans)
-            MediatorDiagnostics.EnablePipelineSpans();
-        if (options.EnableNotificationHandlerSpans)
-            MediatorDiagnostics.EnableNotificationSpans();
+        var options = global::Snowberry.Mediator.OpenTelemetry.Internals.TelemetryRegistration.BuildOptions(configure);
 
         registry.RegisterSingleton(options);
         var instrumentation = new MediatorInstrumentation(options);

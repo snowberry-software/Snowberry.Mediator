@@ -46,6 +46,7 @@ public static class DependencyInjectionHelper
     /// <param name="serviceLifetime">The service lifetime.</param>
     /// <param name="append">Whether to append to existing registrations or replace them.</param>
     /// <param name="customCallback">A custom callback to execute at the start during registration.</param>
+    /// <exception cref="InvalidOperationException">A mediator registry is already present on <paramref name="serviceContext"/> and <paramref name="append"/> is <see langword="false"/>.</exception>
     [RequiresUnreferencedCode("Assembly scanning requires unreferenced code. Use explicit handler registration for AOT compatibility.")]
     [RequiresDynamicCode("Creating generic handler types at runtime requires dynamic code. Use explicit handler registration for AOT compatibility.")]
     public static void AddSnowberryMediator(
@@ -79,6 +80,7 @@ public static class DependencyInjectionHelper
     /// <param name="serviceLifetime">The service lifetime.</param>
     /// <param name="append">Whether to append to existing registrations or replace them.</param>
     /// <param name="customCallback">A custom callback to execute at the start during registration.</param>
+    /// <exception cref="InvalidOperationException">A mediator registry is already present on <paramref name="serviceContext"/> and <paramref name="append"/> is <see langword="false"/>.</exception>
     [RequiresDynamicCode("Creating generic handler types at runtime requires dynamic code. Use explicit handler registration for AOT compatibility.")]
     public static void AddSnowberryMediatorNoScan(
         IServiceContext serviceContext,
@@ -149,6 +151,13 @@ public static class DependencyInjectionHelper
     /// <paramref name="handlerCollection"/>. Honours the <c>Register*</c> and <c>Scan*</c> flags on
     /// <paramref name="options"/> to determine which handler categories to include.
     /// </summary>
+    /// <remarks>
+    /// Request and stream-request handlers are gated on <see cref="MediatorOptions.RegisterRequestHandlers"/> /
+    /// <see cref="MediatorOptions.RegisterStreamRequestHandlers"/> alone (no <c>Scan*</c> flag), while pipeline
+    /// behaviors, stream pipeline behaviors, and notification handlers additionally require their
+    /// <see cref="MediatorOptions.ScanPipelineBehaviors"/> / <see cref="MediatorOptions.ScanStreamPipelineBehaviors"/> /
+    /// <see cref="MediatorOptions.ScanNotificationHandlers"/> flag.
+    /// </remarks>
     /// <param name="options">The mediator options controlling which handler categories to scan.</param>
     /// <param name="handlerCollection">The destination collection that receives discovered handlers.</param>
     /// <param name="assembly">The assembly to scan.</param>
@@ -188,9 +197,17 @@ public static class DependencyInjectionHelper
         if (notificationHandlers.Count == 0)
             return;
 
-        IGlobalNotificationHandlerRegistry<NotificationHandlerInfo>? globalNotificationHandlerRegistry = null;
+        bool alreadyRegistered = serviceContext.IsServiceRegistered<IGlobalNotificationHandlerRegistry<NotificationHandlerInfo>>();
 
-        if (!append || !serviceContext.IsServiceRegistered<IGlobalNotificationHandlerRegistry<NotificationHandlerInfo>>())
+        // A non-append call that finds an existing registry would orphan its handlers into a fresh instance the
+        // container never resolves (TryRegister is a no-op when the type already exists). Fail fast instead.
+        if (alreadyRegistered && !append)
+            throw new InvalidOperationException(
+                "Snowberry.Mediator is already registered on this container. Call AppendSnowberryMediator (or pass append: true) to add more notification handlers.");
+
+        IGlobalNotificationHandlerRegistry<NotificationHandlerInfo>? globalNotificationHandlerRegistry;
+
+        if (!alreadyRegistered)
         {
             globalNotificationHandlerRegistry = new GlobalNotificationHandlerRegistry();
             serviceContext.TryRegister(serviceType: typeof(IGlobalNotificationHandlerRegistry<NotificationHandlerInfo>), instance: globalNotificationHandlerRegistry);
@@ -231,8 +248,16 @@ public static class DependencyInjectionHelper
         if (pipelineBehaviorHandlers.Count == 0)
             return;
 
-        TGlobalPipelineInterface? globalPipelineRegistry = default;
-        if (!append || !serviceContext.IsServiceRegistered<TGlobalPipelineInterface>())
+        bool alreadyRegistered = serviceContext.IsServiceRegistered<TGlobalPipelineInterface>();
+
+        // A non-append call that finds an existing registry would orphan its behaviors into a fresh instance the
+        // container never resolves (TryRegister is a no-op when the type already exists). Fail fast instead.
+        if (alreadyRegistered && !append)
+            throw new InvalidOperationException(
+                "Snowberry.Mediator is already registered on this container. Call AppendSnowberryMediator (or pass append: true) to add more pipeline behaviors.");
+
+        TGlobalPipelineInterface? globalPipelineRegistry;
+        if (!alreadyRegistered)
         {
             globalPipelineRegistry = new TGlobalPipelineRegistry();
             serviceContext.TryRegister(serviceType: typeof(TGlobalPipelineInterface), instance: globalPipelineRegistry);

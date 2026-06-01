@@ -9,6 +9,12 @@ namespace Snowberry.Mediator;
 /// </summary>
 public static class MediatorDiagnostics
 {
+    /// <summary>
+    /// The instrumentation-scope version stamped onto the per-step <see cref="ActivitySource"/> instances, so
+    /// emitted spans carry the library version (OpenTelemetry instrumentation-scope convention).
+    /// </summary>
+    public const string c_InstrumentationVersion = "1.1.0";
+
     /// <summary>The name of the <see cref="ActivitySource"/> used for per-pipeline-behavior spans.</summary>
     public const string c_PipelineSourceName = "Snowberry.Mediator.Pipeline";
 
@@ -37,13 +43,13 @@ public static class MediatorDiagnostics
     /// The <see cref="ActivitySource"/> used when emitting an <see cref="Activity"/> for each
     /// notification handler invocation. The source name is <see cref="c_NotificationSourceName"/>.
     /// </summary>
-    public static readonly ActivitySource s_NotificationSource = new(c_NotificationSourceName);
+    public static readonly ActivitySource s_NotificationSource = new(c_NotificationSourceName, c_InstrumentationVersion);
 
     /// <summary>
     /// The <see cref="ActivitySource"/> used when emitting an <see cref="Activity"/> for each
     /// pipeline behavior invocation. The source name is <see cref="c_PipelineSourceName"/>.
     /// </summary>
-    public static readonly ActivitySource s_PipelineSource = new(c_PipelineSourceName);
+    public static readonly ActivitySource s_PipelineSource = new(c_PipelineSourceName, c_InstrumentationVersion);
 
     private static int s_NotificationEnabled;
 

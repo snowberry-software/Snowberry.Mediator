@@ -41,12 +41,13 @@ internal readonly struct PipelineWalker<TRequest, TResponse> : IPipelineContinua
         PipelineWalker<TRequest, TResponse> next,
         CancellationToken ct)
     {
+        string behaviorName = behaviorType.FullName ?? behaviorType.Name;
         using var activity = MediatorDiagnostics.s_PipelineSource.StartActivity(
-            MediatorDiagnostics.c_BehaviorActivityNamePrefix + behaviorType.Name, ActivityKind.Internal);
+            MediatorDiagnostics.c_BehaviorActivityNamePrefix + behaviorName, ActivityKind.Internal);
         if (activity is not null)
         {
-            activity.SetTag(MediatorDiagnostics.c_BehaviorTypeTag, behaviorType.Name);
-            activity.SetTag(MediatorDiagnostics.c_RequestTypeTag, typeof(TRequest).Name);
+            activity.SetTag(MediatorDiagnostics.c_BehaviorTypeTag, behaviorName);
+            activity.SetTag(MediatorDiagnostics.c_RequestTypeTag, typeof(TRequest).FullName ?? typeof(TRequest).Name);
         }
         try
         {
@@ -72,7 +73,9 @@ internal readonly struct PipelineWalker<TRequest, TResponse> : IPipelineContinua
         var behavior = Unsafe.As<IPipelineBehavior<TRequest, TResponse>>(_sp.GetService(behaviorType))!;
         var next = new PipelineWalker<TRequest, TResponse>(_sp, _terminal, _types, _index + 1);
 
-        if (!MediatorDiagnostics.IsPipelineEnabled)
+        // Skip the instrumented async path (and its per-step allocation) unless the feature is enabled AND a
+        // tracer is actually subscribed to the per-step source - mirrors the top-level decorator's HasListeners gate.
+        if (!MediatorDiagnostics.IsPipelineEnabled || !MediatorDiagnostics.s_PipelineSource.HasListeners())
             return behavior.HandleAsync(request, next, cancellationToken);
 
         return InvokeInstrumentedAsync(behavior, behaviorType, request, next, cancellationToken);

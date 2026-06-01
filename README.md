@@ -81,7 +81,7 @@ services.AddSnowberryMediator(opts =>
 
 ### Source generator (zero-reflection, NativeAOT-friendly)
 
-The `Snowberry.Mediator.SourceGenerator` package discovers handlers, behaviors and notification handlers **at compile time** — across your project and its referenced assemblies — and emits the registration with literal closed generics, eliminating all runtime reflection (`Assembly.GetTypes()`, `Type.GetInterfaces()`, `MakeGenericType`). It is the recommended setup for trimmed / NativeAOT apps.
+The `Snowberry.Mediator.SourceGenerator` package discovers handlers, behaviors and notification handlers **at compile time** (across your project and its referenced assemblies) and emits the registration with literal closed generics, eliminating all runtime reflection (`Assembly.GetTypes()`, `Type.GetInterfaces()`, `MakeGenericType`). It is the recommended setup for trimmed / NativeAOT apps.
 
 1. Reference `Snowberry.Mediator.SourceGenerator` alongside `Snowberry.Mediator` and a DI integration package.
 2. Add the opt-in attribute to your composition-root project:
@@ -90,7 +90,7 @@ The `Snowberry.Mediator.SourceGenerator` package discovers handlers, behaviors a
    [assembly: Snowberry.Mediator.SnowberryMediator]
    ```
 
-3. Call the generated registration — no `options.Assemblies`, no hand-listed handler types:
+3. Call the generated registration with no `options.Assemblies` and no hand-listed handler types:
 
    ```csharp
    using Microsoft.Extensions.DependencyInjection;
@@ -103,9 +103,9 @@ The `Snowberry.Mediator.SourceGenerator` package discovers handlers, behaviors a
        .GetRequiredService<Snowberry.Mediator.Abstractions.IMediator>();
    ```
 
-Handlers in referenced assemblies are discovered as long as the composition-root project can access the type (public, or `internal` exposed via `[InternalsVisibleTo]`). `[PipelineOverwritePriority]` ordering, open-generic behaviors and open-generic notification handlers are fully supported, with byte-identical dispatch semantics to the reflection path — only the *startup* registration changes, so the dispatch numbers below are unaffected. The generated path executes no dynamic code, so it is clean under `PublishAot`/trimming. See the package README for the diagnostics table and the runnable AOT sample under `samples/`.
+Handlers in referenced assemblies are discovered as long as the composition-root project can access the type (public, or `internal` exposed via `[InternalsVisibleTo]`). `[PipelineOverwritePriority]` ordering, open-generic behaviors and open-generic notification handlers are fully supported, with byte-identical dispatch semantics to the reflection path. Only the *startup* registration changes, so the dispatch numbers below are unaffected. The generated path executes no dynamic code, so it is clean under `PublishAot`/trimming. See the package README for the diagnostics table and the runnable AOT sample under `samples/`.
 
-To restrict which referenced assemblies are scanned, set `[assembly: SnowberryMediator(ScanReferencedAssemblies = false)]` and name each one to include with `[assembly: SnowberryMediatorAssembly(typeof(AnyTypeInThatAssembly))]` (the current assembly is always scanned). To give a single handler a non-default lifetime, register it before `AddSnowberryMediator()` — the generated registrations use `TryAdd`, so a pre-registered handler keeps your lifetime. Both are documented in the package README.
+To restrict which referenced assemblies are scanned, set `[assembly: SnowberryMediator(ScanReferencedAssemblies = false)]` and name each one to include with `[assembly: SnowberryMediatorAssembly(typeof(AnyTypeInThatAssembly))]` (the current assembly is always scanned). To give a single handler a non-default lifetime, register it before `AddSnowberryMediator()`; the generated registrations use `TryAdd`, so a pre-registered handler keeps your lifetime. Both are documented in the package README.
 
 ## Writing a pipeline behavior
 
@@ -136,7 +136,7 @@ public sealed class LoggingBehavior<TRequest, TResponse> : IPipelineBehavior<TRe
 
 The `TNext : struct, IPipelineContinuation<,>` constraint lets the JIT specialize the method per continuation type and devirtualize `next.InvokeAsync(...)` to a direct call. Combined with the static-generic walker the library uses internally, this keeps the synchronous dispatch path allocation-free regardless of chain length.
 
-Stream pipeline behaviors (`IStreamPipelineBehavior<TRequest, TResponse>`) follow the same shape — their `HandleAsync<TNext>(request, next, ct)` returns `IAsyncEnumerable<TResponse>` and `next` is constrained as `where TNext : struct, IStreamPipelineContinuation<TRequest, TResponse>`. One mental model for both request and stream pipelines.
+Stream pipeline behaviors (`IStreamPipelineBehavior<TRequest, TResponse>`) follow the same shape: their `HandleAsync<TNext>(request, next, ct)` returns `IAsyncEnumerable<TResponse>` and `next` is constrained as `where TNext : struct, IStreamPipelineContinuation<TRequest, TResponse>`. One mental model for both request and stream pipelines.
 
 ## Pipeline behavior ordering and priority
 

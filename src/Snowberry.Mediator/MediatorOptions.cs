@@ -6,6 +6,14 @@ namespace Snowberry.Mediator;
 /// <summary>
 /// Mediator configuration options.
 /// </summary>
+/// <remarks>
+/// Assembly scanning is asymmetric by category: when <see cref="Assemblies"/> is set, request and stream-request
+/// handlers are discovered whenever <see cref="RegisterRequestHandlers"/> / <see cref="RegisterStreamRequestHandlers"/>
+/// are <see langword="true"/> (there is no <c>Scan*</c> gate for them), whereas pipeline behaviors, stream pipeline
+/// behaviors, and notification handlers are discovered only when BOTH the matching <c>Register*</c> flag AND the
+/// corresponding <see cref="ScanPipelineBehaviors"/> / <see cref="ScanStreamPipelineBehaviors"/> /
+/// <see cref="ScanNotificationHandlers"/> flag are <see langword="true"/>.
+/// </remarks>
 public sealed class MediatorOptions
 {
     /// <summary>

@@ -73,6 +73,11 @@ public sealed class MediatorTelemetryOptions
     /// forwarded to the inner mediator. Defaults to <see langword="null"/>, which applies no
     /// filter.
     /// </summary>
+    /// <remarks>
+    /// Unlike the enrichment callbacks (whose exceptions are caught and recorded as an activity event),
+    /// the filter must not throw: there is no activity in scope at the point it is evaluated, so an
+    /// exception thrown from the filter propagates out of the dispatch call to the caller.
+    /// </remarks>
     public Func<object, bool>? Filter { get; set; }
 
     /// <summary>

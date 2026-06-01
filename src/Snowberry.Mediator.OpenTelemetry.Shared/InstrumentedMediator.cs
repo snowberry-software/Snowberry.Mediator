@@ -143,16 +143,49 @@ public sealed class InstrumentedMediator : IMediator
 
         long start = metricsActive ? Stopwatch.GetTimestamp() : 0;
         string status = MediatorTelemetryConventions.Status.c_Failure;
+        // 'yield return' cannot live inside a try/catch, so enumerate manually: the inner try/catch captures the
+        // exception thrown by MoveNextAsync (handler throw or cancellation) while 'yield return' stays in the outer
+        // try/finally. This lets the finally enrich with the exception detail - matching Send/Publish - while the
+        // early-consumer-break case (no exception, finally runs via iterator dispose) keeps a bare Error status.
+        Exception? error = null;
+        await using var enumerator = _inner.CreateStreamAsync(request, ct).GetAsyncEnumerator(ct);
         try
         {
-            await foreach (var item in _inner.CreateStreamAsync(request, ct).ConfigureAwait(false))
-                yield return item;
+            while (true)
+            {
+                bool hasNext;
+                try
+                {
+                    hasNext = await enumerator.MoveNextAsync().ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    error = ex;
+                    throw;
+                }
+
+                if (!hasNext)
+                    break;
+
+                yield return enumerator.Current;
+            }
             status = MediatorTelemetryConventions.Status.c_Success;
             activity?.SetStatus(ActivityStatusCode.Ok);
         }
         finally
         {
-            if (status != MediatorTelemetryConventions.Status.c_Success) activity?.SetStatus(ActivityStatusCode.Error);
+            if (status != MediatorTelemetryConventions.Status.c_Success && activity is not null)
+            {
+                if (error is not null)
+                {
+                    activity.SetStatus(ActivityStatusCode.Error, error.Message);
+                    InvokeEnrichException(activity, request, error);
+                }
+                else
+                {
+                    activity.SetStatus(ActivityStatusCode.Error);
+                }
+            }
             if (metricsActive)
             {
                 var tags = new TagList

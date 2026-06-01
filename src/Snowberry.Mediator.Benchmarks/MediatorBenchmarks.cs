@@ -95,7 +95,7 @@ public class MediatorBenchmarks
     public ValueTask<int> Send_NoPipeline()
         => _mediatorNoPipeline.SendAsync(_noPipelineRequest);
 
-    // ---------- OTel decorator (no listener) — fast-path regression guard ----------
+    // ---------- OTel decorator (no listener): fast-path regression guard ----------
 
     [Benchmark]
     public ValueTask<int> Send_NoPipeline_OtelDecoratedNoListener()
@@ -300,7 +300,7 @@ public class MediatorBenchmarks
 
         // OTel-decorated mediators with no listener attached. These measure the dispatch decorator's
         // fast-path overhead vs the un-decorated baselines (`Send_NoPipeline`, `Stream_NoPipeline_Enumerate10`,
-        // `Publish_Specific3`). Expected: +1–3 ns / 0 B.
+        // `Publish_Specific3`). Expected: +1 to 3 ns / 0 B.
         _mediatorNoPipelineOtel = BuildMediatorWithOtel(opt =>
         {
             opt.RequestHandlerTypes = [typeof(NoPipelineRequestHandler)];

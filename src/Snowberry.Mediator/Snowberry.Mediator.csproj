@@ -23,10 +23,6 @@
 		</None>
 	</ItemGroup>
 
-	<ItemGroup>
-		<PackageReference Include="ZLinq" Version="1.5.6" />
-	</ItemGroup>
-
 	<!-- ActivitySource ships in-box on .NET 6+; on netstandard2.0 it requires the standalone package. -->
 	<ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
 		<PackageReference Include="System.Diagnostics.DiagnosticSource" Version="10.0.6" />

@@ -46,16 +46,10 @@ public static class OpenTelemetryServiceCollectionExtensions
             }
         }
 
-        var options = new MediatorTelemetryOptions();
-        configure?.Invoke(options);
+        var options = global::Snowberry.Mediator.OpenTelemetry.Internals.TelemetryRegistration.BuildOptions(configure);
 
         services.TryAddSingleton(options);
         services.TryAddSingleton<MediatorInstrumentation>();
-
-        if (options.EnablePipelineBehaviorSpans)
-            MediatorDiagnostics.EnablePipelineSpans();
-        if (options.EnableNotificationHandlerSpans)
-            MediatorDiagnostics.EnableNotificationSpans();
 
         if (alreadyConfigured)
             return services;
