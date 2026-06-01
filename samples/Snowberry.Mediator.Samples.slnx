@@ -1,0 +1,20 @@
+<Solution>
+  <Folder Name="/Aspire/">
+    <Project Path="Snowberry.Mediator.Sample.AppHost/Snowberry.Mediator.Sample.AppHost.csproj" />
+    <Project Path="Snowberry.Mediator.Sample.ServiceDefaults/Snowberry.Mediator.Sample.ServiceDefaults.csproj" />
+    <Project Path="Snowberry.Mediator.Sample.Worker/Snowberry.Mediator.Sample.Worker.csproj" />
+  </Folder>
+  <Folder Name="/SourceGenerator/">
+    <Project Path="Snowberry.Mediator.SourceGenerator.Sample/Snowberry.Mediator.SourceGenerator.Sample.csproj" />
+    <Project Path="Snowberry.Mediator.SourceGenerator.Sample.Handlers/Snowberry.Mediator.SourceGenerator.Sample.Handlers.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="../src/Snowberry.Mediator.Abstractions/Snowberry.Mediator.Abstractions.csproj" />
+    <Project Path="../src/Snowberry.Mediator/Snowberry.Mediator.csproj" />
+    <Project Path="../src/Snowberry.Mediator.DependencyInjection.Shared/Snowberry.Mediator.DependencyInjection.Shared.csproj" />
+    <Project Path="../src/Snowberry.Mediator.Extensions.DependencyInjection/Snowberry.Mediator.Extensions.DependencyInjection.csproj" />
+    <Project Path="../src/Snowberry.Mediator.OpenTelemetry.Shared/Snowberry.Mediator.OpenTelemetry.Shared.csproj" />
+    <Project Path="../src/Snowberry.Mediator.Extensions.OpenTelemetry/Snowberry.Mediator.Extensions.OpenTelemetry.csproj" />
+    <Project Path="../src/Snowberry.Mediator.SourceGenerator/Snowberry.Mediator.SourceGenerator.csproj" />
+  </Folder>
+</Solution>

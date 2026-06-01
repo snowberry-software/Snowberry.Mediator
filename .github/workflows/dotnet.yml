@@ -30,9 +30,9 @@ jobs:
             echo "BUILD_CONFIGURATION=Debug" >> "$GITHUB_ENV"
           fi
       - name: Restore
-        run: dotnet restore src/Snowberry.Mediator.sln -m:1
+        run: dotnet restore src/Snowberry.Mediator.slnx -m:1
       - name: Build
-        run: dotnet build src/Snowberry.Mediator.sln --configuration "$BUILD_CONFIGURATION" --no-restore -m:1
+        run: dotnet build src/Snowberry.Mediator.slnx --configuration "$BUILD_CONFIGURATION" --no-restore -m:1
       - name: Test mediator
         run: dotnet test src/Snowberry.Mediator.Tests/Snowberry.Mediator.Tests.csproj --framework net10.0 --configuration "$BUILD_CONFIGURATION" --no-build --no-restore
       - name: Test source generator
@@ -64,7 +64,7 @@ jobs:
         shell: bash
         run: |
           rm -rf Artifacts
-          dotnet pack src/Snowberry.Mediator.sln --configuration Release --output Artifacts -p:GeneratePackageOnBuild=false -m:1
+          dotnet pack src/Snowberry.Mediator.slnx --configuration Release --output Artifacts -p:GeneratePackageOnBuild=false -m:1
       - name: Push packages
         shell: bash
         run: |
