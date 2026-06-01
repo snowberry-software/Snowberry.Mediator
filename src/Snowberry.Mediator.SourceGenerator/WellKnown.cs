@@ -26,6 +26,9 @@ internal static class WellKnown
     public const string c_TriggerAttributeName = "SnowberryMediatorAttribute";
     public const string c_TriggerAttributeMetadataName = "Snowberry.Mediator.SnowberryMediatorAttribute";
 
+    // Per-assembly include attribute (emitted via post-initialization), used when ScanReferencedAssemblies is false.
+    public const string c_AssemblyAttributeMetadataName = "Snowberry.Mediator.SnowberryMediatorAssemblyAttribute";
+
     // DI integration detection. The bridge context type is probed rather than the container abstraction: its
     // presence proves the matching Snowberry integration package is referenced, which transitively guarantees
     // the container abstraction and lifetime enum that the generated entry point also depends on.

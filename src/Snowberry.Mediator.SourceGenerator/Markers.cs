@@ -35,6 +35,9 @@ internal sealed class Markers
     /// <summary>The generated <c>SnowberryMediatorAttribute</c> symbol, or <see langword="null"/> if not present.</summary>
     public INamedTypeSymbol? TriggerAttribute { get; init; }
 
+    /// <summary>The generated <c>SnowberryMediatorAssemblyAttribute</c> symbol, or <see langword="null"/> if not present.</summary>
+    public INamedTypeSymbol? AssemblyAttribute { get; init; }
+
     /// <summary>Resolves the marker symbols from the compilation.</summary>
     /// <param name="compilation">The compilation to resolve symbols from.</param>
     /// <returns>The resolved markers, or <see langword="null"/> if Snowberry.Mediator.Abstractions is not referenced.</returns>
@@ -72,6 +75,7 @@ internal sealed class Markers
             IStreamPipelineBehavior = streamPipelineBehavior,
             PriorityAttribute = priorityAttribute,
             TriggerAttribute = compilation.GetTypeByMetadataName(WellKnown.c_TriggerAttributeMetadataName),
+            AssemblyAttribute = compilation.GetTypeByMetadataName(WellKnown.c_AssemblyAttributeMetadataName),
         };
     }
 }

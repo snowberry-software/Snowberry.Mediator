@@ -33,8 +33,15 @@ internal static class Discovery
 
         var collector = new Collector(compilation, markers, config, diagnostics);
 
+        // The current (root) assembly carries the opt-in attribute and is always scanned.
         foreach (var type in compilation.Assembly.GlobalNamespace.EnumerateAllTypes(ct))
             collector.Process(type);
+
+        // null = scan every referenced assembly that references the abstractions (the default);
+        // non-null = scan only the explicitly-included assemblies (ScanReferencedAssemblies = false).
+        var includedAssemblies = config.ScanReferencedAssemblies
+            ? null
+            : CollectIncludedAssemblies(compilation, markers);
 
         foreach (var reference in compilation.References)
         {
@@ -44,6 +51,9 @@ internal static class Discovery
                 continue;
 
             if (!assembly.ReferencesAbstractions())
+                continue;
+
+            if (includedAssemblies is not null && !includedAssemblies.Contains(assembly))
                 continue;
 
             foreach (var type in assembly.GlobalNamespace.EnumerateAllTypes(ct))
@@ -91,7 +101,7 @@ internal static class Discovery
 
     private static MediatorConfig ReadConfig(AttributeData attribute)
     {
-        bool requests = true, streamRequests = true, notifications = true, behaviors = true, streamBehaviors = true;
+        bool requests = true, streamRequests = true, notifications = true, behaviors = true, streamBehaviors = true, scanReferenced = true;
 
         foreach (var named in attribute.NamedArguments)
         {
@@ -105,9 +115,43 @@ internal static class Discovery
                 case "RegisterNotificationHandlers": notifications = value; break;
                 case "RegisterPipelineBehaviors": behaviors = value; break;
                 case "RegisterStreamPipelineBehaviors": streamBehaviors = value; break;
+                case "ScanReferencedAssemblies": scanReferenced = value; break;
             }
         }
 
-        return new MediatorConfig(requests, streamRequests, notifications, behaviors, streamBehaviors);
+        return new MediatorConfig(requests, streamRequests, notifications, behaviors, streamBehaviors, scanReferenced);
+    }
+
+    /// <summary>
+    /// Collects the assemblies named by <c>[assembly: SnowberryMediatorAssembly(typeof(T))]</c> markers, used as
+    /// the include-set when <see cref="MediatorConfig.ScanReferencedAssemblies"/> is <see langword="false"/>.
+    /// </summary>
+    /// <param name="compilation">The compilation whose assembly attributes are scanned for include markers.</param>
+    /// <param name="markers">The resolved markers supplying the include-attribute symbol to match against.</param>
+    /// <returns>
+    /// The set of assemblies to include, compared with <see cref="SymbolEqualityComparer.Default"/>; empty when no
+    /// marker is present.
+    /// </returns>
+    private static HashSet<IAssemblySymbol> CollectIncludedAssemblies(Compilation compilation, Markers markers)
+    {
+        var included = new HashSet<IAssemblySymbol>(SymbolEqualityComparer.Default);
+        if (markers.AssemblyAttribute is null)
+            return included;
+
+        foreach (var attribute in compilation.Assembly.GetAttributes())
+        {
+            if (!SymbolEqualityComparer.Default.Equals(attribute.AttributeClass, markers.AssemblyAttribute))
+                continue;
+
+            if (attribute.ConstructorArguments.Length != 1)
+                continue;
+
+            // typeof(T) ctor arg surfaces as a TypedConstant of kind Type whose Value is an ITypeSymbol.
+            // ContainingAssembly is null for array/pointer types (e.g. typeof(int[])); skip those.
+            if (attribute.ConstructorArguments[0].Value is ITypeSymbol { ContainingAssembly: { } markerAssembly })
+                included.Add(markerAssembly);
+        }
+
+        return included;
     }
 }

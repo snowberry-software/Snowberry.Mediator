@@ -9,15 +9,20 @@ namespace Snowberry.Mediator.SourceGenerator;
 /// <param name="RegisterNotificationHandlers">Whether notification handlers are registered.</param>
 /// <param name="RegisterPipelineBehaviors">Whether pipeline behaviors are registered.</param>
 /// <param name="RegisterStreamPipelineBehaviors">Whether stream pipeline behaviors are registered.</param>
+/// <param name="ScanReferencedAssemblies">
+/// Whether referenced assemblies are scanned for handlers. When <see langword="false"/>, only the current
+/// assembly and assemblies named by <c>[assembly: SnowberryMediatorAssembly]</c> are scanned.
+/// </param>
 internal readonly record struct MediatorConfig(
     bool RegisterRequestHandlers,
     bool RegisterStreamRequestHandlers,
     bool RegisterNotificationHandlers,
     bool RegisterPipelineBehaviors,
-    bool RegisterStreamPipelineBehaviors)
+    bool RegisterStreamPipelineBehaviors,
+    bool ScanReferencedAssemblies)
 {
-    /// <summary>The default configuration, which registers every handler category.</summary>
-    public static readonly MediatorConfig s_Default = new(true, true, true, true, true);
+    /// <summary>The default configuration, which registers every handler category and scans referenced assemblies.</summary>
+    public static readonly MediatorConfig s_Default = new(true, true, true, true, true, true);
 }
 
 /// <summary>A concrete request or stream-request handler registration.</summary>

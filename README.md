@@ -105,6 +105,8 @@ The `Snowberry.Mediator.SourceGenerator` package discovers handlers, behaviors a
 
 Handlers in referenced assemblies are discovered as long as the composition-root project can access the type (public, or `internal` exposed via `[InternalsVisibleTo]`). `[PipelineOverwritePriority]` ordering, open-generic behaviors and open-generic notification handlers are fully supported, with byte-identical dispatch semantics to the reflection path — only the *startup* registration changes, so the dispatch numbers below are unaffected. The generated path executes no dynamic code, so it is clean under `PublishAot`/trimming. See the package README for the diagnostics table and the runnable AOT sample under `samples/`.
 
+To restrict which referenced assemblies are scanned, set `[assembly: SnowberryMediator(ScanReferencedAssemblies = false)]` and name each one to include with `[assembly: SnowberryMediatorAssembly(typeof(AnyTypeInThatAssembly))]` (the current assembly is always scanned). To give a single handler a non-default lifetime, register it before `AddSnowberryMediator()` — the generated registrations use `TryAdd`, so a pre-registered handler keeps your lifetime. Both are documented in the package README.
+
 ## Writing a pipeline behavior
 
 A pipeline behavior implements `IPipelineBehavior<TRequest, TResponse>`. Its `HandleAsync` method receives a struct continuation that you invoke to call the next behavior in the chain (or, at the end of the chain, the terminal request handler):

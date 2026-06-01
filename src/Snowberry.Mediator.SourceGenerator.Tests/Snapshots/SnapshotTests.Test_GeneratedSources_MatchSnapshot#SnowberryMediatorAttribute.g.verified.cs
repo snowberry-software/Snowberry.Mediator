@@ -25,5 +25,35 @@ namespace Snowberry.Mediator
 
         /// <summary>Register discovered <c>IStreamPipelineBehavior&lt;,&gt;</c> implementations. Default <see langword="true"/>.</summary>
         public bool RegisterStreamPipelineBehaviors { get; set; } = true;
+
+        /// <summary>
+        /// Scan referenced assemblies (that reference Snowberry.Mediator.Abstractions) for handlers in
+        /// addition to the current assembly. Default <see langword="true"/>. When <see langword="false"/>,
+        /// only the current assembly plus assemblies named by <c>[assembly: SnowberryMediatorAssembly]</c>
+        /// are scanned.
+        /// </summary>
+        public bool ScanReferencedAssemblies { get; set; } = true;
+    }
+
+    /// <summary>
+    /// Names a referenced assembly to include in handler discovery when
+    /// <see cref="SnowberryMediatorAttribute.ScanReferencedAssemblies"/> is <see langword="false"/>.
+    /// Apply once per assembly, passing any type declared in that assembly. Ignored when
+    /// <see cref="SnowberryMediatorAttribute.ScanReferencedAssemblies"/> is <see langword="true"/>,
+    /// because every eligible assembly is already scanned.
+    /// </summary>
+    [global::System.AttributeUsage(global::System.AttributeTargets.Assembly, AllowMultiple = true, Inherited = false)]
+    [global::System.CodeDom.Compiler.GeneratedCode("Snowberry.Mediator.SourceGenerator", null)]
+    internal sealed class SnowberryMediatorAssemblyAttribute : global::System.Attribute
+    {
+        /// <summary>Initializes the attribute with a marker type whose containing assembly is included in discovery.</summary>
+        /// <param name="markerType">Any type declared in the assembly to include.</param>
+        public SnowberryMediatorAssemblyAttribute(global::System.Type markerType)
+        {
+            MarkerType = markerType;
+        }
+
+        /// <summary>Gets the marker type whose containing assembly is included in discovery.</summary>
+        public global::System.Type MarkerType { get; }
     }
 }

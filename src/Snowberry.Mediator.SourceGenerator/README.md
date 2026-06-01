@@ -37,6 +37,41 @@ The `[SnowberryMediator]` attribute exposes per-category toggles (all default `t
 `RegisterRequestHandlers`, `RegisterStreamRequestHandlers`, `RegisterNotificationHandlers`,
 `RegisterPipelineBehaviors`, `RegisterStreamPipelineBehaviors`.
 
+## Scoping which assemblies are scanned
+
+By default the generator scans the current assembly **and every referenced assembly that references
+`Snowberry.Mediator.Abstractions`**. To restrict discovery, set `ScanReferencedAssemblies = false`
+and name the referenced assemblies to include with one
+`[assembly: SnowberryMediatorAssembly(typeof(AnyTypeInThatAssembly))]` per assembly:
+
+```csharp
+// Scan only this assembly plus the two named ones; ignore all other referenced handlers.
+[assembly: SnowberryMediator(ScanReferencedAssemblies = false)]
+[assembly: SnowberryMediatorAssembly(typeof(MyApp.Orders.PlaceOrderHandler))]
+[assembly: SnowberryMediatorAssembly(typeof(MyApp.Billing.Marker))]
+```
+
+- The **current (composition-root) assembly is always scanned** — it carries the opt-in attribute.
+- `ScanReferencedAssemblies = true` (the default) scans every eligible referenced assembly;
+  `SnowberryMediatorAssembly` markers are ignored in that mode (everything is already scanned).
+- Open-generic behaviors/handlers only close over request/notification types from scanned
+  assemblies, so excluding an assembly removes both its handlers and its closure targets.
+
+Use this to stop an unwanted referenced assembly's handlers from registering (surprise
+registrations, or `SBMED001` duplicate-handler errors when two assemblies handle the same request).
+
+## Per-handler service lifetime
+
+`AddSnowberryMediator(lifetime)` applies one lifetime to every discovered handler. To give a
+specific handler a different lifetime, **register it before** calling the generated entry point —
+the generated registrations use no-overwrite (`TryAdd`) semantics, so a pre-registered handler keeps
+your lifetime:
+
+```csharp
+services.AddSingleton<IRequestHandler<GetUser, string>, GetUserHandler>(); // your chosen lifetime
+services.AddSnowberryMediator();                                           // skips the pre-registered one
+```
+
 ## Diagnostics
 
 | ID | Severity | Meaning |
