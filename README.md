@@ -27,6 +27,8 @@ The mediator resolves handlers from an `IServiceProvider` (provided at construct
 - Global registries for pipeline and notification handlers used at runtime by `Mediator`.
 - Zero per-call allocation through the mediator's own dispatch code (see [Performance](#performance)). `SendAsync` / `PublishAsync` return `ValueTask` / `ValueTask<T>` and never allocate a state machine inside the library - any per-call allocation that remains comes from your own handlers if they use `async`/`await` and suspend.
 - AOT-compatible: `Snowberry.Mediator`, `Snowberry.Mediator.Abstractions` and the DI helpers ship with `IsAotCompatible=true` on `net9.0+`. Assembly-scanning entry points are gated with `[RequiresUnreferencedCode]` / `[RequiresDynamicCode]`; the explicit-registration entry points are AOT-safe.
+- OpenTelemetry tracing and metrics through an opt-in `IMediator` decorator, gated on `ActivitySource.HasListeners()` so it costs nothing when no listener is attached (see [OpenTelemetry](#opentelemetry)).
+- Two first-party dependency-injection integrations: `Microsoft.Extensions.DependencyInjection` and the sibling `Snowberry.DependencyInjection` container.
 
 ## Examples
 
@@ -79,6 +81,35 @@ services.AddSnowberryMediator(opts =>
 });
 ```
 
+### Snowberry.DependencyInjection
+
+`Snowberry.Mediator.DependencyInjection` integrates with the sibling [`Snowberry.DependencyInjection`](https://github.com/snowberry-software/Snowberry.DependencyInjection) container. It exposes `AddSnowberryMediator` and `AppendSnowberryMediator` on `IServiceRegistry`, taking the same `MediatorOptions` as the Microsoft container. The registry must also be resolvable as an `IServiceProvider` so the mediator can resolve handlers at dispatch time.
+
+Example: register by scanning the current assembly and enable pipeline/notification scanning:
+
+```csharp
+using System.Reflection;
+using Snowberry.DependencyInjection;                   // ServiceContainer
+using Snowberry.DependencyInjection.Abstractions;      // ServiceLifetime
+using Snowberry.DependencyInjection.Abstractions.Extensions; // GetRequiredService
+using Snowberry.Mediator.DependencyInjection;          // AddSnowberryMediator
+
+using var registry = new ServiceContainer();
+
+registry.AddSnowberryMediator(options =>
+{
+    options.Assemblies = new List<Assembly> { Assembly.GetExecutingAssembly() };
+    options.ScanNotificationHandlers = true;
+    options.ScanPipelineBehaviors = true;
+}, ServiceLifetime.Scoped);
+
+var mediator = registry.GetRequiredService<Snowberry.Mediator.Abstractions.IMediator>();
+```
+
+To extend a registry that already has the mediator (for example when loading plugins), call `AppendSnowberryMediator`. Calling `AddSnowberryMediator` a second time throws, so a double registration cannot silently orphan handlers into a discarded registry.
+
+The source generator targets this container too: when `Snowberry.Mediator.DependencyInjection` is referenced, the generated `AddSnowberryMediator()` (with an `append` overload) is emitted as an extension on `IServiceRegistry`, with the same zero-reflection guarantees described below.
+
 ### Source generator (zero-reflection, NativeAOT-friendly)
 
 The `Snowberry.Mediator.SourceGenerator` package discovers handlers, behaviors and notification handlers **at compile time** (across your project and its referenced assemblies) and emits the registration with literal closed generics, eliminating all runtime reflection (`Assembly.GetTypes()`, `Type.GetInterfaces()`, `MakeGenericType`). It is the recommended setup for trimmed / NativeAOT apps.
@@ -106,6 +137,85 @@ The `Snowberry.Mediator.SourceGenerator` package discovers handlers, behaviors a
 Handlers in referenced assemblies are discovered as long as the composition-root project can access the type (public, or `internal` exposed via `[InternalsVisibleTo]`). `[PipelineOverwritePriority]` ordering, open-generic behaviors and open-generic notification handlers are fully supported, with byte-identical dispatch semantics to the reflection path. Only the *startup* registration changes, so the dispatch numbers below are unaffected. The generated path executes no dynamic code, so it is clean under `PublishAot`/trimming. See the package README for the diagnostics table and the runnable AOT sample under `samples/`.
 
 To restrict which referenced assemblies are scanned, set `[assembly: SnowberryMediator(ScanReferencedAssemblies = false)]` and name each one to include with `[assembly: SnowberryMediatorAssembly(typeof(AnyTypeInThatAssembly))]` (the current assembly is always scanned). To give a single handler a non-default lifetime, register it before `AddSnowberryMediator()`; the generated registrations use `TryAdd`, so a pre-registered handler keeps your lifetime. Both are documented in the package README.
+
+## OpenTelemetry
+
+`Snowberry.Mediator` ships first-class OpenTelemetry tracing and metrics through an `IMediator` decorator (`InstrumentedMediator`). It emits an `Activity` and metric measurements for every `SendAsync`, `CreateStreamAsync` and `PublishAsync` dispatch, with opt-in per-pipeline-behavior and per-notification-handler spans. The decorator is gated on `ActivitySource.HasListeners()`, so with no listener attached the dispatch path stays allocation-free.
+
+Pick the integration package that matches your container:
+
+| Container | Package |
+| --- | --- |
+| `Microsoft.Extensions.DependencyInjection` | `Snowberry.Mediator.Extensions.OpenTelemetry` |
+| `Snowberry.DependencyInjection` | `Snowberry.Mediator.OpenTelemetry` |
+
+### Microsoft Dependency Injection
+
+Register the mediator first, then decorate it. Subscribe the OpenTelemetry SDK to the mediator sources with `AddSnowberryMediatorInstrumentation()` on the tracer and meter builders:
+
+```csharp
+using Microsoft.Extensions.DependencyInjection;
+using Snowberry.Mediator.Extensions.DependencyInjection;
+using Snowberry.Mediator.Extensions.OpenTelemetry;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Trace;
+
+services.AddSnowberryMediator(/* ... */);
+
+services.AddSnowberryMediatorOpenTelemetry(options =>
+{
+    options.EnablePipelineBehaviorSpans = true;
+    options.EnableNotificationHandlerSpans = true;
+});
+
+services.AddOpenTelemetry()
+    .WithTracing(tracing => tracing.AddSnowberryMediatorInstrumentation())
+    .WithMetrics(metrics => metrics.AddSnowberryMediatorInstrumentation());
+```
+
+`AddSnowberryMediatorOpenTelemetry` must run after `AddSnowberryMediator`, because it swaps the existing `IMediator` registration for the decorator.
+
+### Snowberry.DependencyInjection
+
+The order is reversed here: call `AddSnowberryMediatorOpenTelemetry` before `AddSnowberryMediator`, because the registry does not permit re-registering `IMediator` once it exists. The decorator claims the `IMediator` slot first, and the later mediator registration becomes a no-op.
+
+```csharp
+using Snowberry.DependencyInjection;
+using Snowberry.Mediator.DependencyInjection;
+using Snowberry.Mediator.OpenTelemetry;
+
+using var registry = new ServiceContainer();
+
+registry.AddSnowberryMediatorOpenTelemetry(options =>
+{
+    options.EnablePipelineBehaviorSpans = true;
+    options.EnableNotificationHandlerSpans = true;
+});
+
+registry.AddSnowberryMediator(/* ... */);
+```
+
+Subscribe the SDK with the same `AddSnowberryMediatorInstrumentation()` builder extensions shown above; they live in the `Snowberry.Mediator.OpenTelemetry` namespace, reachable from both packages.
+
+### Emitted telemetry
+
+Top-level activities come from the `Snowberry.Mediator` source. The opt-in per-step spans come from `Snowberry.Mediator.Pipeline` and `Snowberry.Mediator.Notification`.
+
+| Activity | Tags |
+| --- | --- |
+| `Mediator.Send {RequestType}` | request type, response type, `operation = send` |
+| `Mediator.Stream {RequestType}` | request type, response type, `operation = stream` |
+| `Mediator.Publish {NotificationType}` | notification type, `operation = publish` |
+| `Mediator.Behavior {BehaviorType}` (opt-in) | behavior type, request type |
+| `Mediator.Handler {HandlerType}` (opt-in) | handler type, notification type |
+
+Six metric instruments are emitted under the `Snowberry.Mediator` meter: a `Counter<long>` and a `Histogram<double>` (`ms`) for each of send, stream and publish, tagged with `type` and `status` (`success` or `failure`). Activity names and the `*.type` tags use the fully-qualified type name, so types that share a simple name across namespaces are never conflated into one span or metric series.
+
+### Enrichment and filtering
+
+`MediatorTelemetryOptions` exposes enrichment callbacks (`EnrichWithRequest`, `EnrichWithResponse`, `EnrichWithNotification`, `EnrichWithException`) and a `Filter` that short-circuits instrumentation for a dispatch. Exceptions thrown from enrichment callbacks are recorded as an `Activity` event named `snowberry.mediator.enrichment.failed` and do not propagate to the caller. `Filter` is the exception: it runs before any `Activity` exists, so a throwing `Filter` propagates out of the dispatch call. Keep it total (non-throwing).
+
+A runnable, end-to-end example wired into the .NET Aspire dashboard lives under [`samples/`](samples/README.md). The full conventions, including every tag key and the per-step opt-in details, are in the [package README](src/Snowberry.Mediator.OpenTelemetry.Shared/README.md).
 
 ## Writing a pipeline behavior
 
