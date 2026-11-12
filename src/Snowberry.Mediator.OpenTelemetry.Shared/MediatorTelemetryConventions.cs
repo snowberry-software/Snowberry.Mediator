@@ -11,9 +11,10 @@ public static class MediatorTelemetryConventions
     /// <summary>
     /// The instrumentation-scope version stamped onto every <see cref="System.Diagnostics.ActivitySource"/> and
     /// <see cref="System.Diagnostics.Metrics.Meter"/> created by the instrumentation, so emitted telemetry carries
-    /// the library version (OpenTelemetry instrumentation-scope convention).
+    /// the library version (OpenTelemetry instrumentation-scope convention). All Snowberry.Mediator packages are
+    /// versioned together, so this is the package version generated into <see cref="MediatorDiagnostics.c_InstrumentationVersion"/>.
     /// </summary>
-    public const string c_InstrumentationVersion = "1.1.0";
+    public const string c_InstrumentationVersion = MediatorDiagnostics.c_InstrumentationVersion;
 
     /// <summary>The name of the <see cref="System.Diagnostics.ActivitySource"/> used for per-pipeline-behavior spans.</summary>
     public const string c_PipelineSourceName = MediatorDiagnostics.c_PipelineSourceName;

@@ -9,6 +9,8 @@ library projects they reference.
 | Source-generator (Native AOT) | Reflection-free registration discovered across assemblies, exercised as a Native AOT smoke test. |
 | Aspire worker (OpenTelemetry) | A hosted service that dispatches through the mediator with full OpenTelemetry tracing and metrics, observed live in the .NET Aspire dashboard. |
 
+The source-generator sample targets `net11.0` and needs the .NET 11 SDK. The Aspire samples target `net10.0` and use the Aspire AppHost SDK, which is restored from NuGet.
+
 ## Source-generator sample (Native AOT)
 
 A minimal console app that uses `Snowberry.Mediator.SourceGenerator` for reflection-free registration.
@@ -62,7 +64,8 @@ the Aspire dashboard.
   spans appear in the dashboard.
 - `Snowberry.Mediator.Sample.ServiceDefaults` holds the shared Aspire defaults. Its `ConfigureOpenTelemetry`
   subscribes the OpenTelemetry tracer and meter providers to the Snowberry.Mediator sources through
-  `AddSnowberryMediatorInstrumentation()`, then exports everything over OTLP.
+  `AddSnowberryMediatorInstrumentation()`, and exports everything over OTLP when `OTEL_EXPORTER_OTLP_ENDPOINT`
+  is set (the AppHost sets it).
 - `Snowberry.Mediator.Sample.AppHost` is the Aspire orchestrator. It launches the worker and the dashboard, and
   points the worker at the dashboard's OTLP endpoint.
 
@@ -73,9 +76,11 @@ dotnet run --project samples/Snowberry.Mediator.Sample.AppHost
 ```
 
 The console prints a dashboard URL (for example `http://localhost:15170`). Open it, select the `worker` resource,
-and watch the **Traces** and **Metrics** tabs. Each dispatch produces a `Mediator.Send ProcessOrder` span with
-child spans for the `LoggingBehavior` pipeline step, plus a `Mediator.Publish OrderProcessed` span with a child
-span per notification handler. The `snowberry.mediator.*` counters and duration histograms appear under Metrics.
+and watch the **Traces** and **Metrics** tabs. Each dispatch produces a
+`Mediator.Send Snowberry.Mediator.Sample.Worker.ProcessOrder` span with a `Mediator.Behavior ...LoggingBehavior...`
+child span for the pipeline step, plus a `Mediator.Publish Snowberry.Mediator.Sample.Worker.OrderProcessed` span
+with a `Mediator.Handler ...` child span per notification handler (span names use full type names). The
+`snowberry.mediator.*` counters and duration histograms appear under Metrics.
 
 The `https` launch profile is also available if you have a trusted local development certificate
 (`dotnet dev-certs https --trust`):

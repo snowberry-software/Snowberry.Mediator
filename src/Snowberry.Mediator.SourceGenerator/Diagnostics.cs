@@ -2,7 +2,7 @@ using Microsoft.CodeAnalysis;
 
 namespace Snowberry.Mediator.SourceGenerator;
 
-/// <summary>Diagnostic descriptors emitted by the generator. IDs are tracked in AnalyzerReleases.Unshipped.md.</summary>
+/// <summary>Diagnostic descriptors emitted by the generator. IDs are tracked in AnalyzerReleases.Shipped.md (new ones go to AnalyzerReleases.Unshipped.md first).</summary>
 internal static class Diagnostics
 {
     private const string c_Category = "SnowberryMediator";

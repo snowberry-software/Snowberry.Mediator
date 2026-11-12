@@ -22,7 +22,7 @@ public static class ServiceCollectionExtensions
     /// </param>
     /// <returns>The supplied <paramref name="services"/> for chaining.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="services"/> or <paramref name="configure"/> is <see langword="null"/>.</exception>
-    /// <exception cref="InvalidOperationException">The mediator is already registered on <paramref name="services"/> and <paramref name="append"/> is <see langword="false"/>; pass <see langword="true"/> to extend it.</exception>
+    /// <exception cref="InvalidOperationException"><paramref name="append"/> is <see langword="false"/> and pipeline behaviors, stream pipeline behaviors or notification handlers are registered while the matching global registry already exists on <paramref name="services"/>; pass <see langword="true"/> to extend it.</exception>
     [RequiresDynamicCode("This method uses reflection to find types from the assemblies defined in the options.")]
     [RequiresUnreferencedCode("This method uses reflection to find types from the assemblies defined in the options.")]
     public static IServiceCollection AddSnowberryMediator(this IServiceCollection services, Action<MediatorOptions> configure, ServiceLifetime serviceLifetime = ServiceLifetime.Scoped, bool append = false)

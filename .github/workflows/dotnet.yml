@@ -7,6 +7,14 @@ on:
     paths-ignore:
       - "README.md"
 
+# Least privilege by default; the deploy job adds id-token: write for Trusted Publishing.
+permissions:
+  contents: read
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_NOLOGO: "1"
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -14,13 +22,13 @@ jobs:
       # Keep Verify deterministic in CI (do not launch a diff tool on snapshot mismatch).
       DiffEngine_Disabled: "true"
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v5
       - name: Setup .NET
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: |
-            9.x
             10.x
+            11.x
       - name: Resolve build configuration
         shell: bash
         run: |
@@ -33,7 +41,9 @@ jobs:
         run: dotnet restore src/Snowberry.Mediator.slnx -m:1
       - name: Build
         run: dotnet build src/Snowberry.Mediator.slnx --configuration "$BUILD_CONFIGURATION" --no-restore -m:1
-      - name: Test mediator
+      - name: Test mediator (net11.0)
+        run: dotnet test src/Snowberry.Mediator.Tests/Snowberry.Mediator.Tests.csproj --framework net11.0 --configuration "$BUILD_CONFIGURATION" --no-build --no-restore
+      - name: Test mediator (net10.0)
         run: dotnet test src/Snowberry.Mediator.Tests/Snowberry.Mediator.Tests.csproj --framework net10.0 --configuration "$BUILD_CONFIGURATION" --no-build --no-restore
       - name: Test source generator
         run: dotnet test src/Snowberry.Mediator.SourceGenerator.Tests/Snowberry.Mediator.SourceGenerator.Tests.csproj --framework net10.0 --configuration "$BUILD_CONFIGURATION" --no-build --no-restore
@@ -43,30 +53,44 @@ jobs:
       - name: Publish AOT sample
         run: dotnet publish samples/Snowberry.Mediator.SourceGenerator.Sample/Snowberry.Mediator.SourceGenerator.Sample.csproj -c Release -r linux-x64
       - name: Run AOT sample
-        run: ./samples/Snowberry.Mediator.SourceGenerator.Sample/bin/Release/net10.0/linux-x64/publish/Snowberry.Mediator.SourceGenerator.Sample
+        run: ./samples/Snowberry.Mediator.SourceGenerator.Sample/bin/Release/net11.0/linux-x64/publish/Snowberry.Mediator.SourceGenerator.Sample
 
+  # nuget.org Trusted Publishing: no long-lived API key. NuGet/login exchanges the job's GitHub OIDC token for a
+  # short-lived (1 hour) key. The nuget.org policy must match this repository, this workflow file (dotnet.yml)
+  # and the release environment.
   deploy:
+    name: Publish to NuGet
     runs-on: ubuntu-latest
-    env:
-      NUGET_KEY: ${{ secrets.NUGET_KEY }}
     needs: build
     # Publish for a tag starting with v.
     if: startsWith(github.ref, 'refs/tags/v')
+    environment: release
+    permissions:
+      contents: read
+      id-token: write
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v5
       - name: Setup .NET
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: |
-            9.x
             10.x
+            11.x
       - name: Pack
         shell: bash
         run: |
           rm -rf Artifacts
           dotnet pack src/Snowberry.Mediator.slnx --configuration Release --output Artifacts -p:GeneratePackageOnBuild=false -m:1
+      # Log in after packing so the short-lived key is fresh for the push.
+      - name: NuGet login
+        id: nuget-login
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
+        with:
+          user: ${{ secrets.NUGET_USER }}
       - name: Push packages
         shell: bash
+        env:
+          NUGET_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
         run: |
           shopt -s nullglob
           packages=(Artifacts/Snowberry.Mediator.*.nupkg)

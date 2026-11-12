@@ -1,38 +1,80 @@
 # Snowberry.Mediator.Extensions.OpenTelemetry
 
-`Microsoft.Extensions.DependencyInjection` integration for `Snowberry.Mediator` OpenTelemetry instrumentation.
+**OpenTelemetry for [`Snowberry.Mediator`](../../README.md) on `Microsoft.Extensions.DependencyInjection`.** `AddSnowberryMediatorOpenTelemetry` decorates the registered `IMediator` with the `InstrumentedMediator` from [`Snowberry.Mediator.OpenTelemetry.Shared`](../Snowberry.Mediator.OpenTelemetry.Shared/README.md), so every dispatch emits spans and metrics. It targets `net11.0`, `net10.0` and `netstandard2.0`.
 
-This package wires the `InstrumentedMediator` decorator from `Snowberry.Mediator.OpenTelemetry.Shared` into an `IServiceCollection`.
+For the `Snowberry.DependencyInjection` container use [`Snowberry.Mediator.OpenTelemetry`](../Snowberry.Mediator.OpenTelemetry/README.md) instead.
 
-For `Snowberry.DependencyInjection` consumers, use the `Snowberry.Mediator.OpenTelemetry` package instead.
+## Table of Contents
 
-## Usage
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Registration Rules](#registration-rules)
+- [Pitfalls](#pitfalls)
+- [Related Packages](#related-packages)
+
+## Installation
+
+```bash
+dotnet add package Snowberry.Mediator.Extensions.OpenTelemetry
+dotnet add package OpenTelemetry.Extensions.Hosting      # AddOpenTelemetry()
+dotnet add package OpenTelemetry.Exporter.Console        # or the exporter you use
+```
+
+## Quick Start
 
 ```csharp
+using Microsoft.Extensions.DependencyInjection;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Trace;
 using Snowberry.Mediator.Extensions.DependencyInjection;
 using Snowberry.Mediator.Extensions.OpenTelemetry;
+using Snowberry.Mediator.OpenTelemetry;   // AddSnowberryMediatorInstrumentation
 
 var services = new ServiceCollection();
 
-services.AddSnowberryMediator(opt =>
+// 1. Register the mediator.
+services.AddSnowberryMediator(options =>
 {
-    opt.RequestHandlerTypes = [typeof(MyRequestHandler)];
-    // ...
+    options.RequestHandlerTypes = [typeof(MyRequestHandler)];
 });
 
-services.AddSnowberryMediatorOpenTelemetry(o =>
+// 2. Decorate it (after AddSnowberryMediator).
+services.AddSnowberryMediatorOpenTelemetry(options =>
 {
-    o.EnablePipelineBehaviorSpans   = true;  // optional, off by default
-    o.EnableNotificationHandlerSpans = true;  // optional, off by default
+    options.EnablePipelineBehaviorSpans = true;     // optional, off by default
+    options.EnableNotificationHandlerSpans = true;  // optional, off by default
 });
 
+// 3. Subscribe the OpenTelemetry SDK to the mediator sources and meter.
 services.AddOpenTelemetry()
-    .WithTracing(t => t.AddSnowberryMediatorInstrumentation().AddConsoleExporter())
-    .WithMetrics(m => m.AddSnowberryMediatorInstrumentation().AddConsoleExporter());
+    .WithTracing(tracing => tracing.AddSnowberryMediatorInstrumentation().AddConsoleExporter())
+    .WithMetrics(metrics => metrics.AddSnowberryMediatorInstrumentation().AddConsoleExporter());
 ```
 
-`AddSnowberryMediatorOpenTelemetry` must be called **after** `AddSnowberryMediator`. The extension decorates the existing `IMediator` registration; calling it before throws `InvalidOperationException`. Calling it more than once is a no-op.
+The full options table, the emitted activities and metrics, and the enrichment hooks are documented in the [`Snowberry.Mediator.OpenTelemetry.Shared` README](../Snowberry.Mediator.OpenTelemetry.Shared/README.md).
 
-The decorator preserves the inner mediator's `ServiceLifetime`. Singleton or Scoped lifetimes are recommended; Transient is supported but allocates a new mediator and decorator per resolution.
+## Registration Rules
 
-See the `Snowberry.Mediator.OpenTelemetry.Shared` package for the full list of emitted activities, metrics, options, and enrichment/filter hooks.
+```csharp
+public static IServiceCollection AddSnowberryMediatorOpenTelemetry(
+    this IServiceCollection services,
+    Action<MediatorTelemetryOptions>? configure = null)
+```
+
+- **Call it after `AddSnowberryMediator`.** It replaces the existing `IMediator` registration with the decorator; called first, it throws `InvalidOperationException` without registering anything, so calling it again after `AddSnowberryMediator` works. The source-generated `AddSnowberryMediator()` works the same way.
+- **The decorator keeps the inner mediator's lifetime.** `Singleton` or `Scoped` is recommended; `Transient` works but creates a mediator and a decorator per resolution.
+- **Repeated calls are a no-op.** The first call's options win; a later call's `configure` callback does not run.
+
+## Pitfalls
+
+- **Only the first `IMediator` registration is decorated.** Registering another `IMediator` afterwards wins in Microsoft DI and bypasses the decorator.
+- **The builder extensions live in `Snowberry.Mediator.OpenTelemetry`.** Without that `using`, `AddSnowberryMediatorInstrumentation()` does not resolve.
+- **A changed `SourceName` must be passed to both builders** (`AddSnowberryMediatorInstrumentation(sourceName)`), or the SDK listens to the wrong source and meter.
+
+## Related Packages
+
+| Package | Purpose |
+| --- | --- |
+| [`Snowberry.Mediator.OpenTelemetry.Shared`](../Snowberry.Mediator.OpenTelemetry.Shared/README.md) | The decorator, options, conventions and builder extensions. |
+| [`Snowberry.Mediator.Extensions.DependencyInjection`](../Snowberry.Mediator.Extensions.DependencyInjection/README.md) | The mediator registration this package decorates. |
+| [`Snowberry.Mediator.OpenTelemetry`](../Snowberry.Mediator.OpenTelemetry/README.md) | The equivalent package for `Snowberry.DependencyInjection`. |
