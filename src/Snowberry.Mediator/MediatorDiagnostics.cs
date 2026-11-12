@@ -7,14 +7,9 @@ namespace Snowberry.Mediator;
 /// the names of the activities and tags those sources emit, and process-wide opt-in flags that
 /// control whether per-step <see cref="Activity"/> objects are created during dispatch.
 /// </summary>
-public static class MediatorDiagnostics
+/// <remarks><c>c_InstrumentationVersion</c> is generated from the package version at build time (see <c>Snowberry.Mediator.csproj</c>).</remarks>
+public static partial class MediatorDiagnostics
 {
-    /// <summary>
-    /// The instrumentation-scope version stamped onto the per-step <see cref="ActivitySource"/> instances, so
-    /// emitted spans carry the library version (OpenTelemetry instrumentation-scope convention).
-    /// </summary>
-    public const string c_InstrumentationVersion = "1.1.0";
-
     /// <summary>The name of the <see cref="ActivitySource"/> used for per-pipeline-behavior spans.</summary>
     public const string c_PipelineSourceName = "Snowberry.Mediator.Pipeline";
 

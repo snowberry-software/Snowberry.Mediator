@@ -66,7 +66,7 @@ public class NotificationHandlerInfo : IEquatable<NotificationHandlerInfo>
     /// <inheritdoc/>
     public override int GetHashCode()
     {
-#if NET9_0_OR_GREATER
+#if NET
         return HashCode.Combine(NotificationType, HandlerType);
 #else
         unchecked

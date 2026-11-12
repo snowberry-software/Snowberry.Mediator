@@ -1,4 +1,4 @@
-#if NET8_0_OR_GREATER
+#if NET
 using System.Collections.Frozen;
 #endif
 using System.Diagnostics.CodeAnalysis;
@@ -18,7 +18,7 @@ public class BaseGlobalPipelineRegistry<T> : IBaseGlobalPipelineRegistry<T>
     where T : PipelineBehaviorHandlerInfo
 {
     /// <summary>The lock guarding the mutable registration state.</summary>
-#if NET9_0_OR_GREATER
+#if NET
     protected readonly Lock _lock = new();
 #else
     protected readonly object _lock = new();
@@ -35,7 +35,7 @@ public class BaseGlobalPipelineRegistry<T> : IBaseGlobalPipelineRegistry<T>
 
     // Read-optimized frozen snapshots (atomic reference writes via Build).
     // After Build: arrays are sorted by SortIndex descending so iteration order matches dispatch order.
-#if NET8_0_OR_GREATER
+#if NET
     private FrozenDictionary<Type, PipelineBehaviorValue<T>[]> _frozenPipelineBehaviors
         = FrozenDictionary<Type, PipelineBehaviorValue<T>[]>.Empty;
 #else
@@ -161,7 +161,7 @@ public class BaseGlobalPipelineRegistry<T> : IBaseGlobalPipelineRegistry<T>
                 dict[kvp.Key] = arr;
             }
 
-#if NET8_0_OR_GREATER
+#if NET
             _frozenPipelineBehaviors = dict.ToFrozenDictionary();
 #else
             _frozenPipelineBehaviors = dict;
@@ -301,14 +301,8 @@ public class BaseGlobalPipelineRegistry<T> : IBaseGlobalPipelineRegistry<T>
         /// <inheritdoc/>
         public override int GetHashCode()
         {
-#if NET9_0_OR_GREATER
-            return HashCode.Combine(HandlerInfo);
-#else
-            unchecked
-            {
-                return HandlerInfo?.GetHashCode() ?? 0;
-            }
-#endif
+            // Equality delegates to HandlerInfo alone, so its hash code is sufficient on every target.
+            return HandlerInfo?.GetHashCode() ?? 0;
         }
 
         /// <inheritdoc/>

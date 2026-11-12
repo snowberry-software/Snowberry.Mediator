@@ -20,6 +20,49 @@ public class Microsoft_OpenTelemetryDecorationTests
     }
 
     [Fact]
+    public void CalledBeforeAddSnowberryMediator_Throws_LeavesNoRegistrations_SoRetryDecorates()
+    {
+        var services = new ServiceCollection();
+        bool configureRan = false;
+        Assert.Throws<InvalidOperationException>(() => services.AddSnowberryMediatorOpenTelemetry(_ => configureRan = true));
+
+        Assert.False(configureRan);
+        Assert.Empty(services);
+
+        services.AddSnowberryMediator(opt => opt.RequestHandlerTypes = [typeof(CounterRequestHandler)], ServiceLifetime.Singleton);
+        services.AddSnowberryMediatorOpenTelemetry();
+
+        var sp = services.BuildServiceProvider();
+        Assert.IsType<InstrumentedMediator>(sp.GetRequiredService<IMediator>());
+    }
+
+    [Fact]
+    public void CalledTwice_SecondConfigureCallbackDoesNotRun()
+    {
+        MediatorDiagnostics.ResetForTests();
+        try
+        {
+            var services = new ServiceCollection();
+            services.AddSnowberryMediator(opt => opt.RequestHandlerTypes = [typeof(CounterRequestHandler)], ServiceLifetime.Singleton);
+            services.AddSnowberryMediatorOpenTelemetry();
+
+            bool secondRan = false;
+            services.AddSnowberryMediatorOpenTelemetry(o =>
+            {
+                secondRan = true;
+                o.EnablePipelineBehaviorSpans = true;
+            });
+
+            Assert.False(secondRan);
+            Assert.False(MediatorDiagnostics.IsPipelineEnabled);
+        }
+        finally
+        {
+            MediatorDiagnostics.ResetForTests();
+        }
+    }
+
+    [Fact]
     public void CalledTwice_IsIdempotent_AndDoesNotDoubleWrap()
     {
         var services = new ServiceCollection();

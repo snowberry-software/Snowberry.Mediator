@@ -1,3 +1,4 @@
+using Snowberry.Mediator.Abstractions.Exceptions;
 using Snowberry.Mediator.OpenTelemetry;
 using Snowberry.Mediator.Tests.Common.Handler;
 using Snowberry.Mediator.Tests.Common.Requests;
@@ -54,6 +55,31 @@ public class OpenTelemetry_StreamEdgeCaseTests
         Assert.Equal(1, observed); // handler yields 1 before throwing
         var activity = Assert.Single(fx.StoppedActivities);
         Assert.Equal(System.Diagnostics.ActivityStatusCode.Error, activity.Status);
+
+        var countMeasurement = Assert.Single(fx.Measurements, m => m.InstrumentName == MediatorTelemetryConventions.Instruments.c_StreamCount);
+        Assert.Equal(MediatorTelemetryConventions.Status.c_Failure, countMeasurement.Tag(MediatorTelemetryConventions.Tags.c_MetricStatus));
+    }
+
+    [Fact]
+    public async Task Stream_InnerThrowsBeforeEnumeration_ActivityStoppedWithFailure_EnrichWithExceptionRuns()
+    {
+        Exception? enriched = null;
+        using var fx = new MicrosoftOpenTelemetryFixture(
+            opt => opt.StreamRequestHandlerTypes = [typeof(NumberStreamRequestHandler)],
+            telemetry => telemetry.EnrichWithException = (_, _, ex) => enriched = ex);
+
+        // No handler is registered for ThrowingStreamRequest, so the inner mediator throws synchronously
+        // from CreateStreamAsync, before any enumerator exists.
+        var thrown = await Assert.ThrowsAsync<HandlerNotFoundException>(async () =>
+        {
+            await foreach (var _ in fx.Mediator.CreateStreamAsync(new ThrowingStreamRequest()))
+            {
+            }
+        });
+
+        var activity = Assert.Single(fx.StoppedActivities);
+        Assert.Equal(System.Diagnostics.ActivityStatusCode.Error, activity.Status);
+        Assert.Same(thrown, enriched);
 
         var countMeasurement = Assert.Single(fx.Measurements, m => m.InstrumentName == MediatorTelemetryConventions.Instruments.c_StreamCount);
         Assert.Equal(MediatorTelemetryConventions.Status.c_Failure, countMeasurement.Tag(MediatorTelemetryConventions.Tags.c_MetricStatus));
