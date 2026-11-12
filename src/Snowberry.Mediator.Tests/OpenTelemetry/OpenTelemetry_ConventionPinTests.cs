@@ -1,3 +1,4 @@
+using System.Reflection;
 using Snowberry.Mediator.OpenTelemetry;
 
 namespace Snowberry.Mediator.Tests.OpenTelemetry;
@@ -18,6 +19,21 @@ public class OpenTelemetry_ConventionPinTests
         Assert.Equal("Snowberry.Mediator.Notification", MediatorTelemetryConventions.c_NotificationSourceName);
         Assert.Equal("Snowberry.Mediator.Pipeline", MediatorDiagnostics.c_PipelineSourceName);
         Assert.Equal("Snowberry.Mediator.Notification", MediatorDiagnostics.c_NotificationSourceName);
+    }
+
+    [Fact]
+    public void InstrumentationVersion_MatchesPackageVersion()
+    {
+        // The informational version is $(Version) plus an optional "+<commit>" suffix added by SourceLink.
+        string? informational = typeof(MediatorDiagnostics).Assembly
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+        Assert.NotNull(informational);
+        string packageVersion = informational!.Split('+')[0];
+
+        Assert.Equal(MediatorDiagnostics.c_InstrumentationVersion, packageVersion);
+        Assert.Equal(MediatorTelemetryConventions.c_InstrumentationVersion, packageVersion);
+        Assert.Equal(packageVersion, MediatorDiagnostics.s_PipelineSource.Version);
+        Assert.Equal(packageVersion, MediatorDiagnostics.s_NotificationSource.Version);
     }
 
     [Fact]

@@ -35,14 +35,6 @@ public class ExtensionAndExceptionTests : Common.MediatorTestBase
     }
 
     [Fact]
-    public void PipelineBehaviorNotFound_MessageIsNegated()
-    {
-        var ex = new PipelineBehaviorNotFoundException(typeof(CounterRequest), isStream: false);
-        Assert.StartsWith("No pipeline behavior found for request type", ex.Message);
-        Assert.Equal(typeof(CounterRequest), ex.RequestType);
-    }
-
-    [Fact]
     public void Microsoft_AddSnowberryMediator_NullServices_Throws()
     {
         IServiceCollection services = null!;

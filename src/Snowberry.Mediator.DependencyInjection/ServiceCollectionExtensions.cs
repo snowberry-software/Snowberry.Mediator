@@ -14,15 +14,16 @@ public static class ServiceCollectionExtensions
     /// Adds the Mediator services to the specified <see cref="IServiceRegistry" />.
     /// </summary>
     /// <remarks>
-    /// The <see cref="IServiceRegistry"/> must be resolvable as an <see cref="IServiceProvider"/> so the mediator
-    /// can resolve handlers at dispatch time.
+    /// Appending reuses the existing global pipeline and notification registries by resolving them from the
+    /// registry, so <paramref name="serviceRegistry"/> must also implement <c>IKeyedServiceProvider</c>
+    /// (<c>ServiceContainer</c> does); otherwise appended behaviors and notification handlers are not used.
     /// </remarks>
     /// <param name="serviceRegistry">The service registry to add the registrations to.</param>
     /// <param name="configure">A callback used to configure the <see cref="MediatorOptions"/>.</param>
     /// <param name="serviceLifetime">The service lifetime of the mediator and handlers.</param>
     /// <returns>The supplied <paramref name="serviceRegistry"/> for chaining.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="serviceRegistry"/> or <paramref name="configure"/> is <see langword="null"/>.</exception>
-    /// <exception cref="InvalidOperationException">The mediator is already registered on <paramref name="serviceRegistry"/>; use <see cref="AppendSnowberryMediator"/> to extend it.</exception>
+    /// <exception cref="InvalidOperationException">Pipeline behaviors, stream pipeline behaviors or notification handlers are registered while the matching global registry already exists on <paramref name="serviceRegistry"/>; use <see cref="AppendSnowberryMediator"/> to extend it.</exception>
     [RequiresDynamicCode("This method uses reflection to find types from the assemblies defined in the options.")]
     [RequiresUnreferencedCode("This method uses reflection to find types from the assemblies defined in the options.")]
     public static IServiceRegistry AddSnowberryMediator(this IServiceRegistry serviceRegistry, Action<MediatorOptions> configure, ServiceLifetime serviceLifetime = ServiceLifetime.Scoped)
@@ -34,8 +35,9 @@ public static class ServiceCollectionExtensions
     /// Appends the Mediator services to the specified <see cref="IServiceRegistry" /> and preserves existing registrations.
     /// </summary>
     /// <remarks>
-    /// The <see cref="IServiceRegistry"/> must be resolvable as an <see cref="IServiceProvider"/> so the mediator
-    /// can resolve handlers at dispatch time.
+    /// Appending reuses the existing global pipeline and notification registries by resolving them from the
+    /// registry, so <paramref name="serviceRegistry"/> must also implement <c>IKeyedServiceProvider</c>
+    /// (<c>ServiceContainer</c> does); otherwise appended behaviors and notification handlers are not used.
     /// </remarks>
     /// <param name="serviceRegistry">The service registry to add the registrations to.</param>
     /// <param name="configure">A callback used to configure the <see cref="MediatorOptions"/>.</param>
@@ -53,8 +55,9 @@ public static class ServiceCollectionExtensions
     /// Adds the Mediator services to the specified <see cref="IServiceRegistry" />.
     /// </summary>
     /// <remarks>
-    /// The <see cref="IServiceRegistry"/> must be resolvable as an <see cref="IServiceProvider"/> so the mediator
-    /// can resolve handlers at dispatch time.
+    /// Appending reuses the existing global pipeline and notification registries by resolving them from the
+    /// registry, so <paramref name="serviceRegistry"/> must also implement <c>IKeyedServiceProvider</c>
+    /// (<c>ServiceContainer</c> does); otherwise appended behaviors and notification handlers are not used.
     /// </remarks>
     /// <param name="serviceRegistry">The service registry to add the registrations to.</param>
     /// <param name="configure">A callback used to configure the <see cref="MediatorOptions"/>.</param>

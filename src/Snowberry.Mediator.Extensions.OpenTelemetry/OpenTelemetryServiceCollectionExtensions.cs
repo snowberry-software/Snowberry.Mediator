@@ -35,68 +35,64 @@ public static class OpenTelemetryServiceCollectionExtensions
         _ = services ?? throw new ArgumentNullException(nameof(services));
 
         // Idempotency guard: presence of MediatorInstrumentation means AddSnowberryMediatorOpenTelemetry
-        // has already run. Skip the descriptor swap so we don't wrap an already-wrapped decorator.
-        bool alreadyConfigured = false;
+        // has already run. Return before building options, so a repeated call neither re-runs the configure
+        // callback (which could flip the process-wide per-step span flags) nor wraps the decorator again.
         for (int i = 0; i < services.Count; i++)
         {
             if (services[i].ServiceType == typeof(MediatorInstrumentation))
+                return services;
+        }
+
+        // Locate the IMediator registration to decorate before touching the collection, so the
+        // "called too early" failure leaves no registrations behind and a later retry still decorates.
+        int index = -1;
+        for (int i = 0; i < services.Count; i++)
+        {
+            var candidate = services[i];
+            if (candidate.ServiceType == typeof(IMediator)
+                && (candidate.ImplementationInstance is IMediator || candidate.ImplementationFactory is not null || candidate.ImplementationType is not null))
             {
-                alreadyConfigured = true;
+                index = i;
                 break;
             }
         }
+
+        if (index < 0)
+            throw new InvalidOperationException(
+                "AddSnowberryMediatorOpenTelemetry must be called after AddSnowberryMediator. " +
+                "No IMediator registration was found in the service collection.");
 
         var options = global::Snowberry.Mediator.OpenTelemetry.Internals.TelemetryRegistration.BuildOptions(configure);
 
         services.TryAddSingleton(options);
         services.TryAddSingleton<MediatorInstrumentation>();
 
-        if (alreadyConfigured)
-            return services;
-
-        bool decorated = false;
-        for (int i = 0; i < services.Count; i++)
+        var d = services[index];
+        Func<IServiceProvider, IMediator> innerFactory;
+        if (d.ImplementationInstance is IMediator instance)
         {
-            var d = services[i];
-            if (d.ServiceType != typeof(IMediator))
-                continue;
-
-            Func<IServiceProvider, IMediator> innerFactory;
-            if (d.ImplementationInstance is IMediator instance)
-            {
-                innerFactory = _ => instance;
-            }
-            else if (d.ImplementationFactory is { } factory)
-            {
-                innerFactory = sp => (IMediator)factory(sp);
-            }
-            else if (d.ImplementationType is { } implType)
-            {
-                // Promote the concrete IMediator type to its own descriptor so it can be resolved from
-                // the decorator factory. Same lifetime as the original.
-                services.TryAdd(new ServiceDescriptor(implType, implType, d.Lifetime));
-                innerFactory = sp => (IMediator)sp.GetRequiredService(implType);
-            }
-            else
-            {
-                continue;
-            }
-
-            services[i] = new ServiceDescriptor(
-                typeof(IMediator),
-                sp => new InstrumentedMediator(
-                    innerFactory(sp),
-                    sp.GetRequiredService<MediatorInstrumentation>(),
-                    sp.GetRequiredService<MediatorTelemetryOptions>()),
-                d.Lifetime);
-            decorated = true;
-            break;
+            innerFactory = _ => instance;
+        }
+        else if (d.ImplementationFactory is { } factory)
+        {
+            innerFactory = sp => (IMediator)factory(sp);
+        }
+        else
+        {
+            // Promote the concrete IMediator type to its own descriptor so it can be resolved from
+            // the decorator factory. Same lifetime as the original.
+            var implType = d.ImplementationType!;
+            services.TryAdd(new ServiceDescriptor(implType, implType, d.Lifetime));
+            innerFactory = sp => (IMediator)sp.GetRequiredService(implType);
         }
 
-        if (!decorated)
-            throw new InvalidOperationException(
-                "AddSnowberryMediatorOpenTelemetry must be called after AddSnowberryMediator. " +
-                "No IMediator registration was found in the service collection.");
+        services[index] = new ServiceDescriptor(
+            typeof(IMediator),
+            sp => new InstrumentedMediator(
+                innerFactory(sp),
+                sp.GetRequiredService<MediatorInstrumentation>(),
+                sp.GetRequiredService<MediatorTelemetryOptions>()),
+            d.Lifetime);
 
         return services;
     }

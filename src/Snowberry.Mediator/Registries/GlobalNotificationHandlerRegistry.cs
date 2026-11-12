@@ -1,5 +1,5 @@
 using System.Collections.Concurrent;
-#if NET8_0_OR_GREATER
+#if NET
 using System.Collections.Frozen;
 #endif
 using System.Diagnostics;
@@ -22,7 +22,7 @@ namespace Snowberry.Mediator.Registries;
 /// </summary>
 public sealed class GlobalNotificationHandlerRegistry : IGlobalNotificationHandlerRegistry<NotificationHandlerInfo>
 {
-#if NET9_0_OR_GREATER
+#if NET
     private readonly Lock _lock = new();
 #else
     private readonly object _lock = new();
@@ -32,7 +32,7 @@ public sealed class GlobalNotificationHandlerRegistry : IGlobalNotificationHandl
     private readonly List<NotificationHandlerInfo> _openGenericHandlers = [];
 
     // Read-optimized frozen snapshots.
-#if NET8_0_OR_GREATER
+#if NET
     private FrozenDictionary<Type, NotificationHandlerInfo[]> _frozenNotificationHandlers
         = FrozenDictionary<Type, NotificationHandlerInfo[]>.Empty;
 #else
@@ -167,7 +167,7 @@ public sealed class GlobalNotificationHandlerRegistry : IGlobalNotificationHandl
                 dict[kvp.Key] = kvp.Value.ToArray();
             }
 
-#if NET8_0_OR_GREATER
+#if NET
             _frozenNotificationHandlers = dict.ToFrozenDictionary();
 #else
             _frozenNotificationHandlers = dict;

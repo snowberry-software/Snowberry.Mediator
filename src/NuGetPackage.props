@@ -4,7 +4,7 @@
         <Platforms>AnyCPU;x64;x86</Platforms>
 
         <Authors>Snowberry Software</Authors>
-        <AssemblyVersion>2.0.0.0</AssemblyVersion>
+        <AssemblyVersion>3.0.0.0</AssemblyVersion>
         <VersionPrefix>$(AssemblyVersion)</VersionPrefix>
         <!-- <VersionSuffix>alpha</VersionSuffix> -->
 
@@ -47,10 +47,10 @@
         <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
     </PropertyGroup>
 
-    <!-- SourceLink -->
-    <ItemGroup>
-        <!-- For GitHub -->
-        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.202"
-            PrivateAssets="All" />
-    </ItemGroup>
+    <!-- Runtime-async (.NET 11+): the runtime drives async methods instead of compiler-generated state machines.
+         Still a preview feature in .NET 11 (planned default in .NET 12); applies to Task/ValueTask-returning
+         async methods only, async iterators keep the classic lowering. -->
+    <PropertyGroup Condition="'$(TargetFramework)' == 'net11.0'">
+        <Features>$(Features);runtime-async=on</Features>
+    </PropertyGroup>
 </Project>

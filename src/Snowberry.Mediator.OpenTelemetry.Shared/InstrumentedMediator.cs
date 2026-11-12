@@ -147,16 +147,18 @@ public sealed class InstrumentedMediator : IMediator
         // exception thrown by MoveNextAsync (handler throw or cancellation) while 'yield return' stays in the outer
         // try/finally. This lets the finally enrich with the exception detail - matching Send/Publish - while the
         // early-consumer-break case (no exception, finally runs via iterator dispose) keeps a bare Error status.
+        // The inner CreateStreamAsync call is inside the try as well: the inner mediator throws synchronously
+        // (no handler, cancelled token) before any enumerator exists, and that failure must still stop the
+        // Activity and record metrics. The enumerator is disposed after the telemetry is recorded, as before.
         Exception? error = null;
-        await using var enumerator = _inner.CreateStreamAsync(request, ct).GetAsyncEnumerator(ct);
+        IAsyncEnumerator<TResponse>? enumerator = null;
         try
         {
-            while (true)
+            try
             {
-                bool hasNext;
                 try
                 {
-                    hasNext = await enumerator.MoveNextAsync().ConfigureAwait(false);
+                    enumerator = _inner.CreateStreamAsync(request, ct).GetAsyncEnumerator(ct);
                 }
                 catch (Exception ex)
                 {
@@ -164,39 +166,58 @@ public sealed class InstrumentedMediator : IMediator
                     throw;
                 }
 
-                if (!hasNext)
-                    break;
+                while (true)
+                {
+                    bool hasNext;
+                    try
+                    {
+                        hasNext = await enumerator.MoveNextAsync().ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        error = ex;
+                        throw;
+                    }
 
-                yield return enumerator.Current;
+                    if (!hasNext)
+                        break;
+
+                    yield return enumerator.Current;
+                }
+                status = MediatorTelemetryConventions.Status.c_Success;
+                activity?.SetStatus(ActivityStatusCode.Ok);
             }
-            status = MediatorTelemetryConventions.Status.c_Success;
-            activity?.SetStatus(ActivityStatusCode.Ok);
+            finally
+            {
+                if (status != MediatorTelemetryConventions.Status.c_Success && activity is not null)
+                {
+                    if (error is not null)
+                    {
+                        activity.SetStatus(ActivityStatusCode.Error, error.Message);
+                        InvokeEnrichException(activity, request, error);
+                    }
+                    else
+                    {
+                        activity.SetStatus(ActivityStatusCode.Error);
+                    }
+                }
+                if (metricsActive)
+                {
+                    var tags = new TagList
+                    {
+                        { MediatorTelemetryConventions.Tags.c_MetricType, typeName },
+                        { MediatorTelemetryConventions.Tags.c_MetricStatus, status },
+                    };
+                    if (inst.StreamCount.Enabled) inst.StreamCount.Add(1, tags);
+                    if (inst.StreamDuration.Enabled) inst.StreamDuration.Record(ElapsedMilliseconds(start), tags);
+                }
+                activity?.Dispose();
+            }
         }
         finally
         {
-            if (status != MediatorTelemetryConventions.Status.c_Success && activity is not null)
-            {
-                if (error is not null)
-                {
-                    activity.SetStatus(ActivityStatusCode.Error, error.Message);
-                    InvokeEnrichException(activity, request, error);
-                }
-                else
-                {
-                    activity.SetStatus(ActivityStatusCode.Error);
-                }
-            }
-            if (metricsActive)
-            {
-                var tags = new TagList
-                {
-                    { MediatorTelemetryConventions.Tags.c_MetricType, typeName },
-                    { MediatorTelemetryConventions.Tags.c_MetricStatus, status },
-                };
-                if (inst.StreamCount.Enabled) inst.StreamCount.Add(1, tags);
-                if (inst.StreamDuration.Enabled) inst.StreamDuration.Record(ElapsedMilliseconds(start), tags);
-            }
-            activity?.Dispose();
+            if (enumerator is not null)
+                await enumerator.DisposeAsync().ConfigureAwait(false);
         }
     }
 

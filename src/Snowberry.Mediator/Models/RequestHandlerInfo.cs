@@ -73,7 +73,7 @@ public class RequestHandlerInfo : IEquatable<RequestHandlerInfo>
     /// <inheritdoc/>
     public override int GetHashCode()
     {
-#if NET9_0_OR_GREATER
+#if NET
         return HashCode.Combine(HandlerType, RequestType, ResponseType);
 #else
         unchecked
